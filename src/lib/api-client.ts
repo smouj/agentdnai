@@ -155,6 +155,23 @@ export const api = {
   rotateKey: (id: string) =>
     apiFetch<{ publicKey: string }>(`/agents/${id}/rotate-key`, { method: 'POST' }),
 
+  deleteAgent: (id: string) =>
+    apiFetch<{ success: boolean; message: string }>(`/agents/${id}`, { method: 'DELETE' }),
+
+  getAgentHealth: (id: string) =>
+    apiFetch<{
+      agentId: string;
+      status: string;
+      healthy: boolean;
+      checks: {
+        keyRotation: { status: 'ok' | 'warning'; lastRotated: string | null; daysSinceRotation: number };
+        tokenHealth: { status: 'ok' | 'warning' | 'critical'; activeTokens: number; expiredUnrevoked: number };
+        permissions: { status: 'ok' | 'warning'; totalPermissions: number; highRiskCount: number };
+        auditTrail: { status: 'ok'; recentEvents: number };
+      };
+      uptime: number;
+    }>(`/agents/${id}/health`),
+
   // Permissions
   grantPermission: (agentId: string, data: { scope: string; resource?: string; effect?: string; expiresAt?: string }) =>
     apiFetch<Permission>(`/agents/${agentId}/permissions`, { method: 'POST', body: JSON.stringify(data) }),

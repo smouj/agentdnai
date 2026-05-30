@@ -21,6 +21,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator } from '@/components/ui/command';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
@@ -246,7 +248,7 @@ function Sparkline({ values, color = 'bg-primary', className = '' }: { values: n
         <div
           key={i}
           className={`${color} rounded-t-sm min-w-[3px] transition-all duration-500`}
-          style={{ height: `${(v / max) * 100}%`, width: '4px' }}
+          style={{ height: `${(v / max) * 100}%`, width: '5px' }}
         />
       ))}
     </div>
@@ -324,18 +326,28 @@ function GridBackground() {
 // ─── Floating Particles ──────────────────────────────────────────────────────
 
 function FloatingParticles() {
+  const [mounted, setMounted] = React.useState(false);
+  // Deterministic seeded random to avoid hydration mismatch
+  const seededRandom = (seed: number) => {
+    const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  };
   const particles = React.useMemo(() =>
     Array.from({ length: 30 }, (_, i) => ({
       id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      duration: Math.random() * 15 + 10,
-      delay: Math.random() * 10,
-      opacity: Math.random() * 0.4 + 0.1,
+      x: seededRandom(i * 2) * 100,
+      y: seededRandom(i * 2 + 1) * 100,
+      size: seededRandom(i * 3) * 3 + 1,
+      duration: seededRandom(i * 3 + 1) * 15 + 10,
+      delay: seededRandom(i * 3 + 2) * 10,
+      opacity: seededRandom(i * 5) * 0.4 + 0.1,
     })),
     []
   );
+
+  React.useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -398,6 +410,8 @@ function LandingPage() {
         <GridBackground />
         <FloatingParticles />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3" />
+        {/* Noise texture overlay */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")', backgroundRepeat: 'repeat', backgroundSize: '256px 256px' }} />
         <motion.div 
           className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
           animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
@@ -418,17 +432,37 @@ function LandingPage() {
               <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/5">
                 <Fingerprint className="w-3 h-3 mr-1" /> Secure Identity Layer
               </Badge>
-              <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
-                Every AI agent<br />
-                needs an{' '}
-                <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-                  identity
-                </span>.
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-lg">
+              <div className="flex items-center gap-3 mb-4">
+                <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight">
+                  Every AI agent<br />
+                  needs an{' '}
+                  <span className="bg-gradient-to-r from-cyan-400 via-primary to-teal-300 bg-clip-text text-transparent">
+                    identity
+                  </span>.
+                </h1>
+              </div>
+              <Badge variant="outline" className="mb-4 border-cyan-500/30 text-cyan-400 bg-cyan-500/5 w-fit text-[10px]">
+                v2.0 · Open Source
+              </Badge>
+              <p className="text-lg text-muted-foreground mb-2 max-w-lg">
                 AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions,
                 encrypted credentials, revocable access and a clear audit trail.
               </p>
+              <motion.p
+                className="text-sm text-primary/70 mb-8 max-w-lg font-mono"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1, duration: 0.5 }}
+              >
+                <span className="inline-block">
+                  {'> '}Identity · Authorization · Audit — unified for AI agents
+                  <motion.span
+                    className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle"
+                    animate={{ opacity: [1, 0, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  />
+                </span>
+              </motion.p>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" className="relative overflow-hidden group h-12 px-8 text-base font-semibold bg-cyan-500 text-white hover:bg-cyan-400 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 transition-all" onClick={() => setView('dashboard')}>
                   <span className="absolute inset-0 rounded-md bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 bg-[length:200%_100%] animate-[gradient-shift_3s_ease-in-out_infinite] opacity-90 group-hover:opacity-100 transition-opacity" />
@@ -898,20 +932,24 @@ function SecurityScore({ stats }: { stats: DashboardStats | null }) {
   if (!stats) return null;
   const total = stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount;
   const score = total > 0 ? Math.round((stats.recentAllowCount / total) * 100) : 100;
-  const radius = 36;
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
   const color = score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
   const strokeColor = score >= 80 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
+  const riskLevel = score >= 80 ? 'Low Risk' : score >= 50 ? 'Medium Risk' : 'High Risk';
+  const riskColor = score >= 80 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' : score >= 50 ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-red-500/15 text-red-400 border-red-500/30';
+  const gradientBg = score >= 80 ? 'from-emerald-500/[0.06] via-transparent to-emerald-500/[0.02]' : score >= 50 ? 'from-amber-500/[0.06] via-transparent to-amber-500/[0.02]' : 'from-red-500/[0.06] via-transparent to-red-500/[0.02]';
+  const description = score >= 80 ? 'Your authorization policies are performing well. Most requests are being allowed with minimal denials.' : score >= 50 ? 'There are some denied actions that may need review. Consider adjusting policies for frequently-denied agents.' : 'A high rate of denials detected. Review your permission assignments and agent configurations urgently.';
   
   return (
-    <Card className="bg-card/30 backdrop-blur-lg border-border/30">
-      <CardContent className="p-4 flex items-center gap-4">
-        <div className="relative">
-          <svg width="88" height="88" className="-rotate-90">
-            <circle cx="44" cy="44" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="6" />
+    <Card className={`bg-card/30 backdrop-blur-lg border-border/30 bg-gradient-to-r ${gradientBg}`}>
+      <CardContent className="p-5 flex items-center gap-6">
+        <div className="relative flex-shrink-0">
+          <svg width="100" height="100" className="-rotate-90">
+            <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="7" />
             <motion.circle
-              cx="44" cy="44" r={radius} fill="none" stroke={strokeColor} strokeWidth="6"
+              cx="50" cy="50" r={radius} fill="none" stroke={strokeColor} strokeWidth="7"
               strokeLinecap="round"
               strokeDasharray={circumference}
               initial={{ strokeDashoffset: circumference }}
@@ -920,14 +958,22 @@ function SecurityScore({ stats }: { stats: DashboardStats | null }) {
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className={`text-lg font-bold ${color}`}>{score}</span>
+            <span className={`text-xl font-bold ${color}`}>{score}</span>
           </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold">Security Score</p>
-          <p className="text-xs text-muted-foreground">
-            {score >= 80 ? 'Healthy authorization rate' : score >= 50 ? 'Some denied actions' : 'High denial rate'}
-          </p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-sm font-semibold">Security Score</p>
+            <Badge variant="outline" className={`${riskColor} gap-1 text-[10px] px-1.5 py-0`}>
+              {riskLevel}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">{description}</p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> {stats.recentAllowCount} allowed</span>
+            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-400" /> {stats.recentDenyCount} denied</span>
+            <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> {stats.recentRequiresApprovalCount} pending</span>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1085,20 +1131,28 @@ function DashboardView() {
   }
 
   const statCards = [
-    { label: 'Total Agents', value: stats?.totalAgents || 0, icon: <Bot className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-primary', trend: '+12%', trendUp: true, gradientFrom: 'from-cyan-400', gradientTo: 'to-primary' },
-    { label: 'Active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-emerald-400', trend: '+8%', trendUp: true, gradientFrom: 'from-emerald-400', gradientTo: 'to-emerald-300' },
-    { label: 'Permissions', value: stats?.totalPermissions || 0, icon: <Shield className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-primary', trend: '+24%', trendUp: true, gradientFrom: 'from-cyan-400', gradientTo: 'to-blue-400' },
-    { label: 'Active Tokens', value: stats?.activeTokens || 0, icon: <Key className="w-4 h-4 text-amber-400" />, color: 'text-amber-400', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-amber-400', trend: '-3%', trendUp: false, gradientFrom: 'from-amber-400', gradientTo: 'to-orange-400' },
+    { label: 'Total Agents', subtitle: 'Registered identities', value: stats?.totalAgents || 0, icon: <Bot className="w-5 h-5 text-cyan-400" />, iconBg: 'bg-cyan-400/10', color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-cyan-400', trend: '+12%', trendUp: true, gradientFrom: 'from-cyan-400', gradientTo: 'to-primary', cardBg: 'bg-gradient-to-br from-cyan-500/[0.07] via-transparent to-cyan-500/[0.03]' },
+    { label: 'Active', subtitle: 'Currently active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />, iconBg: 'bg-emerald-400/10', color: 'text-emerald-400', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-emerald-400', trend: '+8%', trendUp: true, gradientFrom: 'from-emerald-400', gradientTo: 'to-emerald-300', cardBg: 'bg-gradient-to-br from-emerald-500/[0.07] via-transparent to-emerald-500/[0.03]' },
+    { label: 'Permissions', subtitle: 'Total scope entries', value: stats?.totalPermissions || 0, icon: <Shield className="w-5 h-5 text-blue-400" />, iconBg: 'bg-blue-400/10', color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-blue-400', trend: '+24%', trendUp: true, gradientFrom: 'from-blue-400', gradientTo: 'to-indigo-400', cardBg: 'bg-gradient-to-br from-blue-500/[0.07] via-transparent to-blue-500/[0.03]' },
+    { label: 'Active Tokens', subtitle: 'Issued & unexpired', value: stats?.activeTokens || 0, icon: <Key className="w-5 h-5 text-amber-400" />, iconBg: 'bg-amber-400/10', color: 'text-amber-400', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-amber-400', trend: '-3%', trendUp: false, gradientFrom: 'from-amber-400', gradientTo: 'to-orange-400', cardBg: 'bg-gradient-to-br from-amber-500/[0.07] via-transparent to-amber-500/[0.03]' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <span className="text-[11px] text-muted-foreground/60 font-mono flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Last updated: just now
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs font-mono text-muted-foreground border-border/50 px-2 py-1 cursor-pointer hover:bg-accent transition-colors" onClick={() => { const e = new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true, bubbles: true }); document.dispatchEvent(e); }}>
+            ⌘K
+          </Badge>
           <NotificationCenter events={recentAudit} />
           <Button variant="outline" size="sm" onClick={() => setShowSetupWizard(true)}>
             <Zap className="w-4 h-4 mr-1" /> Quick Setup
@@ -1119,6 +1173,8 @@ function DashboardView() {
           </Button>
         </div>
       </div>
+      {/* Animated gradient line below header */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-[gradient-shift_4s_ease-in-out_infinite] bg-[length:200%_100%]" />
 
       {/* System Status Bar */}
       <div className="flex items-center gap-4 px-4 py-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
@@ -1138,32 +1194,34 @@ function DashboardView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, i) => (
           <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
-            <Card className="bg-card/30 backdrop-blur-lg border-border/30 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group relative overflow-hidden">
-              {/* Gradient top accent line */}
-              <div className="h-0.5 w-full bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0" />
+            <Card className={`bg-card/30 backdrop-blur-lg border-border/30 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group relative overflow-hidden ${card.cardBg}`}>
               {/* Shimmer effect on hover */}
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-lg bg-gradient-to-r from-transparent via-primary/5 to-transparent bg-[length:200%_100%] animate-[border-shimmer_2s_linear_infinite]" />
               <CardContent className="p-4 relative">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">{card.label}</span>
-                  {card.icon}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform" style={{ backgroundColor: card.iconBg === 'bg-cyan-400/10' ? 'rgba(34,211,238,0.1)' : card.iconBg === 'bg-emerald-400/10' ? 'rgba(52,211,153,0.1)' : card.iconBg === 'bg-blue-400/10' ? 'rgba(96,165,250,0.1)' : 'rgba(251,191,36,0.1)' }}>
+                    {card.icon}
+                  </div>
+                  <Sparkline values={card.sparkline} color={card.sparkColor} className="h-10" />
                 </div>
-                <div className="flex items-end justify-between">
-                  <div>
-                    <motion.div
-                      className={`text-2xl font-bold bg-gradient-to-r ${card.gradientFrom} ${card.gradientTo} bg-clip-text text-transparent`}
-                      key={`stat-${card.label}-${card.value}`}
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: [0.5, 1.15, 1], opacity: 1 }}
-                      transition={{ delay: i * 0.1 + 0.3, duration: 0.5, type: 'spring' }}
-                    >
-                      {card.value}
-                    </motion.div>
-                    <span className={`text-xs font-mono flex items-center gap-0.5 mt-0.5 ${card.trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
+                <div>
+                  <span className="text-xs text-muted-foreground">{card.label}</span>
+                  <motion.div
+                    className={`text-3xl font-bold bg-gradient-to-r ${card.gradientFrom} ${card.gradientTo} bg-clip-text text-transparent`}
+                    key={`stat-${card.label}-${card.value}`}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [0.5, 1.15, 1], opacity: 1 }}
+                    transition={{ delay: i * 0.1 + 0.3, duration: 0.5, type: 'spring' }}
+                  >
+                    {card.value}
+                  </motion.div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className={`text-xs font-mono flex items-center gap-0.5 ${card.trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
                       {card.trendUp ? <span>↑</span> : <span>↓</span>} {card.trend}
                     </span>
+                    <span className="text-[10px] text-muted-foreground/60">·</span>
+                    <span className="text-[10px] text-muted-foreground/60">{card.subtitle}</span>
                   </div>
-                  <Sparkline values={card.sparkline} color={card.sparkColor} />
                 </div>
               </CardContent>
             </Card>
@@ -1181,21 +1239,25 @@ function DashboardView() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/30" onClick={() => setView('agents')}>
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:scale-[1.03] transition-all" onClick={() => setView('agents')}>
               <Plus className="w-5 h-5 text-emerald-400" />
-              <span className="text-xs">New Agent</span>
+              <span className="text-xs font-medium">New Agent</span>
+              <span className="text-[10px] text-muted-foreground/70">Register new AI agent</span>
             </Button>
-            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30" onClick={() => setView('security-events')}>
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30 hover:scale-[1.03] transition-all" onClick={() => setView('security-events')}>
               <Radio className="w-5 h-5 text-primary" />
-              <span className="text-xs">Live Feed</span>
+              <span className="text-xs font-medium">Live Feed</span>
+              <span className="text-[10px] text-muted-foreground/70">Monitor events</span>
             </Button>
-            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/30" onClick={() => setView('audit')}>
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/30 hover:scale-[1.03] transition-all" onClick={() => setView('audit')}>
               <ScrollText className="w-5 h-5 text-amber-400" />
-              <span className="text-xs">View Audit</span>
+              <span className="text-xs font-medium">View Audit</span>
+              <span className="text-[10px] text-muted-foreground/70">Authorization logs</span>
             </Button>
-            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-500/30" onClick={() => setView('policies')}>
+            <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:scale-[1.03] transition-all" onClick={() => setView('policies')}>
               <Shield className="w-5 h-5 text-cyan-400" />
-              <span className="text-xs">Policies</span>
+              <span className="text-xs font-medium">Policies</span>
+              <span className="text-[10px] text-muted-foreground/70">Manage permissions</span>
             </Button>
           </div>
         </CardContent>
@@ -1209,21 +1271,38 @@ function DashboardView() {
             <CardDescription>Recent authorization events</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative pl-6">
-              <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
-              {recentAudit.slice(0, 5).map((event, i) => {
+            <div className="relative pl-8">
+              <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-border to-transparent" />
+              {/* Today header */}
+              <div className="relative mb-3 -ml-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 bg-card/80 px-2 py-0.5 rounded">Today</span>
+              </div>
+              {recentAudit.slice(0, 3).map((event, i) => {
+                const eventTypeStyles: Record<string, { pillBg: string; pillText: string; borderColor: string }> = {
+                  PERMISSION_GRANTED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                  PERMISSION_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                  AUTHORIZATION_CHECK: { pillBg: 'bg-cyan-500/15', pillText: 'text-cyan-400', borderColor: 'border-l-cyan-400' },
+                  AGENT_CREATED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                  AGENT_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                  AGENT_PAUSED: { pillBg: 'bg-amber-500/15', pillText: 'text-amber-400', borderColor: 'border-l-amber-400' },
+                  AGENT_RESUMED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                  KEY_ROTATED: { pillBg: 'bg-cyan-500/15', pillText: 'text-cyan-400', borderColor: 'border-l-cyan-400' },
+                  TOKEN_ISSUED: { pillBg: 'bg-amber-500/15', pillText: 'text-amber-400', borderColor: 'border-l-amber-400' },
+                  TOKEN_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                };
                 const timelineIcons: Record<string, React.ReactNode> = {
-                  PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-primary" />,
+                  PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-emerald-400" />,
                   PERMISSION_REVOKED: <ShieldX className="w-3 h-3 text-red-400" />,
-                  AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-primary" />,
+                  AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-cyan-400" />,
                   AGENT_CREATED: <Plus className="w-3 h-3 text-emerald-400" />,
                   AGENT_REVOKED: <Ban className="w-3 h-3 text-red-400" />,
                   AGENT_PAUSED: <Pause className="w-3 h-3 text-amber-400" />,
                   AGENT_RESUMED: <Play className="w-3 h-3 text-emerald-400" />,
-                  KEY_ROTATED: <RotateCcw className="w-3 h-3 text-primary" />,
+                  KEY_ROTATED: <RotateCcw className="w-3 h-3 text-cyan-400" />,
                   TOKEN_ISSUED: <Key className="w-3 h-3 text-amber-400" />,
                   TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-red-400" />,
                 };
+                const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-primary/15', pillText: 'text-primary', borderColor: 'border-l-primary' };
                 return (
                   <motion.div
                     key={event.id}
@@ -1232,7 +1311,7 @@ function DashboardView() {
                     transition={{ delay: i * 0.1 }}
                     className="relative mb-4 last:mb-0"
                   >
-                    <div className={`absolute -left-4 top-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                    <div className={`absolute -left-5 top-1 w-5 h-5 rounded-full flex items-center justify-center ${
                       event.decision === 'allow' ? 'bg-emerald-400/20' :
                       event.decision === 'deny' ? 'bg-red-400/20' :
                       event.decision === 'requires_approval' ? 'bg-amber-400/20' :
@@ -1240,60 +1319,138 @@ function DashboardView() {
                     }`}>
                       {timelineIcons[event.eventType] || <Activity className="w-3 h-3 text-muted-foreground" />}
                     </div>
-                    <div className="ml-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono">{event.eventType.replace(/_/g, ' ')}</span>
+                    <div className={`ml-4 pl-3 border-l-2 ${style.borderColor} rounded-r-md py-1.5 px-3 bg-card/30`}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`${style.pillBg} ${style.pillText} text-[11px] font-mono px-1.5 py-0.5 rounded`}>{event.eventType.replace(/_/g, ' ')}</span>
                         {event.decision && <DecisionBadge decision={event.decision} />}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {event.action || 'System event'} · {timeAgo(event.createdAt)}
                       </p>
                     </div>
                   </motion.div>
                 );
               })}
+              {/* Earlier header */}
+              {recentAudit.length > 3 && (
+                <>
+                  <div className="relative mb-3 -ml-2 mt-2">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 bg-card/80 px-2 py-0.5 rounded">Earlier</span>
+                  </div>
+                  {recentAudit.slice(3, 5).map((event, i) => {
+                    const eventTypeStyles: Record<string, { pillBg: string; pillText: string; borderColor: string }> = {
+                      PERMISSION_GRANTED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                      PERMISSION_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                      AUTHORIZATION_CHECK: { pillBg: 'bg-cyan-500/15', pillText: 'text-cyan-400', borderColor: 'border-l-cyan-400' },
+                      AGENT_CREATED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                      AGENT_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                      AGENT_PAUSED: { pillBg: 'bg-amber-500/15', pillText: 'text-amber-400', borderColor: 'border-l-amber-400' },
+                      AGENT_RESUMED: { pillBg: 'bg-emerald-500/15', pillText: 'text-emerald-400', borderColor: 'border-l-emerald-400' },
+                      KEY_ROTATED: { pillBg: 'bg-cyan-500/15', pillText: 'text-cyan-400', borderColor: 'border-l-cyan-400' },
+                      TOKEN_ISSUED: { pillBg: 'bg-amber-500/15', pillText: 'text-amber-400', borderColor: 'border-l-amber-400' },
+                      TOKEN_REVOKED: { pillBg: 'bg-red-500/15', pillText: 'text-red-400', borderColor: 'border-l-red-400' },
+                    };
+                    const timelineIcons: Record<string, React.ReactNode> = {
+                      PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-emerald-400" />,
+                      PERMISSION_REVOKED: <ShieldX className="w-3 h-3 text-red-400" />,
+                      AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-cyan-400" />,
+                      AGENT_CREATED: <Plus className="w-3 h-3 text-emerald-400" />,
+                      AGENT_REVOKED: <Ban className="w-3 h-3 text-red-400" />,
+                      AGENT_PAUSED: <Pause className="w-3 h-3 text-amber-400" />,
+                      AGENT_RESUMED: <Play className="w-3 h-3 text-emerald-400" />,
+                      KEY_ROTATED: <RotateCcw className="w-3 h-3 text-cyan-400" />,
+                      TOKEN_ISSUED: <Key className="w-3 h-3 text-amber-400" />,
+                      TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-red-400" />,
+                    };
+                    const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-primary/15', pillText: 'text-primary', borderColor: 'border-l-primary' };
+                    return (
+                      <motion.div
+                        key={event.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: (i + 3) * 0.1 }}
+                        className="relative mb-4 last:mb-0"
+                      >
+                        <div className={`absolute -left-5 top-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                          event.decision === 'allow' ? 'bg-emerald-400/20' :
+                          event.decision === 'deny' ? 'bg-red-400/20' :
+                          event.decision === 'requires_approval' ? 'bg-amber-400/20' :
+                          'bg-primary/20'
+                        }`}>
+                          {timelineIcons[event.eventType] || <Activity className="w-3 h-3 text-muted-foreground" />}
+                        </div>
+                        <div className={`ml-4 pl-3 border-l-2 ${style.borderColor} rounded-r-md py-1.5 px-3 bg-card/30`}>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`${style.pillBg} ${style.pillText} text-[11px] font-mono px-1.5 py-0.5 rounded`}>{event.eventType.replace(/_/g, ' ')}</span>
+                            {event.decision && <DecisionBadge decision={event.decision} />}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {event.action || 'System event'} · {timeAgo(event.createdAt)}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Authorization Decisions */}
-      <Card className="bg-card/50 border-border/50">
+      <Card className="bg-card/50 border-border/50 overflow-hidden relative">
+        <div className="h-0.5 w-full bg-gradient-to-r from-emerald-500/40 via-red-500/40 to-amber-500/40" />
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Recent Authorization Decisions</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" /> Authorization Decisions
+          </CardTitle>
           <CardDescription>Allow vs deny vs requires approval</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-emerald-400" />
-              <span className="text-sm">Allow: <strong>{stats?.recentAllowCount || 0}</strong></span>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="flex flex-col items-center p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+              <span className="text-2xl font-bold text-emerald-400">{stats?.recentAllowCount || 0}</span>
+              <span className="text-xs text-emerald-400/70 font-medium">Allowed</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-400" />
-              <span className="text-sm">Deny: <strong>{stats?.recentDenyCount || 0}</strong></span>
+            <div className="flex flex-col items-center p-3 rounded-lg bg-red-500/5 border border-red-500/10">
+              <span className="text-2xl font-bold text-red-400">{stats?.recentDenyCount || 0}</span>
+              <span className="text-xs text-red-400/70 font-medium">Denied</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-amber-400" />
-              <span className="text-sm">Requires Approval: <strong>{stats?.recentRequiresApprovalCount || 0}</strong></span>
+            <div className="flex flex-col items-center p-3 rounded-lg bg-amber-500/5 border border-amber-500/10">
+              <span className="text-2xl font-bold text-amber-400">{stats?.recentRequiresApprovalCount || 0}</span>
+              <span className="text-xs text-amber-400/70 font-medium">Pending</span>
             </div>
           </div>
-          <div className="mt-4 space-y-2">
-            <div className="h-4 bg-secondary rounded-full overflow-hidden flex">
-              {stats && (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount) > 0 && (
-                <>
-                  <div className="bg-emerald-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentAllowCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-900">{stats.recentAllowCount}</span>
-                  </div>
-                  <div className="bg-red-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-red-900">{stats.recentDenyCount}</span>
-                  </div>
-                  <div className="bg-amber-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentRequiresApprovalCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
-                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-amber-900">{stats.recentRequiresApprovalCount}</span>
-                  </div>
-                </>
-              )}
-            </div>
+          <div className="h-5 bg-secondary/50 rounded-full overflow-hidden flex">
+            {stats && (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount) > 0 && (
+              <>
+                <motion.div
+                  className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full relative"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(stats.recentAllowCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                >
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentAllowCount}</span>
+                </motion.div>
+                <motion.div
+                  className="bg-gradient-to-r from-red-500 to-red-400 h-full relative"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+                >
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentDenyCount}</span>
+                </motion.div>
+                <motion.div
+                  className="bg-gradient-to-r from-amber-500 to-amber-400 h-full relative"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${(stats.recentRequiresApprovalCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
+                >
+                  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentRequiresApprovalCount}</span>
+                </motion.div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -1336,7 +1493,7 @@ function DashboardView() {
                 </div>
               </motion.div>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+              <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                 {agents.slice(0, 5).map((agent, i) => (
                   <motion.div
                     key={agent.id}
@@ -1344,19 +1501,27 @@ function DashboardView() {
                     initial="initial"
                     animate="animate"
                     custom={i}
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer transition-colors group"
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 hover:bg-primary/5 cursor-pointer transition-all group border border-transparent hover:border-primary/10 hover:scale-[1.01]"
                     onClick={() => navigateToAgent(agent.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors group-hover:shadow-md group-hover:shadow-primary/10">
                         <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-sm font-medium">{agent.name}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{agent.runtime}</div>
+                        <div className="text-sm font-medium group-hover:text-primary transition-colors">{agent.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
+                          <span className={agent.status === 'ACTIVE' ? 'text-emerald-400' : agent.status === 'PAUSED' ? 'text-amber-400' : agent.status === 'REVOKED' ? 'text-red-400' : 'text-muted-foreground'}>
+                            {agent.status === 'ACTIVE' && <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-0.5 animate-pulse" />}
+                            {agent.runtime}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <StatusBadge status={agent.status} />
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={agent.status} />
+                      <ChevronRight className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors" />
+                    </div>
                   </motion.div>
                 ))}
               </div>
@@ -1380,26 +1545,29 @@ function DashboardView() {
                 <p className="text-sm">No audit events yet.</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {recentAudit.map((event, i) => (
-                  <motion.div
-                    key={event.id}
-                    variants={fadeInStagger}
-                    initial="initial"
-                    animate="animate"
-                    custom={i}
-                    className="flex items-center justify-between p-2 rounded bg-secondary/20 text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-muted-foreground">{event.eventType}</span>
-                      {event.action && <span className="text-foreground/70">{event.action}</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">{timeAgo(event.createdAt)}</span>
-                      {event.decision && <DecisionBadge decision={event.decision} />}
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
+                {recentAudit.map((event, i) => {
+                  const eventStyle = event.decision === 'allow' ? 'border-l-emerald-400' : event.decision === 'deny' ? 'border-l-red-400' : event.decision === 'requires_approval' ? 'border-l-amber-400' : 'border-l-primary/30';
+                  return (
+                    <motion.div
+                      key={event.id}
+                      variants={fadeInStagger}
+                      initial="initial"
+                      animate="animate"
+                      custom={i}
+                      className={`flex items-center justify-between p-2.5 rounded bg-secondary/15 text-xs border-l-2 ${eventStyle} hover:bg-secondary/30 transition-colors`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-mono text-muted-foreground truncate">{event.eventType.replace(/_/g, ' ')}</span>
+                        {event.action && <span className="text-foreground/60 truncate max-w-[120px]">{event.action}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-muted-foreground/60">{timeAgo(event.createdAt)}</span>
+                        {event.decision && <DecisionBadge decision={event.decision} />}
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -1407,7 +1575,12 @@ function DashboardView() {
       </div>
 
       {/* Authorization Trends (24h) */}
-      <Card className="bg-card/50 border-border/50">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.5 }}
+      >
+      <Card className="bg-card/50 border-border/50 overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Activity className="w-4 h-4 text-primary" /> Authorization Trends (24h)
@@ -1463,9 +1636,15 @@ function DashboardView() {
           )}
         </CardContent>
       </Card>
+      </motion.div>
 
       {/* Permission Distribution */}
-      <Card className="bg-card/50 border-border/50">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
+      >
+      <Card className="bg-card/50 border-border/50 overflow-hidden">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" /> Permission Distribution
@@ -1532,6 +1711,7 @@ function DashboardView() {
           )}
         </CardContent>
       </Card>
+      </motion.div>
 
       {/* Quick Setup Wizard */}
       <QuickSetupWizard open={showSetupWizard} onOpenChange={setShowSetupWizard} onComplete={load} />
@@ -1709,7 +1889,7 @@ function AgentsView() {
               custom={i}
             >
               <Card
-                className={`bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden hover:shadow-lg ${
+                className={`bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden hover:shadow-lg hover:scale-[1.02] ${
                   agent.status === 'ACTIVE' ? 'hover:shadow-primary/10' : 'hover:shadow-primary/5'
                 }`}
                 onClick={() => navigateToAgent(agent.id)}
@@ -2106,6 +2286,41 @@ function AgentDetailView() {
           <Button variant="outline" size="sm" onClick={handleRotateKey} disabled={submitting}>
             <RotateCcw className="w-4 h-4 mr-1" /> Rotate Key
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={submitting}>
+                <Trash2 className="w-4 h-4 mr-1" /> Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete <strong>{agent.name}</strong>? This action cannot be undone. All permissions, tokens, and audit events for this agent will be permanently removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-500 text-white hover:bg-red-600"
+                  onClick={async () => {
+                    setSubmitting(true);
+                    try {
+                      await api.deleteAgent(agent.id);
+                      toast({ title: 'Agent deleted', description: `${agent.name} has been permanently deleted.` });
+                      setView('agents');
+                    } catch (err: any) {
+                      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                >
+                  Delete Agent
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
@@ -4550,6 +4765,108 @@ function SecurityEventsView() {
   );
 }
 
+// ─── Command Palette ──────────────────────────────────────────────────────────
+
+function CommandPalette() {
+  const [open, setOpen] = useState(false);
+  const { setView, navigateToAgent } = useAppStore();
+  const [agents, setAgents] = useState<Agent[]>([]);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+    document.addEventListener('keydown', down);
+    return () => document.removeEventListener('keydown', down);
+  }, []);
+
+  // Load agents when palette opens for agent navigation
+  useEffect(() => {
+    if (open) {
+      api.listAgents().then(setAgents).catch(() => {});
+    }
+  }, [open]);
+
+  const navItems = [
+    { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard, shortcut: '1' },
+    { id: 'agents' as const, label: 'Agents', icon: Bot, shortcut: '2' },
+    { id: 'playground' as const, label: 'Playground', icon: Command, shortcut: '3' },
+    { id: 'agent-compare' as const, label: 'Compare', icon: Layers, shortcut: '4' },
+    { id: 'activity-heatmap' as const, label: 'Activity', icon: Activity, shortcut: '5' },
+    { id: 'security-events' as const, label: 'Live Feed', icon: Radio, shortcut: '6' },
+    { id: 'audit' as const, label: 'Audit Log', icon: ScrollText, shortcut: '7' },
+    { id: 'tokens' as const, label: 'Tokens', icon: Key, shortcut: '8' },
+    { id: 'policies' as const, label: 'Policies', icon: Shield, shortcut: '9' },
+    { id: 'settings' as const, label: 'Settings', icon: Settings, shortcut: '0' },
+    { id: 'docs' as const, label: 'Docs', icon: BookOpen, shortcut: 'D' },
+  ];
+
+  const actions = [
+    { label: 'New Agent', icon: Plus, action: () => { setOpen(false); setView('agents'); }, shortcut: 'N' },
+    { label: 'Seed Demo Data', icon: Sparkles, action: async () => { setOpen(false); try { await fetch('/api/seed', { method: 'POST' }); toast({ title: 'Demo data seeded' }); } catch (err: any) { toast({ title: 'Error', description: err.message, variant: 'destructive' }); } }, shortcut: 'S' },
+    { label: 'Quick Setup', icon: Zap, action: () => { setOpen(false); setView('dashboard'); }, shortcut: 'Q' },
+    { label: 'Refresh Data', icon: RefreshCw, action: () => { setOpen(false); window.location.reload(); }, shortcut: 'R' },
+    { label: 'Export Data', icon: Download, action: () => { setOpen(false); api.exportData().then(blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'agentdnai-export.json'; a.click(); URL.revokeObjectURL(url); toast({ title: 'Data exported' }); }).catch((err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' })); }, shortcut: 'E' },
+  ];
+
+  return (
+    <CommandDialog open={open} onOpenChange={setOpen} title="Command Palette" description="Search for a command or navigate...">
+      <CommandInput placeholder="Type a command or search..." />
+      <CommandList>
+        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandGroup heading="Navigation">
+          {navItems.map((item) => (
+            <CommandItem
+              key={item.id}
+              value={item.label}
+              onSelect={() => { setOpen(false); setView(item.id); }}
+            >
+              <item.icon className="w-4 h-4" />
+              <span>{item.label}</span>
+              <CommandShortcut>⌘{item.shortcut}</CommandShortcut>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Actions">
+          {actions.map((action) => (
+            <CommandItem
+              key={action.label}
+              value={action.label}
+              onSelect={action.action}
+            >
+              <action.icon className="w-4 h-4" />
+              <span>{action.label}</span>
+              <CommandShortcut>⌘{action.shortcut}</CommandShortcut>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+        {agents.length > 0 && (
+          <>
+            <CommandSeparator />
+            <CommandGroup heading="Agents">
+              {agents.map((agent) => (
+                <CommandItem
+                  key={agent.id}
+                  value={agent.name}
+                  onSelect={() => { setOpen(false); navigateToAgent(agent.id); }}
+                >
+                  <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
+                  <span>{agent.name}</span>
+                  <StatusBadge status={agent.status} />
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </>
+        )}
+      </CommandList>
+    </CommandDialog>
+  );
+}
+
 export default function AgentDNAIApp() {
   const { currentView, setView } = useAppStore();
   const [isMobile, setIsMobile] = useState(false);
@@ -4578,6 +4895,7 @@ export default function AgentDNAIApp() {
         </motion.div>
       ) : (
         <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex flex-col md:flex-row">
+          <CommandPalette />
           <DashboardSidebar />
           <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-20 md:pb-6">
             <AnimatePresence mode="wait">

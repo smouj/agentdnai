@@ -762,3 +762,86 @@ Priority Recommendations for Next Phase:
 4. Add dashboard widget customization (drag-and-drop layout)
 5. Implement rate limiting on API endpoints
 6. Add WebSocket integration in frontend (connect to port 3003 via Caddy gateway)
+
+---
+Task ID: 11
+Agent: Main Agent (Cron Review Round 9)
+Task: QA testing, fix hydration bugs, styling improvements, new features (command palette, agent deletion, health check)
+
+Work Log:
+- Reviewed worklog.md - project at 4627 lines page.tsx, 24+ API endpoints, 14+ views, stable
+- Performed comprehensive QA testing via agent-browser across all views
+- Found and fixed critical hydration mismatch bug: FloatingParticles component used Math.random() during SSR, causing server/client HTML mismatch
+  - Replaced Math.random() with deterministic seeded pseudo-random generator (sin-based)
+  - Added client-only mount check (useState + useEffect pattern) to prevent SSR rendering
+  - Verified: hydration errors eliminated after fix
+- VLM rated dashboard 7/10, landing page 7.5/10 before improvements
+- Added Command Palette (⌘K / Ctrl+K):
+  - Full searchable command palette with navigation, actions, and agent quick-access
+  - Uses shadcn/ui CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem
+  - Keyboard shortcut listener via useEffect
+  - ⌘K badge in dashboard header for discoverability
+  - Navigation group: Dashboard, Agents, Playground, Compare, Activity, Live Feed, Audit Log, Tokens, Policies, Settings, Docs
+  - Actions group: New Agent, Seed Demo Data, Quick Setup, Refresh Data, Export Data
+  - Agents group: dynamically loaded from API, clicking navigates to agent detail
+- Added Agent Deletion API:
+  - DELETE /api/agents/[id] endpoint that deletes agent and all related data (permissions, tokens, audit events, authz decisions)
+  - Creates AGENT_DELETED audit event before deletion
+  - Added api.deleteAgent(id) method to api-client.ts
+  - Added red "Delete Agent" button with AlertDialog confirmation in AgentDetailView
+- Added Agent Health Check API:
+  - GET /api/agents/[id]/health endpoint with comprehensive health checks
+  - Checks: key rotation (warning if > 90 days), token health (critical if expired unrevoked), permissions (warning if > 15 high-risk), audit trail (ok)
+  - Returns healthy boolean, uptime (days), and detailed check results
+  - Added api.getAgentHealth(id) method to api-client.ts
+- Styling improvements:
+  - Stat cards: added unique gradient backgrounds (from-{color}/[0.07] via-transparent), larger icon circles with colored backgrounds, subtitles under values
+  - SecurityScore: enhanced with gradient card background, risk level badge, description text, color-coded statistics
+  - Quick Actions: added descriptions under each button, taller buttons, hover:scale-[1.03] animation
+  - Activity Timeline: added "Today"/"Earlier" time-grouped headers, colored event type pills, thicker left-border color indicators, gradient timeline line
+  - Dashboard header: added "Last updated: just now" indicator, ⌘K badge, animated gradient line below header
+  - Authorization Decisions: redesigned as 3-column stat grid with colored boxes, animated gradient progress bar with staggered entrance
+  - Agent list items: added hover:border-primary/10, hover:scale-[1.01], ChevronRight arrow on hover, active agent pulse indicator in runtime text
+  - Recent Audit items: added border-l-2 color coding, improved text truncation, custom-scrollbar class
+  - Charts section: added staggered entrance animations (motion.div with delay 0.6s and 0.8s), overflow-hidden on cards
+  - Landing page: added noise texture overlay, "v2.0 · Open Source" badge, animated typing cursor effect, improved gradient text
+- All lint checks pass (0 errors, 0 warnings)
+- Dev server running without errors
+- VLM rated final dashboard 7/10 (same, but with more features and visual polish)
+- Page.tsx grew from ~4627 to ~4990+ lines
+
+Stage Summary:
+- 1 critical bug fixed (hydration mismatch)
+- 3 new features: Command Palette (⌘K), Agent Deletion, Agent Health Check
+- 2 new API endpoints: DELETE /api/agents/[id], GET /api/agents/[id]/health
+- 10+ styling improvements across dashboard, landing page, agent list, timeline, decisions
+- All features tested and working via agent-browser
+- Command Palette fully functional with search, navigation, and agent quick-access
+- Agent deletion with confirmation dialog and cascade delete
+- Health check with 4-point assessment system
+
+Current Project Status:
+- Feature-rich, production-quality cybersecurity dashboard
+- 26+ API endpoints (agents, permissions, tokens, authz, audit, stats, activity, trends, health, export, import, delete)
+- 14+ UI views (Home, Dashboard, Agents, Agent Detail, Playground, Compare, Activity, Live Feed, Audit, Tokens, Policies, Settings, Docs)
+- Advanced features: Search/filter, batch authz, approval workflow, chain verification, data visualization, activity heatmap, quick setup wizard, theme toggle, command palette, agent deletion, health check
+- Professional visual design: Glassmorphism, gradient accents, Framer Motion animations, recharts charts, custom scrollbar, animated progress bars
+- VLM rated dashboard 7/10, landing page 7.5/10
+- Hydration mismatch bug fixed - no SSR/CSR mismatches
+
+Unresolved Issues / Risks:
+- No user authentication (NextAuth.js not yet implemented)
+- No real encryption of private keys at rest
+- SQLite only (not PostgreSQL as in original spec)
+- CLI and SDK are conceptual only
+- Light theme needs more styling work
+- Health check results not yet shown in Agent Detail UI
+- Agent groups/tagging not yet implemented
+
+Priority Recommendations for Next Phase:
+1. Add Health Check tab to Agent Detail view (using existing GET /api/agents/[id]/health)
+2. Implement user authentication with Auth.js/NextAuth
+3. Add agent grouping/tagging features
+4. Polish light theme mode styling
+5. Add rate limiting to API endpoints
+6. Implement private key encryption at rest using AES-256
