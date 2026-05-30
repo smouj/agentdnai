@@ -23,6 +23,22 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
+/**
+ * Fetch a file download (Blob) from an API endpoint.
+ */
+async function apiFetchBlob(path: string, options?: RequestInit): Promise<Blob> {
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(error.error || `HTTP ${res.status}`);
+  }
+
+  return res.blob();
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface Agent {
@@ -205,4 +221,27 @@ export const api = {
       topActions: { action: string; count: number }[];
       period: string;
     }>('/stats/trends'),
+
+  // Agent Risk
+  getAgentRisk: (id: string) =>
+    apiFetch<{
+      agentId: string;
+      riskScore: number;
+      riskLevel: string;
+      factors: { name: string; impact: number; description: string }[];
+    }>(`/agents/${id}/risk`),
+
+  // Data Export/Import
+  exportData: () =>
+    apiFetchBlob('/export'),
+
+  importData: (data: Record<string, unknown>) =>
+    apiFetch<{
+      imported: { agents: number; permissions: number; tokens: number };
+      skipped: { agents: number };
+      errors: string[];
+    }>('/import', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };

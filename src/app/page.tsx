@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
 import { api, type Agent, type Permission, type Token, type AuditEvent, type AuthzResult, type DashboardStats, type IssuedToken } from '@/lib/api-client';
 import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES, type PermissionCategory } from '@/lib/permissions';
@@ -40,7 +40,7 @@ import {
   ShieldX, MoreHorizontal, RefreshCw, Download, Hash, Cpu,
   Layers, Brain, Bot, Sparkles, Command, Menu, X, Code2,
   Wrench, Package, MessageSquare, Workflow, Bell, BellRing,
-  Sun, Moon, Calendar
+  Sun, Moon, Calendar, Radio, TrendingUp, Upload, FileDown
 } from 'lucide-react';
 
 // ─── Animation Variants ──────────────────────────────────────────────────────
@@ -787,6 +787,19 @@ AgentDNAI Authorization Check
 
 function DashboardSidebar() {
   const { currentView, setView, sidebarOpen, setSidebarOpen } = useAppStore();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile && sidebarOpen) setSidebarOpen(false);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [sidebarOpen, setSidebarOpen]);
 
   const navItems = [
     { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
@@ -794,11 +807,15 @@ function DashboardSidebar() {
     { id: 'playground' as const, icon: Command, label: 'Playground' },
     { id: 'agent-compare' as const, icon: Layers, label: 'Compare' },
     { id: 'activity-heatmap' as const, icon: Activity, label: 'Activity' },
+    { id: 'security-events' as const, icon: Radio, label: 'Live Feed' },
     { id: 'audit' as const, icon: ScrollText, label: 'Audit Log' },
     { id: 'tokens' as const, icon: Key, label: 'Tokens' },
     { id: 'policies' as const, icon: Shield, label: 'Policies' },
     { id: 'settings' as const, icon: Settings, label: 'Settings' },
   ];
+
+  // Hide sidebar on mobile (we use bottom nav instead)
+  if (isMobile) return null;
 
   return (
     <aside className={`border-r border-border/50 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'} relative`}>
@@ -813,38 +830,45 @@ function DashboardSidebar() {
           <Menu className="w-4 h-4" />
         </Button>
       </div>
-      <nav className="flex-1 p-3 space-y-1">
-        {navItems.map((item, i) => (
-          <motion.button
-            key={item.id}
-            variants={slideInLeft}
-            initial="initial"
-            animate="animate"
-            transition={{ delay: i * 0.05 }}
-            onClick={() => setView(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
-              currentView === item.id
-                ? 'text-primary border-l-2 border-primary pl-2 bg-gradient-to-r from-primary/15 via-primary/8 to-transparent'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent pl-2'
-            }`}
-          >
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 shrink-0" />
-                    {sidebarOpen && <span>{item.label}</span>}
-                  </span>
-                </TooltipTrigger>
-                {!sidebarOpen && (
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
+        {navItems.map((item, i) => {
+          const isActive = currentView === item.id;
+          const btn = (
+            <motion.button
+              key={item.id}
+              variants={slideInLeft}
+              initial="initial"
+              animate="animate"
+              transition={{ delay: i * 0.05 }}
+              onClick={() => setView(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                isActive
+                  ? 'text-primary border-l-2 border-primary pl-2 bg-gradient-to-r from-primary/15 via-primary/8 to-transparent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent pl-2'
+              }`}
+            >
+              <item.icon className="w-4 h-4 shrink-0" />
+              {sidebarOpen && <span>{item.label}</span>}
+            </motion.button>
+          );
+
+          if (!sidebarOpen) {
+            return (
+              <TooltipProvider key={item.id} delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {btn}
+                  </TooltipTrigger>
                   <TooltipContent side="right" className="text-xs">
                     {item.label}
                   </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          </motion.button>
-        ))}
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          return btn;
+        })}
       </nav>
       <div className="p-3 border-t border-border/50">
         <button
@@ -1128,9 +1152,10 @@ function DashboardView() {
                   <div>
                     <motion.div
                       className={`text-2xl font-bold bg-gradient-to-r ${card.gradientFrom} ${card.gradientTo} bg-clip-text text-transparent`}
+                      key={`stat-${card.label}-${card.value}`}
                       initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ delay: i * 0.1 + 0.3, duration: 0.4, type: 'spring' }}
+                      animate={{ scale: [0.5, 1.15, 1], opacity: 1 }}
+                      transition={{ delay: i * 0.1 + 0.3, duration: 0.5, type: 'spring' }}
                     >
                       {card.value}
                     </motion.div>
@@ -1155,18 +1180,22 @@ function DashboardView() {
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setView('agents')}>
-              <Plus className="w-4 h-4 mr-1" /> New Agent
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10 hover:border-emerald-500/30" onClick={() => setView('agents')}>
+              <Plus className="w-5 h-5 text-emerald-400" />
+              <span className="text-xs">New Agent</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setView('audit')}>
-              <ScrollText className="w-4 h-4 mr-1" /> View Audit
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-primary/5 border-primary/20 hover:bg-primary/10 hover:border-primary/30" onClick={() => setView('security-events')}>
+              <Radio className="w-5 h-5 text-primary" />
+              <span className="text-xs">Live Feed</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setView('policies')}>
-              <Shield className="w-4 h-4 mr-1" /> View Policies
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-amber-500/5 border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/30" onClick={() => setView('audit')}>
+              <ScrollText className="w-5 h-5 text-amber-400" />
+              <span className="text-xs">View Audit</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setView('tokens')}>
-              <Key className="w-4 h-4 mr-1" /> Manage Tokens
+            <Button variant="outline" className="h-auto py-3 flex flex-col items-center gap-1.5 bg-cyan-500/5 border-cyan-500/20 hover:bg-cyan-500/10 hover:border-cyan-500/30" onClick={() => setView('policies')}>
+              <Shield className="w-5 h-5 text-cyan-400" />
+              <span className="text-xs">Policies</span>
             </Button>
           </div>
         </CardContent>
@@ -1182,31 +1211,47 @@ function DashboardView() {
           <CardContent>
             <div className="relative pl-6">
               <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
-              {recentAudit.slice(0, 5).map((event, i) => (
-                <motion.div
-                  key={event.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="relative mb-4 last:mb-0"
-                >
-                  <div className={`absolute -left-4 top-1 w-3 h-3 rounded-full border-2 ${
-                    event.decision === 'allow' ? 'bg-emerald-400 border-emerald-400' :
-                    event.decision === 'deny' ? 'bg-red-400 border-red-400' :
-                    event.decision === 'requires_approval' ? 'bg-amber-400 border-amber-400' :
-                    'bg-primary border-primary'
-                  }`} />
-                  <div className="ml-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-mono">{event.eventType.replace(/_/g, ' ')}</span>
-                      {event.decision && <DecisionBadge decision={event.decision} />}
+              {recentAudit.slice(0, 5).map((event, i) => {
+                const timelineIcons: Record<string, React.ReactNode> = {
+                  PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-primary" />,
+                  PERMISSION_REVOKED: <ShieldX className="w-3 h-3 text-red-400" />,
+                  AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-primary" />,
+                  AGENT_CREATED: <Plus className="w-3 h-3 text-emerald-400" />,
+                  AGENT_REVOKED: <Ban className="w-3 h-3 text-red-400" />,
+                  AGENT_PAUSED: <Pause className="w-3 h-3 text-amber-400" />,
+                  AGENT_RESUMED: <Play className="w-3 h-3 text-emerald-400" />,
+                  KEY_ROTATED: <RotateCcw className="w-3 h-3 text-primary" />,
+                  TOKEN_ISSUED: <Key className="w-3 h-3 text-amber-400" />,
+                  TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-red-400" />,
+                };
+                return (
+                  <motion.div
+                    key={event.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="relative mb-4 last:mb-0"
+                  >
+                    <div className={`absolute -left-4 top-1 w-5 h-5 rounded-full flex items-center justify-center ${
+                      event.decision === 'allow' ? 'bg-emerald-400/20' :
+                      event.decision === 'deny' ? 'bg-red-400/20' :
+                      event.decision === 'requires_approval' ? 'bg-amber-400/20' :
+                      'bg-primary/20'
+                    }`}>
+                      {timelineIcons[event.eventType] || <Activity className="w-3 h-3 text-muted-foreground" />}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {event.action || 'System event'} · {timeAgo(event.createdAt)}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="ml-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-mono">{event.eventType.replace(/_/g, ' ')}</span>
+                        {event.decision && <DecisionBadge decision={event.decision} />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {event.action || 'System event'} · {timeAgo(event.createdAt)}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -1719,6 +1764,150 @@ function AgentsView() {
   );
 }
 
+// ─── Agent Risk Profile ────────────────────────────────────────────────────
+
+function AgentRiskProfile({ agentId }: { agentId: string }) {
+  const [riskData, setRiskData] = useState<{
+    agentId: string;
+    riskScore: number;
+    riskLevel: string;
+    factors: { name: string; impact: number; description: string }[];
+    assessedAt?: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadRisk = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await api.getAgentRisk(agentId);
+      setRiskData(data);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load risk data');
+    } finally {
+      setLoading(false);
+    }
+  }, [agentId]);
+
+  useEffect(() => { loadRisk(); }, [loadRisk]);
+
+  const riskColors: Record<string, { stroke: string; text: string; bg: string }> = {
+    low: { stroke: '#34d399', text: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    medium: { stroke: '#fbbf24', text: 'text-amber-400', bg: 'bg-amber-500/10' },
+    high: { stroke: '#f97316', text: 'text-orange-400', bg: 'bg-orange-500/10' },
+    critical: { stroke: '#ef4444', text: 'text-red-400', bg: 'bg-red-500/10' },
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+        <CardContent className="p-8 text-center">
+          <TrendingUp className="w-12 h-12 mx-auto mb-4 text-primary opacity-30" />
+          <h3 className="text-lg font-semibold mb-2">Risk analysis coming soon</h3>
+          <p className="text-sm text-muted-foreground mb-4">The risk scoring engine is being calibrated. Check back later.</p>
+          <Button variant="outline" size="sm" onClick={loadRisk}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!riskData) return null;
+
+  const colors = riskColors[riskData.riskLevel] || riskColors.low;
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (riskData.riskScore / 100) * circumference;
+
+  return (
+    <div className="space-y-6">
+      {/* Risk Score Circle */}
+      <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+        <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
+          <div className="relative">
+            <svg width="160" height="160" className="-rotate-90">
+              <circle cx="80" cy="80" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
+              <motion.circle
+                cx="80" cy="80" r={radius} fill="none" stroke={colors.stroke} strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                initial={{ strokeDashoffset: circumference }}
+                animate={{ strokeDashoffset: offset }}
+                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className={`text-3xl font-bold ${colors.text}`}>{riskData.riskScore}</span>
+              <span className={`text-xs font-mono uppercase ${colors.text} opacity-80`}>{riskData.riskLevel}</span>
+            </div>
+          </div>
+          <div className="text-center sm:text-left">
+            <h3 className="text-lg font-semibold">Risk Score</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              {riskData.riskLevel === 'low' && 'This agent has a low risk profile. Permissions and tokens are well-managed.'}
+              {riskData.riskLevel === 'medium' && 'This agent has a moderate risk profile. Consider reviewing permissions and active tokens.'}
+              {riskData.riskLevel === 'high' && 'This agent has a high risk profile. Review high-risk scopes and consider reducing permissions.'}
+              {riskData.riskLevel === 'critical' && 'This agent has a critical risk profile. Immediate review recommended. Consider revoking or pausing.'}
+            </p>
+            <div className="flex items-center gap-2 mt-3">
+              <Badge className={`${colors.bg} ${colors.text} border-0`}>
+                {riskData.riskLevel.toUpperCase()} RISK
+              </Badge>
+              <Button variant="outline" size="sm" onClick={loadRisk}>
+                <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh Risk Score
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Risk Factors */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {riskData.factors.map((factor, i) => (
+          <motion.div
+            key={factor.name}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.08, duration: 0.3 }}
+          >
+            <Card className="bg-card/50 border-border/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">{factor.name}</span>
+                  <span className={`text-xs font-mono ${factor.impact > 20 ? 'text-red-400' : factor.impact > 10 ? 'text-amber-400' : factor.impact > 0 ? 'text-orange-400' : 'text-emerald-400'}`}>
+                    +{factor.impact}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden mb-2">
+                  <motion.div
+                    className={`h-full rounded-full ${
+                      factor.impact > 20 ? 'bg-red-400' : factor.impact > 10 ? 'bg-amber-400' : factor.impact > 0 ? 'bg-orange-400' : 'bg-emerald-400'
+                    }`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min((factor.impact / 30) * 100, 100)}%` }}
+                    transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{factor.description}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Agent Detail View ────────────────────────────────────────────────────────
 
 function AgentDetailView() {
@@ -2157,6 +2346,7 @@ function AgentDetailView() {
         <TabsList className="bg-secondary/30">
           <TabsTrigger value="permissions"><Shield className="w-4 h-4 mr-1" /> Permissions</TabsTrigger>
           <TabsTrigger value="tokens"><Key className="w-4 h-4 mr-1" /> Tokens</TabsTrigger>
+          <TabsTrigger value="risk"><TrendingUp className="w-4 h-4 mr-1" /> Risk Profile</TabsTrigger>
           <TabsTrigger value="audit"><ScrollText className="w-4 h-4 mr-1" /> Audit</TabsTrigger>
         </TabsList>
 
@@ -2314,6 +2504,10 @@ function AgentDetailView() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="risk">
+          <AgentRiskProfile agentId={agent.id} />
         </TabsContent>
       </Tabs>
     </motion.div>
@@ -2929,6 +3123,82 @@ function SettingsView() {
                 <span className="font-mono text-emerald-400">99.97%</span>
               </div>
               <Progress value={99.97} className="h-1 mt-1" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Data Management */}
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-primary" /> Data Management</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Export All Data</p>
+                  <p className="text-xs text-muted-foreground">Download all agents, permissions, tokens, and audit events as JSON</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const data = await api.exportData();
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `agentdnai-export-${new Date().toISOString().split('T')[0]}.json`;
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      toast({ title: 'Export complete', description: 'Data has been downloaded as JSON.' });
+                    } catch (err: any) {
+                      toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
+                    }
+                  }}
+                >
+                  <FileDown className="w-4 h-4 mr-1" /> Export JSON
+                </Button>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium mb-2">Import Data</p>
+                <p className="text-xs text-muted-foreground mb-3">Upload a previously exported JSON file to import agents</p>
+                <div className="flex items-center gap-3">
+                  <Input
+                    type="file"
+                    accept=".json"
+                    className="text-xs"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                          try {
+                            const data = JSON.parse(ev.target?.result as string);
+                            const result = await api.importData(data);
+                            toast({
+                              title: 'Import complete',
+                              description: `${result.agentsImported} agent(s) imported, ${result.agentsSkipped} skipped.`,
+                            });
+                            if (result.errors.length > 0) {
+                              toast({
+                                title: 'Import warnings',
+                                description: result.errors.slice(0, 3).join('; '),
+                                variant: 'destructive',
+                              });
+                            }
+                          } catch (err: any) {
+                            toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+                          }
+                        };
+                        reader.readAsText(file);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -4005,8 +4275,300 @@ function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; o
   );
 }
 
+// ─── Security Events Feed View ──────────────────────────────────────────────
+
+interface SSEEvent {
+  id: string;
+  eventType: string;
+  actorType: string;
+  actorId: string | null;
+  agentId: string | null;
+  resource: string | null;
+  action: string | null;
+  decision: string | null;
+  metadata: string | null;
+  previousHash: string | null;
+  eventHash: string;
+  createdAt: string;
+}
+
+function SecurityEventsView() {
+  const { navigateToAgent } = useAppStore();
+  const [liveEvents, setLiveEvents] = useState<SSEEvent[]>([]);
+  const [recentEvents, setRecentEvents] = useState<AuditEvent[]>([]);
+  const [paused, setPaused] = useState(false);
+  const [missedCount, setMissedCount] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(paused);
+  const missedBufferRef = useRef<SSEEvent[]>([]);
+
+  useEffect(() => { pausedRef.current = paused; }, [paused]);
+
+  // Load agents for name lookup
+  useEffect(() => {
+    api.listAgents().then(setAgents).catch(console.error);
+  }, []);
+
+  // Load recent events via REST
+  useEffect(() => {
+    api.getAuditEvents({ limit: 50 }).then(setRecentEvents).catch(console.error);
+  }, []);
+
+  // SSE connection
+  useEffect(() => {
+    let es: EventSource | null = null;
+
+    const connect = () => {
+      setConnectionStatus('reconnecting');
+      es = new EventSource('/api/events/stream');
+
+      es.onopen = () => {
+        setConnectionStatus('connected');
+      };
+
+      es.onerror = () => {
+        setConnectionStatus('disconnected');
+        es?.close();
+        // Reconnect after 3 seconds
+        setTimeout(connect, 3000);
+      };
+
+      es.addEventListener('initial', (e) => {
+        try {
+          const events: SSEEvent[] = JSON.parse(e.data);
+          setLiveEvents(events.slice(0, 50));
+        } catch { /* ignore parse errors */ }
+      });
+
+      es.addEventListener('security-event', (e) => {
+        try {
+          const event: SSEEvent = JSON.parse(e.data);
+          if (pausedRef.current) {
+            missedBufferRef.current.push(event);
+            setMissedCount(prev => prev + 1);
+          } else {
+            setLiveEvents(prev => [event, ...prev].slice(0, 100));
+          }
+        } catch { /* ignore parse errors */ }
+      });
+    };
+
+    connect();
+
+    return () => {
+      es?.close();
+    };
+  }, []);
+
+  // Auto-scroll to top on new event
+  useEffect(() => {
+    if (!paused && feedRef.current) {
+      feedRef.current.scrollTop = 0;
+    }
+  }, [liveEvents, paused]);
+
+  const handleResume = () => {
+    if (missedBufferRef.current.length > 0) {
+      setLiveEvents(prev => [...missedBufferRef.current.reverse(), ...prev].slice(0, 100));
+      missedBufferRef.current = [];
+    }
+    setMissedCount(0);
+    setPaused(false);
+  };
+
+  const agentNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const a of agents) { map[a.id] = a.name; }
+    return map;
+  }, [agents]);
+
+  const eventTypeIcons: Record<string, React.ReactNode> = {
+    PERMISSION_GRANTED: <ShieldCheck className="w-3.5 h-3.5 text-primary" />,
+    PERMISSION_REVOKED: <ShieldX className="w-3.5 h-3.5 text-red-400" />,
+    AUTHORIZATION_CHECK: <Shield className="w-3.5 h-3.5 text-primary" />,
+    AGENT_CREATED: <Plus className="w-3.5 h-3.5 text-emerald-400" />,
+    AGENT_REVOKED: <Ban className="w-3.5 h-3.5 text-red-400" />,
+    AGENT_PAUSED: <Pause className="w-3.5 h-3.5 text-amber-400" />,
+    AGENT_RESUMED: <Play className="w-3.5 h-3.5 text-emerald-400" />,
+    KEY_ROTATED: <RotateCcw className="w-3.5 h-3.5 text-primary" />,
+    TOKEN_ISSUED: <Key className="w-3.5 h-3.5 text-amber-400" />,
+    TOKEN_REVOKED: <Trash2 className="w-3.5 h-3.5 text-red-400" />,
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Security Events Feed</h1>
+          <p className="text-muted-foreground">Real-time security event monitoring</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Connection status */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 bg-card/50">
+            <div className={`w-2 h-2 rounded-full ${
+              connectionStatus === 'connected' ? 'bg-emerald-400 animate-pulse' :
+              connectionStatus === 'reconnecting' ? 'bg-amber-400 animate-pulse' :
+              'bg-red-400'
+            }`} />
+            <span className={`text-xs font-mono ${
+              connectionStatus === 'connected' ? 'text-emerald-400' :
+              connectionStatus === 'reconnecting' ? 'text-amber-400' :
+              'text-red-400'
+            }`}>
+              {connectionStatus === 'connected' ? 'LIVE' : connectionStatus === 'reconnecting' ? 'RECONNECTING' : 'DISCONNECTED'}
+            </span>
+          </div>
+          {paused && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10"
+            >
+              <span className="text-xs font-mono text-amber-400">PAUSED</span>
+              {missedCount > 0 && (
+                <Badge variant="outline" className="text-xs bg-amber-500/15 text-amber-400 border-amber-500/30">
+                  {missedCount} missed
+                </Badge>
+              )}
+            </motion.div>
+          )}
+          <Button
+            variant={paused ? 'default' : 'outline'}
+            size="sm"
+            onClick={paused ? handleResume : () => setPaused(true)}
+          >
+            {paused ? <><Play className="w-4 h-4 mr-1" /> Resume</> : <><Pause className="w-4 h-4 mr-1" /> Pause</>}
+          </Button>
+        </div>
+      </div>
+
+      {/* Live Feed */}
+      <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Radio className="w-4 h-4 text-primary" /> Live Feed
+            </CardTitle>
+            <Badge variant="outline" className="text-xs font-mono">{liveEvents.length} events</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div ref={feedRef} className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-2">
+            {liveEvents.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <Radio className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Waiting for events...</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">New security events will appear here in real-time</p>
+              </div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {liveEvents.map((event, i) => (
+                  <motion.div
+                    key={`${event.id}-${i}`}
+                    initial={{ opacity: 0, y: -20, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="flex items-start gap-3 p-3 rounded-lg border border-border/30 bg-card/50 hover:border-primary/20 transition-colors"
+                  >
+                    <div className="shrink-0 mt-0.5">
+                      {eventTypeIcons[event.eventType] || <Activity className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
+                          {new Date(event.createdAt).toLocaleTimeString()}
+                        </span>
+                        <Badge variant="outline" className="text-[10px] font-mono bg-primary/5 border-primary/20">
+                          {event.eventType.replace(/_/g, ' ')}
+                        </Badge>
+                        {event.decision && <DecisionBadge decision={event.decision} />}
+                        {event.agentId && (
+                          <button
+                            className="text-xs font-mono text-primary hover:underline"
+                            onClick={() => navigateToAgent(event.agentId!)}
+                          >
+                            {agentNameMap[event.agentId] || event.agentId.slice(0, 8)}
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 truncate">
+                        {event.action || 'System event'}{event.resource ? ` · ${event.resource}` : ''}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Events via REST */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ScrollText className="w-4 h-4 text-primary" /> Recent Events (Last 50)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="max-h-96 overflow-y-auto custom-scrollbar">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Event</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Decision</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentEvents.map(e => (
+                  <TableRow key={e.id} className={e.decision === 'allow' ? 'bg-emerald-500/[0.02]' : e.decision === 'deny' ? 'bg-red-500/[0.02]' : e.decision === 'requires_approval' ? 'bg-amber-500/[0.02]' : ''}>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
+                    <TableCell className="font-mono text-xs">{e.eventType.replace(/_/g, ' ')}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {e.agentId ? (
+                        <button className="text-primary hover:underline" onClick={() => navigateToAgent(e.agentId!)}>
+                          {agentNameMap[e.agentId] || e.agentId.slice(0, 8)}
+                        </button>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
+                    <TableCell>{e.decision ? <DecisionBadge decision={e.decision} /> : '-'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AgentDNAIApp() {
   const { currentView, setView } = useAppStore();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  // Mobile bottom nav items (5 most important)
+  const mobileNavItems = [
+    { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Home' },
+    { id: 'agents' as const, icon: Bot, label: 'Agents' },
+    { id: 'security-events' as const, icon: Radio, label: 'Live' },
+    { id: 'audit' as const, icon: ScrollText, label: 'Audit' },
+    { id: 'settings' as const, icon: Settings, label: 'Settings' },
+  ];
 
   return (
     <AnimatePresence mode="wait">
@@ -4015,9 +4577,9 @@ export default function AgentDNAIApp() {
           <LandingPage />
         </motion.div>
       ) : (
-        <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex">
+        <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex flex-col md:flex-row">
           <DashboardSidebar />
-          <main className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+          <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-20 md:pb-6">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentView}
@@ -4037,9 +4599,27 @@ export default function AgentDNAIApp() {
                 {currentView === 'playground' && <PlaygroundView />}
                 {currentView === 'agent-compare' && <AgentCompareView />}
                 {currentView === 'activity-heatmap' && <ActivityHeatmapView />}
+                {currentView === 'security-events' && <SecurityEventsView />}
               </motion.div>
             </AnimatePresence>
           </main>
+          {/* Mobile Bottom Navigation */}
+          {isMobile && (
+            <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-card/95 backdrop-blur-xl flex items-center justify-around h-16 px-2 safe-area-bottom">
+              {mobileNavItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setView(item.id)}
+                  className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
+                    currentView === item.id ? 'text-primary' : 'text-muted-foreground'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="text-[10px] font-medium">{item.label}</span>
+                </button>
+              ))}
+            </nav>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

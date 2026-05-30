@@ -18,7 +18,8 @@ export type AppView =
   | 'docs'
   | 'playground'
   | 'agent-compare'
-  | 'activity-heatmap';
+  | 'activity-heatmap'
+  | 'security-events';
 
 interface AppState {
   currentView: AppView;
