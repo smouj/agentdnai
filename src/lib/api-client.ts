@@ -115,8 +115,14 @@ export const api = {
   createAgent: (data: { name: string; runtime: string; description?: string }) =>
     apiFetch<Agent>('/agents', { method: 'POST', body: JSON.stringify(data) }),
 
-  listAgents: () =>
-    apiFetch<Agent[]>('/agents'),
+  listAgents: (params?: { search?: string; status?: string; runtime?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.search) sp.set('search', params.search);
+    if (params?.status) sp.set('status', params.status);
+    if (params?.runtime) sp.set('runtime', params.runtime);
+    const qs = sp.toString();
+    return apiFetch<Agent[]>(`/agents${qs ? `?${qs}` : ''}`);
+  },
 
   getAgent: (id: string) =>
     apiFetch<Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }>(`/agents/${id}`),
@@ -157,6 +163,13 @@ export const api = {
   checkAuthz: (data: { agentId: string; action: string; resource?: string }) =>
     apiFetch<AuthzResult>('/authz/check', { method: 'POST', body: JSON.stringify(data) }),
 
+  batchCheckAuthz: (data: { agentId: string; actions: string[]; resource?: string }) =>
+    apiFetch<{ results: AuthzResult[] }>('/authz/batch-check', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Approval
+  approveAction: (agentId: string, data: { action: string; resource?: string }) =>
+    apiFetch<Permission>(`/agents/${agentId}/approve`, { method: 'POST', body: JSON.stringify(data) }),
+
   // Audit
   getAuditEvents: (params?: { agentId?: string; decision?: string; eventType?: string; limit?: number; offset?: number }) => {
     const searchParams = new URLSearchParams();
@@ -168,6 +181,9 @@ export const api = {
     const qs = searchParams.toString();
     return apiFetch<AuditEvent[]>(`/audit${qs ? `?${qs}` : ''}`);
   },
+
+  verifyAuditChain: () =>
+    apiFetch<{ valid: boolean; eventsChecked: number; firstInvalidEvent: string | null; message: string }>('/audit/verify'),
 
   // Stats
   getStats: () =>

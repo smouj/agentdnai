@@ -939,17 +939,24 @@ function AgentsView() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newAgent, setNewAgent] = useState({ name: '', runtime: '', description: '' });
   const [creating, setCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [runtimeFilter, setRuntimeFilter] = useState('all');
 
   const loadAgents = useCallback(async () => {
     try {
-      const data = await api.listAgents();
+      const data = await api.listAgents({
+        search: searchQuery || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        runtime: runtimeFilter === 'all' ? undefined : runtimeFilter,
+      });
       setAgents(data);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchQuery, statusFilter, runtimeFilter]);
 
   useEffect(() => { loadAgents(); }, [loadAgents]);
 
@@ -1020,6 +1027,46 @@ function AgentsView() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* Search and Filter Bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search agents by name, description, or URI..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-10 bg-secondary/30"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-36 bg-secondary/30"><SelectValue placeholder="All Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="REVOKED">Revoked</SelectItem>
+            <SelectItem value="BLOCKED">Blocked</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={runtimeFilter} onValueChange={setRuntimeFilter}>
+          <SelectTrigger className="w-40 bg-secondary/30"><SelectValue placeholder="All Runtimes" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Runtimes</SelectItem>
+            <SelectItem value="hermes">Hermes</SelectItem>
+            <SelectItem value="codex">Codex</SelectItem>
+            <SelectItem value="openclaw">OpenClaw</SelectItem>
+            <SelectItem value="cli">CLI</SelectItem>
+            <SelectItem value="automation">Automation</SelectItem>
+            <SelectItem value="custom">Custom</SelectItem>
+          </SelectContent>
+        </Select>
+        {(searchQuery || statusFilter !== 'all' || runtimeFilter !== 'all') && (
+          <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setStatusFilter('all'); setRuntimeFilter('all'); }}>
+            <X className="w-4 h-4 mr-1" /> Clear
+          </Button>
+        )}
       </div>
 
       {loading ? (
@@ -1497,6 +1544,24 @@ function AgentDetailView() {
                   {authzResult.expiresAt && (
                     <p className="text-xs text-muted-foreground mt-2">Expires: {new Date(authzResult.expiresAt).toLocaleString()}</p>
                   )}
+                  {authzResult.requiresApproval && agent && (
+                    <Button
+                      size="sm"
+                      className="mt-3 bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
+                      onClick={async () => {
+                        try {
+                          await api.approveAction(agent.id, { action: authzForm.action, resource: authzForm.resource || undefined });
+                          toast({ title: 'Action Approved', description: `Approved ${authzForm.action} for 1 hour.` });
+                          setAuthzResult(null);
+                          loadAgent();
+                        } catch (err: any) {
+                          toast({ title: 'Approval Error', description: err.message, variant: 'destructive' });
+                        }
+                      }}
+                    >
+                      <ShieldCheck className="w-4 h-4 mr-1" /> Approve This Action (1h)
+                    </Button>
+                  )}
                 </motion.div>
               )}
             </div>
@@ -1808,13 +1873,31 @@ function AuditView() {
         </Card>
       )}
 
-      {/* Chain Integrity Notice */}
+      {/* Chain Integrity Verification */}
       <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-4 flex items-center gap-3">
-          <Hash className="w-5 h-5 text-primary" />
-          <div>
-            <p className="text-sm font-semibold">Hash Chain Integrity</p>
-            <p className="text-xs text-muted-foreground">Every audit event is linked to the previous one via a SHA-256 hash chain. Any tampering with historical records will break the chain and be immediately detectable.</p>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Hash className="w-5 h-5 text-primary" />
+              <div>
+                <p className="text-sm font-semibold">Hash Chain Integrity</p>
+                <p className="text-xs text-muted-foreground">Every audit event is linked via SHA-256 hash chain. Tampering breaks the chain and is immediately detectable.</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={async () => {
+              try {
+                const result = await api.verifyAuditChain();
+                if (result.valid) {
+                  toast({ title: 'Chain Verified', description: `${result.eventsChecked} events verified. Hash chain is intact.` });
+                } else {
+                  toast({ title: 'Chain Broken!', description: `Integrity failed at event ${result.firstInvalidEvent}`, variant: 'destructive' });
+                }
+              } catch (err: any) {
+                toast({ title: 'Verification Error', description: err.message, variant: 'destructive' });
+              }
+            }}>
+              <ShieldCheck className="w-4 h-4 mr-1" /> Verify Chain
+            </Button>
           </div>
         </CardContent>
       </Card>

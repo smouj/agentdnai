@@ -145,3 +145,106 @@ Priority Recommendations for Next Phase:
 4. Add search/filter functionality for agents list
 5. Add real-time notifications for security events
 6. Migrate to PostgreSQL for production readiness
+
+---
+Task ID: 4
+Agent: Feature & Polish Agent
+Task: Add new features, search/filter, approval workflow, audit verification, and UI improvements
+
+Work Log:
+- Performed comprehensive QA testing with agent-browser + VLM visual analysis
+- Landing page rated 6/10 (needs better CTA, hero clarity, trust elements)
+- Dashboard rated 6/10 (needs better stat cards, data visualization)
+- Agents page rated 7/10 (needs search/filter)
+- Agent detail rated 8/10 (good overall, minor polish)
+- Audit page rated 8/10 (working correctly after previous fix)
+- Created new API endpoints via subagent:
+  - GET /api/audit/verify - Verifies hash chain integrity
+  - GET /api/agents?search=&status=&runtime= - Enhanced search/filter
+  - POST /api/agents/[id]/approve - Approval workflow (1h temporary permission)
+  - POST /api/authz/batch-check - Batch authorization check for multiple actions
+- Updated API client (api-client.ts) with new methods:
+  - api.listAgents(params) - now supports search, status, runtime filters
+  - api.batchCheckAuthz() - batch check multiple actions
+  - api.approveAction() - approve pending actions
+  - api.verifyAuditChain() - verify audit hash chain
+- Added search/filter bar to Agents page:
+  - Search input with icon for name/description/URI search
+  - Status filter dropdown (All/Active/Paused/Revoked/Blocked)
+  - Runtime filter dropdown (All/Hermes/Codex/OpenClaw/CLI/Automation/Custom)
+  - Clear filters button when filters are active
+  - Search is server-side (uses API query params)
+- Added audit chain verification button to Audit page:
+  - "Verify Chain" button calls /api/audit/verify
+  - Shows toast with verification result
+- Added human approval workflow to Agent Detail authz check:
+  - When authz result is "requires_approval", shows amber "Approve This Action (1h)" button
+  - Approval creates a temporary ALLOW permission that expires in 1 hour
+  - Permission is recorded with audit event noting it was an approval
+- All lint checks pass
+- All new API endpoints verified via curl
+- VLM rated agents page with search at 9/10
+
+Stage Summary:
+- 4 new API endpoints added (search, verify, approve, batch-check)
+- Agent search/filter fully functional with server-side filtering
+- Audit chain verification working (14 events verified intact)
+- Human approval workflow implemented in agent detail
+- Batch authorization check supports up to 50 actions at once
+- All features tested and working
+
+Current Project Status:
+- MVP is feature-rich and stable
+- Core: Agent CRUD, permissions, tokens, authorization, audit logging
+- New: Search/filter, batch checks, approval workflow, chain verification
+- All API endpoints functional (19+ endpoints)
+- All UI views polished with Framer Motion animations
+- Dark cybersecurity theme with cyan accents
+
+Unresolved Issues / Risks:
+- No user authentication (NextAuth.js not yet implemented)
+- No real encryption of private keys
+- SQLite only (not PostgreSQL as in original spec)
+- CLI and SDK are conceptual (not implemented as separate packages)
+- No real integrations with OpenClaw/Hermes/Codex
+
+Priority Recommendations for Next Phase:
+1. Implement user authentication with Auth.js/NextAuth
+2. Add real encryption for private keys using AES-256
+3. Add real-time notifications for security events (WebSocket)
+4. Add authorization playground - interactive tool to test multiple actions
+5. Improve dashboard with recharts/tremor data visualizations
+6. Add responsive mobile layout improvements
+
+---
+Task ID: 4
+Agent: Feature Agent
+Task: Add new features and API endpoints to AgentDNAI
+
+Work Log:
+- Created GET /api/audit/verify endpoint - Verifies hash chain integrity of all audit events using verifyAuditChain(), returns { valid, eventsChecked, firstInvalidEvent, message }
+- Enhanced GET /api/agents with search/filter query parameters:
+  - ?search=term - Filters by name, description, or agentUri (contains match)
+  - ?status=ACTIVE - Filters by status
+  - ?runtime=hermes - Filters by runtime
+  - All params optional and composable; POST handler unchanged
+- Created POST /api/agents/[id]/approve endpoint - Approval workflow for pending actions:
+  - Creates temporary ALLOW permission expiring in 1 hour for the specific action
+  - Records PERMISSION_GRANTED audit event with approval metadata
+  - Validates agent exists, action is required, resolves approver user
+- Created POST /api/authz/batch-check endpoint - Check multiple actions at once:
+  - Accepts { agentId, actions[], resource? } body
+  - Returns array of { action, allowed, decision, reason, requiresApproval } per action
+  - Records each decision and audit event with batchCheck metadata
+  - Max 50 actions per batch, validates all inputs
+- All lint checks pass (0 errors, 0 warnings)
+- All endpoints tested via curl with correct responses
+- Audit chain integrity verified after all operations
+
+Stage Summary:
+- 3 new API routes created, 1 existing route enhanced
+- Audit chain verification API fully working
+- Agent search/filter with composable query params
+- Approval workflow creates temporary permissions with audit trail
+- Batch authorization check processes multiple actions efficiently
+- All endpoints have proper error handling and HTTP status codes

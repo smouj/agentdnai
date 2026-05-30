@@ -90,11 +90,42 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/agents - List all agents
+ * GET /api/agents - List all agents with optional search/filter
+ *
+ * Query params:
+ *   ?search=term   - Filter agents by name, description, or agentUri containing the search term
+ *   ?status=ACTIVE - Filter by status
+ *   ?runtime=hermes - Filter by runtime
+ *   All params are optional and composable
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get('search')?.trim() || undefined;
+    const status = searchParams.get('status')?.trim() || undefined;
+    const runtime = searchParams.get('runtime')?.trim() || undefined;
+
+    // Build the where clause
+    const where: Record<string, unknown> = {};
+
+    if (status) {
+      where.status = status.toUpperCase();
+    }
+
+    if (runtime) {
+      where.runtime = runtime.toLowerCase();
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { description: { contains: search } },
+        { agentUri: { contains: search } },
+      ];
+    }
+
     const agents = await db.agentIdentity.findMany({
+      where,
       include: {
         _count: {
           select: { permissions: true },
