@@ -14,7 +14,8 @@ export type AppView =
   | 'audit'
   | 'tokens'
   | 'policies'
-  | 'settings';
+  | 'settings'
+  | 'docs';
 
 interface AppState {
   currentView: AppView;
@@ -32,7 +33,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedAgentId: null,
   sidebarOpen: true,
 
-  setView: (view) => set({ currentView: view, selectedAgentId: view === 'agent-detail' ? undefined : null }),
+  setView: (view) => set({ currentView: view }),
   selectAgent: (agentId) => set({ selectedAgentId: agentId, currentView: 'agent-detail' }),
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   navigateToAgent: (agentId) => set({ selectedAgentId: agentId, currentView: 'agent-detail' }),

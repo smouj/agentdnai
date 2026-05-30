@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/lib/store';
 import { api, type Agent, type Permission, type Token, type AuditEvent, type AuthzResult, type DashboardStats, type IssuedToken } from '@/lib/api-client';
 import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES, type PermissionCategory } from '@/lib/permissions';
+import { formatDistanceToNow } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ─── UI Components ────────────────────────────────────────────────────────────
 
@@ -31,8 +33,209 @@ import {
   HardDrive, Trash2, Zap, ArrowRight, ArrowLeft, Home, LayoutDashboard,
   Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
   ShieldX, MoreHorizontal, RefreshCw, Download, Hash, Cpu,
-  Layers, Brain, Bot
+  Layers, Brain, Bot, Sparkles, Command, Menu, X, Code2,
+  Wrench, Package, MessageSquare, Workflow
 } from 'lucide-react';
+
+// ─── Animation Variants ──────────────────────────────────────────────────────
+
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+};
+
+const fadeInStagger = {
+  initial: { opacity: 0, y: 20 },
+  animate: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' },
+  }),
+};
+
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.8 },
+  animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
+};
+
+const slideInLeft = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+};
+
+// ─── Helper: Relative Time ───────────────────────────────────────────────────
+
+function timeAgo(date: string | Date): string {
+  try {
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
+  } catch {
+    return 'unknown';
+  }
+}
+
+// ─── Runtime Icon Helper ─────────────────────────────────────────────────────
+
+function RuntimeIcon({ runtime, className = 'w-5 h-5' }: { runtime: string; className?: string }) {
+  const iconMap: Record<string, React.ReactNode> = {
+    hermes: <Zap className={`${className} text-amber-400`} />,
+    codex: <Code2 className={`${className} text-emerald-400`} />,
+    openclaw: <Package className={`${className} text-cyan-400`} />,
+    cli: <Terminal className={`${className} text-orange-400`} />,
+    automation: <Workflow className={`${className} text-purple-400`} />,
+    custom: <Cpu className={`${className} text-pink-400`} />,
+  };
+  return <>{iconMap[runtime] || <Bot className={`${className} text-primary`} />}</>;
+}
+
+// ─── Copy Button Helper ──────────────────────────────────────────────────────
+
+function CopyButton({ text, className = '' }: { text: string; className?: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Button size="icon" variant="ghost" className={`h-7 w-7 ${className}`} onClick={handleCopy}>
+      {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    </Button>
+  );
+}
+
+// ─── Animated DNA Helix SVG ──────────────────────────────────────────────────
+
+function DNAHelix({ className = '' }: { className?: string }) {
+  return (
+    <div className={`relative ${className}`}>
+      <svg viewBox="0 0 120 400" className="w-full h-full animate-spin-slow" style={{ animationDuration: '20s' }}>
+        <defs>
+          <linearGradient id="dnaGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+          </linearGradient>
+          <linearGradient id="dnaGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+            <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="hsl(var--primary))" stopOpacity="0.2" />
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        {[...Array(20)].map((_, i) => {
+          const y = i * 20;
+          const x1 = 60 + Math.sin(i * 0.6) * 30;
+          const x2 = 60 - Math.sin(i * 0.6) * 30;
+          return (
+            <g key={i}>
+              <line x1={x1} y1={y} x2={x2} y2={y} stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.3" />
+              <circle cx={x1} cy={y} r="3" fill="url(#dnaGrad1)" filter="url(#glow)" />
+              <circle cx={x2} cy={y} r="3" fill="url(#dnaGrad2)" filter="url(#glow)" />
+            </g>
+          );
+        })}
+        <path
+          d={Array.from({ length: 20 }, (_, i) => {
+            const y = i * 20;
+            const x = 60 + Math.sin(i * 0.6) * 30;
+            return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+          }).join(' ')}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="2"
+          opacity="0.5"
+          filter="url(#glow)"
+        />
+        <path
+          d={Array.from({ length: 20 }, (_, i) => {
+            const y = i * 20;
+            const x = 60 - Math.sin(i * 0.6) * 30;
+            return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+          }).join(' ')}
+          fill="none"
+          stroke="hsl(var(--primary))"
+          strokeWidth="2"
+          opacity="0.5"
+          filter="url(#glow)"
+        />
+      </svg>
+    </div>
+  );
+}
+
+// ─── Live Demo Authorization Animation ───────────────────────────────────────
+
+function LiveAuthzDemo() {
+  const [step, setStep] = useState(0);
+  const steps = [
+    { label: 'Agent: hermes-auditor', icon: <Bot className="w-4 h-4 text-primary" /> },
+    { label: 'Action: github.repo.read', icon: <Shield className="w-4 h-4 text-primary" /> },
+    { label: 'Checking permissions...', icon: <RefreshCw className="w-4 h-4 text-primary animate-spin" /> },
+    { label: 'ALLOW ✓', icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" /> },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setStep(s => (s + 1) % (steps.length + 2));
+    }, 1500);
+    return () => clearInterval(interval);
+  }, [steps.length]);
+
+  const displayStep = Math.min(step, steps.length - 1);
+
+  return (
+    <div className="rounded-xl border border-border/50 bg-card/50 p-5 backdrop-blur">
+      <div className="text-xs text-muted-foreground font-mono mb-3 flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        Live Authorization Check
+      </div>
+      <div className="space-y-2">
+        {steps.map((s, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: i <= displayStep ? 1 : 0.2, x: 0 }}
+            transition={{ delay: i * 0.1, duration: 0.3 }}
+            className={`flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-lg transition-colors ${
+              i === 3 && displayStep === 3
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : i <= displayStep
+                ? 'text-foreground/80'
+                : 'text-muted-foreground/40'
+            }`}
+          >
+            {s.icon}
+            {s.label}
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sparkline Mini Chart ────────────────────────────────────────────────────
+
+function Sparkline({ values, color = 'bg-primary', className = '' }: { values: number[]; color?: string; className?: string }) {
+  const max = Math.max(...values, 1);
+  return (
+    <div className={`flex items-end gap-0.5 h-8 ${className}`}>
+      {values.map((v, i) => (
+        <div
+          key={i}
+          className={`${color} rounded-t-sm min-w-[3px] transition-all duration-500`}
+          style={{ height: `${(v / max) * 100}%`, width: '4px' }}
+        />
+      ))}
+    </div>
+  );
+}
 
 // ─── Status Badge Component ───────────────────────────────────────────────────
 
@@ -47,7 +250,9 @@ function StatusBadge({ status }: { status: string }) {
   const v = variants[status] || variants.EXPIRED;
   return (
     <Badge variant="outline" className={`${v.className} gap-1 font-mono text-xs`}>
-      {v.icon} {status}
+      {status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+      {status !== 'ACTIVE' && v.icon}
+      {status}
     </Badge>
   );
 }
@@ -99,8 +304,8 @@ function LandingPage() {
             </div>
             <span className="text-xl font-bold tracking-tight">Agent<span className="text-primary">DNAI</span></span>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setView('dashboard')}>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setView('docs')}>
               <BookOpen className="w-4 h-4 mr-1" /> Docs
             </Button>
             <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setView('dashboard')}>
@@ -115,15 +320,22 @@ function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3" />
         <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-20 w-64 h-64 bg-primary/3 rounded-full blur-3xl" />
-        <div className="max-w-7xl mx-auto px-6 py-24 relative">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
+        <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32 relative">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            >
               <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/5">
                 <Fingerprint className="w-3 h-3 mr-1" /> Secure Identity Layer
               </Badge>
-              <h1 className="text-5xl lg:text-6xl font-bold tracking-tight mb-6 leading-tight">
+              <h1 className="text-5xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
                 Every AI agent<br />
-                needs an <span className="text-primary">identity</span>.
+                needs an{' '}
+                <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                  identity
+                </span>.
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-lg">
                 AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions,
@@ -133,17 +345,22 @@ function LandingPage() {
                 <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan" onClick={() => setView('dashboard')}>
                   <Shield className="w-5 h-5 mr-2" /> Open Dashboard
                 </Button>
-                <Button size="lg" variant="outline" className="border-border">
-                  <Terminal className="w-5 h-5 mr-2" /> View CLI
+                <Button size="lg" variant="outline" className="border-border" onClick={() => setView('docs')}>
+                  <BookOpen className="w-5 h-5 mr-2" /> Read Docs
                 </Button>
               </div>
-              <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Deny by default</div>
                 <div className="flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Temporary tokens</div>
                 <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-primary" /> Full audit trail</div>
               </div>
-            </div>
-            <div className="relative hidden lg:block">
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
+              className="relative hidden lg:flex flex-col gap-6"
+            >
               <div className="rounded-xl border border-border/50 bg-card/50 p-6 backdrop-blur glow-cyan">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-3 h-3 rounded-full bg-red-500/60" />
@@ -166,13 +383,34 @@ AgentDNAI Authorization Check
   Expires:   2026-06-30 23:59:59 UTC`}
                 </pre>
               </div>
-            </div>
+              <LiveAuthzDemo />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trusted By */}
+      <section className="py-12 border-t border-border/20">
+        <div className="max-w-7xl mx-auto px-6">
+          <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-widest">Trusted by forward-thinking teams</p>
+          <div className="flex flex-wrap items-center justify-center gap-8">
+            {['NeuralForge', 'AutoScale', 'CodeVault', 'DataPulse', 'SecureOps'].map((name, i) => (
+              <motion.div
+                key={name}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.5 }}
+                transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
+                className="text-lg font-bold text-muted-foreground/40 tracking-wide"
+              >
+                {name}
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Problem Section */}
-      <section className="py-20 border-t border-border/30">
+      <section className="py-24 border-t border-border/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4 border-red-500/30 text-red-400 bg-red-500/5">
@@ -184,26 +422,28 @@ AgentDNAI Authorization Check
               Without a proper identity layer, they become hard to control, hard to audit and hard to revoke.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: <ShieldAlert className="w-8 h-8" />, title: 'No Identity', desc: 'Agents operate anonymously. You can\'t tell which agent did what.' },
               { icon: <Key className="w-8 h-8" />, title: 'No Scoping', desc: 'Agents get blanket access. One compromised key exposes everything.' },
               { icon: <Eye className="w-8 h-8" />, title: 'No Audit', desc: 'No record of what agents did. Impossible to investigate incidents.' },
             ].map((item, i) => (
-              <Card key={i} className="bg-card/50 border-border/50 hover:border-red-500/30 transition-colors">
-                <CardHeader>
-                  <div className="text-red-400 mb-2">{item.icon}</div>
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
-              </Card>
+              <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+                <Card className="bg-card/50 border-border/50 hover:border-red-500/30 transition-colors h-full">
+                  <CardHeader>
+                    <div className="text-red-400 mb-2">{item.icon}</div>
+                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Solution Section */}
-      <section className="py-20 border-t border-border/30 bg-card/20">
+      <section className="py-24 border-t border-border/30 bg-card/20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <Badge variant="outline" className="mb-4 border-primary/30 text-primary bg-primary/5">
@@ -215,60 +455,62 @@ AgentDNAI Authorization Check
               scoped permissions, temporary tokens and a tamper-evident audit trail.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               { icon: <Fingerprint className="w-6 h-6" />, title: 'Agent Identity', desc: 'Unique URI, key pair, and status for every agent.' },
               { icon: <Shield className="w-6 h-6" />, title: 'Scoped Permissions', desc: 'Granular allow/deny rules per resource and action.' },
               { icon: <Key className="w-6 h-6" />, title: 'Temporary Tokens', desc: 'Short-lived, hash-stored tokens. Never permanent.' },
               { icon: <ScrollText className="w-6 h-6" />, title: 'Audit Trail', desc: 'Hash-chained, append-only log of every decision.' },
             ].map((item, i) => (
-              <Card key={i} className="bg-card/50 border-border/50 hover:border-primary/30 transition-colors group">
-                <CardHeader>
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
-                    {item.icon}
-                  </div>
-                  <CardTitle className="text-base">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
-              </Card>
+              <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+                <Card className="bg-card/50 border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group h-full">
+                  <CardHeader>
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                      {item.icon}
+                    </div>
+                    <CardTitle className="text-base">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="py-20 border-t border-border/30">
+      <section className="py-24 border-t border-border/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">How it works</h2>
             <p className="text-muted-foreground">Four steps to secure your AI agents.</p>
           </div>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-4 gap-8">
             {[
               { step: '01', title: 'Create Agent', desc: 'Generate a unique identity with cryptographic key pair.' },
               { step: '02', title: 'Grant Permissions', desc: 'Assign scoped permissions: allow, deny, or require approval.' },
               { step: '03', title: 'Issue Token', desc: 'Get a temporary token for the agent to authenticate.' },
               { step: '04', title: 'Check Authorization', desc: 'Every action is validated and recorded in the audit log.' },
             ].map((item, i) => (
-              <div key={i} className="relative">
+              <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i} className="relative">
                 <div className="text-5xl font-bold text-primary/10 mb-2">{item.step}</div>
                 <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
                 <p className="text-sm text-muted-foreground">{item.desc}</p>
                 {i < 3 && <ChevronRight className="hidden md:block absolute -right-3 top-1/2 text-primary/30 w-6 h-6" />}
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Permissions Preview */}
-      <section className="py-20 border-t border-border/30 bg-card/20">
+      <section className="py-24 border-t border-border/30 bg-card/20">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Granular Permission Catalog</h2>
             <p className="text-muted-foreground">Every scope is defined. Every risk level is labeled. Production always requires approval.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-8">
             {[
               { icon: <Github className="w-5 h-5" />, name: 'GitHub', scopes: ['repo.read', 'repo.write', 'issue.create', 'pr.merge'], color: 'text-purple-400' },
               { icon: <Server className="w-5 h-5" />, name: 'Server', scopes: ['logs.read', 'command.run', 'deploy.staging', 'deploy.production'], color: 'text-orange-400' },
@@ -277,35 +519,37 @@ AgentDNAI Authorization Check
               { icon: <Globe className="w-5 h-5" />, name: 'Browser', scopes: ['open', 'read', 'click', 'form.submit'], color: 'text-cyan-400' },
               { icon: <Lock className="w-5 h-5" />, name: 'Secrets', scopes: ['read', 'write', 'rotate'], color: 'text-red-400' },
             ].map((cat, i) => (
-              <Card key={i} className="bg-card/50 border-border/50">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={cat.color}>{cat.icon}</span>
-                    <CardTitle className="text-base">{cat.name}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cat.scopes.map((s, j) => (
-                      <Badge key={j} variant="secondary" className="text-xs font-mono bg-secondary/50">
-                        {cat.name.toLowerCase()}.{s}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+                <Card className="bg-card/50 border-border/50 h-full">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={cat.color}>{cat.icon}</span>
+                      <CardTitle className="text-base">{cat.name}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-1.5">
+                      {cat.scopes.map((s, j) => (
+                        <Badge key={j} variant="secondary" className="text-xs font-mono bg-secondary/50">
+                          {cat.name.toLowerCase()}.{s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Security Principles */}
-      <section className="py-20 border-t border-border/30">
+      <section className="py-24 border-t border-border/30">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">Security by Design</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {[
               { title: 'Deny by Default', desc: 'Everything is denied unless explicitly allowed. No exceptions.' },
               { title: 'Least Privilege', desc: 'Agents receive only the minimum permissions needed.' },
@@ -314,30 +558,37 @@ AgentDNAI Authorization Check
               { title: 'Production Guarded', desc: 'Production actions always require human approval.' },
               { title: 'Audit Integrity', desc: 'Hash-chained append-only log detects tampering.' },
             ].map((item, i) => (
-              <div key={i} className="flex gap-4 items-start">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <ShieldCheck className="w-4 h-4 text-primary" />
+              <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+                <div className="flex gap-4 items-start">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <ShieldCheck className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold mb-1">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.desc}</p>
-                </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 border-t border-border/30 bg-gradient-to-b from-primary/5 to-transparent">
+      <section className="py-24 border-t border-border/30 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-4">No more anonymous agents.</h2>
           <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
             Know every agent. Control every action. Start building with verifiable identity today.
           </p>
-          <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan" onClick={() => setView('dashboard')}>
-            <Zap className="w-5 h-5 mr-2" /> Launch Dashboard
-          </Button>
+          <div className="flex items-center justify-center gap-4">
+            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan" onClick={() => setView('dashboard')}>
+              <Zap className="w-5 h-5 mr-2" /> Launch Dashboard
+            </Button>
+            <Button size="lg" variant="outline" onClick={() => setView('docs')}>
+              <BookOpen className="w-5 h-5 mr-2" /> Read the Docs
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -361,7 +612,7 @@ AgentDNAI Authorization Check
 // ─── Dashboard Sidebar ────────────────────────────────────────────────────────
 
 function DashboardSidebar() {
-  const { currentView, setView, sidebarOpen } = useAppStore();
+  const { currentView, setView, sidebarOpen, setSidebarOpen } = useAppStore();
 
   const navItems = [
     { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
@@ -373,17 +624,26 @@ function DashboardSidebar() {
   ];
 
   return (
-    <aside className={`w-64 border-r border-border/50 bg-sidebar shrink-0 flex flex-col transition-all duration-200 ${sidebarOpen ? '' : 'w-16'}`}>
-      <div className="p-4 flex items-center gap-3 border-b border-border/50">
-        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-          <Fingerprint className="w-5 h-5 text-primary" />
+    <aside className={`border-r border-border/50 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'}`}>
+      <div className="p-4 flex items-center justify-between border-b border-border/50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+            <Fingerprint className="w-5 h-5 text-primary" />
+          </div>
+          {sidebarOpen && <span className="text-lg font-bold">Agent<span className="text-primary">DNAI</span></span>}
         </div>
-        {sidebarOpen && <span className="text-lg font-bold">Agent<span className="text-primary">DNAI</span></span>}
+        <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Menu className="w-4 h-4" />
+        </Button>
       </div>
       <nav className="flex-1 p-3 space-y-1">
-        {navItems.map(item => (
-          <button
+        {navItems.map((item, i) => (
+          <motion.button
             key={item.id}
+            variants={slideInLeft}
+            initial="initial"
+            animate="animate"
+            transition={{ delay: i * 0.05 }}
             onClick={() => setView(item.id)}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               currentView === item.id
@@ -393,10 +653,17 @@ function DashboardSidebar() {
           >
             <item.icon className="w-4 h-4 shrink-0" />
             {sidebarOpen && <span>{item.label}</span>}
-          </button>
+          </motion.button>
         ))}
       </nav>
       <div className="p-3 border-t border-border/50">
+        <button
+          onClick={() => setView('docs')}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mb-1`}
+        >
+          <BookOpen className="w-4 h-4 shrink-0" />
+          {sidebarOpen && <span>Docs</span>}
+        </button>
         <button
           onClick={() => setView('home')}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
@@ -418,72 +685,106 @@ function DashboardView() {
   const [recentAudit, setRecentAudit] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [s, a, ev] = await Promise.all([api.getStats(), api.listAgents(), api.getAuditEvents({ limit: 10 })]);
-        setStats(s);
-        setAgents(a);
-        setRecentAudit(ev);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+  const load = useCallback(async () => {
+    try {
+      const [s, a, ev] = await Promise.all([api.getStats(), api.listAgents(), api.getAuditEvents({ limit: 10 })]);
+      setStats(s);
+      setAgents(a);
+      setRecentAudit(ev);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
   }
 
+  const statCards = [
+    { label: 'Total Agents', value: stats?.totalAgents || 0, icon: <Bot className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-primary' },
+    { label: 'Active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-emerald-400' },
+    { label: 'Permissions', value: stats?.totalPermissions || 0, icon: <Shield className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-primary' },
+    { label: 'Active Tokens', value: stats?.activeTokens || 0, icon: <Key className="w-4 h-4 text-amber-400" />, color: 'text-amber-400', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-amber-400' },
+  ];
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={load}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Refresh
+          </Button>
+          <Button size="sm" className="bg-primary text-primary-foreground" onClick={async () => {
+            try {
+              await fetch('/api/seed', { method: 'POST' });
+              toast({ title: 'Demo data seeded', description: 'Refresh to see the new data.' });
+              load();
+            } catch (err: any) {
+              toast({ title: 'Error', description: err.message, variant: 'destructive' });
+            }
+          }}>
+            <Sparkles className="w-4 h-4 mr-1" /> Seed Demo
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Stats Grid with Sparklines */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Total Agents</span>
-              <Bot className="w-4 h-4 text-primary" />
-            </div>
-            <div className="text-2xl font-bold">{stats?.totalAgents || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Active</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-400">{stats?.activeAgents || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Permissions</span>
-              <Shield className="w-4 h-4 text-primary" />
-            </div>
-            <div className="text-2xl font-bold">{stats?.totalPermissions || 0}</div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">Active Tokens</span>
-              <Key className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-bold text-amber-400">{stats?.activeTokens || 0}</div>
-          </CardContent>
-        </Card>
+        {statCards.map((card, i) => (
+          <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+            <Card className="bg-card/50 border-border/50 hover:border-primary/20 transition-colors">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">{card.label}</span>
+                  {card.icon}
+                </div>
+                <div className="flex items-end justify-between">
+                  <motion.div
+                    className={`text-2xl font-bold ${card.color}`}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: i * 0.1 + 0.3, duration: 0.4, type: 'spring' }}
+                  >
+                    {card.value}
+                  </motion.div>
+                  <Sparkline values={card.sparkline} color={card.sparkColor} />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
+
+      {/* Quick Actions */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setView('agents')}>
+              <Plus className="w-4 h-4 mr-1" /> New Agent
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('audit')}>
+              <ScrollText className="w-4 h-4 mr-1" /> View Audit
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('policies')}>
+              <Shield className="w-4 h-4 mr-1" /> View Policies
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setView('tokens')}>
+              <Key className="w-4 h-4 mr-1" /> Manage Tokens
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Authorization Decisions */}
       <Card className="bg-card/50 border-border/50">
@@ -518,7 +819,7 @@ function DashboardView() {
         </CardContent>
       </Card>
 
-      {/* Agent Quick List */}
+      {/* Agent Quick List & Recent Audit */}
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="bg-card/50 border-border/50">
           <CardHeader className="pb-3">
@@ -531,24 +832,45 @@ function DashboardView() {
           </CardHeader>
           <CardContent>
             {agents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bot className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">No agents yet. Create your first agent.</p>
-                <Button size="sm" className="mt-3 bg-primary text-primary-foreground" onClick={() => setView('agents')}>
-                  <Plus className="w-4 h-4 mr-1" /> Create Agent
-                </Button>
-              </div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-center py-8 text-muted-foreground"
+              >
+                <div className="relative mx-auto w-16 h-16 mb-4">
+                  <Bot className="w-16 h-16 text-primary/20 absolute inset-0" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                  </div>
+                </div>
+                <p className="text-sm mb-3">No agents yet. Create your first agent or seed demo data.</p>
+                <div className="flex items-center justify-center gap-2">
+                  <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => setView('agents')}>
+                    <Plus className="w-4 h-4 mr-1" /> Create Agent
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={async () => {
+                    await fetch('/api/seed', { method: 'POST' });
+                    load();
+                  }}>
+                    <Sparkles className="w-4 h-4 mr-1" /> Seed Demo
+                  </Button>
+                </div>
+              </motion.div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {agents.slice(0, 5).map(agent => (
-                  <div
+                {agents.slice(0, 5).map((agent, i) => (
+                  <motion.div
                     key={agent.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer transition-colors"
+                    variants={fadeInStagger}
+                    initial="initial"
+                    animate="animate"
+                    custom={i}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 hover:bg-secondary/50 cursor-pointer transition-colors group"
                     onClick={() => navigateToAgent(agent.id)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Bot className="w-4 h-4 text-primary" />
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="text-sm font-medium">{agent.name}</div>
@@ -556,7 +878,7 @@ function DashboardView() {
                       </div>
                     </div>
                     <StatusBadge status={agent.status} />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -580,14 +902,24 @@ function DashboardView() {
               </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {recentAudit.map(event => (
-                  <div key={event.id} className="flex items-center justify-between p-2 rounded bg-secondary/20 text-xs">
+                {recentAudit.map((event, i) => (
+                  <motion.div
+                    key={event.id}
+                    variants={fadeInStagger}
+                    initial="initial"
+                    animate="animate"
+                    custom={i}
+                    className="flex items-center justify-between p-2 rounded bg-secondary/20 text-xs"
+                  >
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-muted-foreground">{event.eventType}</span>
                       {event.action && <span className="text-foreground/70">{event.action}</span>}
                     </div>
-                    {event.decision && <DecisionBadge decision={event.decision} />}
-                  </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">{timeAgo(event.createdAt)}</span>
+                      {event.decision && <DecisionBadge decision={event.decision} />}
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -693,50 +1025,69 @@ function AgentsView() {
       {loading ? (
         <div className="flex items-center justify-center h-64"><RefreshCw className="w-6 h-6 text-primary animate-spin" /></div>
       ) : agents.length === 0 ? (
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="py-16 text-center">
-            <Bot className="w-12 h-12 text-primary/30 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
-            <p className="text-muted-foreground mb-4">Create your first AI agent identity to get started.</p>
-            <Button className="bg-primary text-primary-foreground" onClick={() => setShowCreateDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Create Agent
-            </Button>
-          </CardContent>
-        </Card>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+          <Card className="bg-card/50 border-border/50">
+            <CardContent className="py-16 text-center">
+              <div className="relative mx-auto w-20 h-20 mb-6">
+                <Bot className="w-20 h-20 text-primary/20 absolute inset-0" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first AI agent identity to get started.</p>
+              <Button className="bg-primary text-primary-foreground" onClick={() => setShowCreateDialog(true)}>
+                <Plus className="w-4 h-4 mr-2" /> Create Agent
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {agents.map(agent => (
-            <Card
+          {agents.map((agent, i) => (
+            <motion.div
               key={agent.id}
-              className="bg-card/50 border-border/50 hover:border-primary/30 transition-colors cursor-pointer group"
-              onClick={() => navigateToAgent(agent.id)}
+              variants={fadeInStagger}
+              initial="initial"
+              animate="animate"
+              custom={i}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <Bot className="w-5 h-5 text-primary" />
+              <Card
+                className="bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden hover:shadow-lg hover:shadow-primary/5"
+                onClick={() => navigateToAgent(agent.id)}
+              >
+                {/* Gradient border effect on hover */}
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ padding: '1px' }} />
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <RuntimeIcon runtime={agent.runtime} className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{agent.name}</CardTitle>
+                        <CardDescription className="font-mono text-xs flex items-center gap-1">
+                          <RuntimeIcon runtime={agent.runtime} className="w-3 h-3" />
+                          {agent.runtime}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-base">{agent.name}</CardTitle>
-                      <CardDescription className="font-mono text-xs">{agent.runtime}</CardDescription>
-                    </div>
+                    <StatusBadge status={agent.status} />
                   </div>
-                  <StatusBadge status={agent.status} />
-                </div>
-              </CardHeader>
-              <CardContent className="pb-3">
-                {agent.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{agent.description}</p>}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {agent._count?.permissions || 0} perms</span>
-                  <span className="flex items-center gap-1"><Key className="w-3 h-3" /> {agent._count?.tokens || 0} tokens</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(agent.createdAt).toLocaleDateString()}</span>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-0">
-                <div className="text-xs font-mono text-muted-foreground/60 truncate w-full">{agent.agentUri}</div>
-              </CardFooter>
-            </Card>
+                </CardHeader>
+                <CardContent className="pb-3">
+                  {agent.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{agent.description}</p>}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {agent._count?.permissions || 0} perms</span>
+                    <span className="flex items-center gap-1"><Key className="w-3 h-3" /> {agent._count?.tokens || 0} tokens</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {timeAgo(agent.createdAt)}</span>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-0">
+                  <div className="text-xs font-mono text-muted-foreground/60 truncate w-full">{agent.agentUri}</div>
+                </CardFooter>
+              </Card>
+            </motion.div>
           ))}
         </div>
       )}
@@ -893,20 +1244,34 @@ function AgentDetailView() {
     );
   }
 
+  // Group permissions by category for the better permission table
+  const permsByCategory = (agent.permissions || []).reduce<Record<string, Permission[]>>((acc, p) => {
+    const cat = p.scope.split('.')[0];
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(p);
+    return acc;
+  }, {});
+
   return (
-    <div className="space-y-6">
+    <motion.div {...fadeIn} className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => setView('agents')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <RuntimeIcon runtime={agent.runtime} className="w-6 h-6" />
+          </div>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold">{agent.name}</h1>
               <StatusBadge status={agent.status} />
             </div>
-            <p className="text-sm font-mono text-muted-foreground mt-1">{agent.agentUri}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-sm font-mono text-muted-foreground">{agent.agentUri}</span>
+              <CopyButton text={agent.agentUri} />
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -937,9 +1302,9 @@ function AgentDetailView() {
           <CardContent className="p-4 space-y-3">
             <h3 className="text-sm font-semibold flex items-center gap-2"><Fingerprint className="w-4 h-4 text-primary" /> Identity</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Runtime</span><span className="font-mono">{agent.runtime}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span>{new Date(agent.createdAt).toLocaleDateString()}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Last Seen</span><span>{agent.lastSeenAt ? new Date(agent.lastSeenAt).toLocaleDateString() : 'Never'}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Runtime</span><span className="font-mono flex items-center gap-1"><RuntimeIcon runtime={agent.runtime} className="w-3 h-3" /> {agent.runtime}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span title={new Date(agent.createdAt).toLocaleString()}>{timeAgo(agent.createdAt)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Last Seen</span><span>{agent.lastSeenAt ? timeAgo(agent.lastSeenAt) : 'Never'}</span></div>
             </div>
           </CardContent>
         </Card>
@@ -1041,12 +1406,12 @@ function AgentDetailView() {
                   <AlertTitle>Token Issued</AlertTitle>
                   <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
                 </Alert>
-                <div className="bg-secondary/30 rounded p-3 font-mono text-xs break-all">{issuedToken.token}</div>
+                <div className="bg-secondary/30 rounded p-3 font-mono text-xs break-all flex items-center gap-2">
+                  <span className="flex-1">{issuedToken.token}</span>
+                  <CopyButton text={issuedToken.token} />
+                </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Expires: {new Date(issuedToken.expiresAt).toLocaleString()}</span>
-                  <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(issuedToken.token)}>
-                    <Copy className="w-4 h-4 mr-1" /> Copy
-                  </Button>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {issuedToken.scopes.map(s => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
@@ -1106,7 +1471,7 @@ function AgentDetailView() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Check Authorization</DialogTitle>
+              <DialogTitle>Authorization Check Playground</DialogTitle>
               <DialogDescription>Test if this agent is authorized to perform an action.</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -1119,13 +1484,20 @@ function AgentDetailView() {
                 <Input placeholder="e.g. github.com/org/repo" value={authzForm.resource} onChange={e => setAuthzForm({ ...authzForm, resource: e.target.value })} />
               </div>
               {authzResult && (
-                <div className={`rounded-lg border p-4 ${authzResult.allowed ? 'border-emerald-500/30 bg-emerald-500/5' : authzResult.requiresApproval ? 'border-amber-500/30 bg-amber-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className={`rounded-lg border p-4 ${authzResult.allowed ? 'border-emerald-500/30 bg-emerald-500/5' : authzResult.requiresApproval ? 'border-amber-500/30 bg-amber-500/5' : 'border-red-500/30 bg-red-500/5'}`}
+                >
                   <div className="flex items-center gap-2 mb-2">
                     {authzResult.allowed ? <CheckCircle2 className="w-5 h-5 text-emerald-400" /> : authzResult.requiresApproval ? <AlertTriangle className="w-5 h-5 text-amber-400" /> : <XCircle className="w-5 h-5 text-red-400" />}
-                    <span className="font-semibold">{authzResult.decision.toUpperCase()}</span>
+                    <span className="font-semibold text-lg">{authzResult.decision.toUpperCase()}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{authzResult.reason}</p>
-                </div>
+                  {authzResult.expiresAt && (
+                    <p className="text-xs text-muted-foreground mt-2">Expires: {new Date(authzResult.expiresAt).toLocaleString()}</p>
+                  )}
+                </motion.div>
               )}
             </div>
             <DialogFooter>
@@ -1153,6 +1525,7 @@ function AgentDetailView() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Category</TableHead>
                       <TableHead>Scope</TableHead>
                       <TableHead>Resource</TableHead>
                       <TableHead>Effect</TableHead>
@@ -1161,19 +1534,39 @@ function AgentDetailView() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {agent.permissions.map(p => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-mono text-xs">{p.scope}</TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{p.resource || '*'}</TableCell>
-                        <TableCell><EffectBadge effect={p.effect} /></TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{p.expiresAt ? new Date(p.expiresAt).toLocaleDateString() : 'Never'}</TableCell>
-                        <TableCell>
-                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDeletePermission(p.id)}>
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {agent.permissions.map(p => {
+                      const cat = p.scope.split('.')[0];
+                      const catIcons: Record<string, React.ReactNode> = {
+                        github: <Github className="w-3.5 h-3.5 text-purple-400" />,
+                        filesystem: <HardDrive className="w-3.5 h-3.5 text-blue-400" />,
+                        server: <Server className="w-3.5 h-3.5 text-orange-400" />,
+                        database: <Database className="w-3.5 h-3.5 text-emerald-400" />,
+                        browser: <Globe className="w-3.5 h-3.5 text-cyan-400" />,
+                        secrets: <Lock className="w-3.5 h-3.5 text-red-400" />,
+                        email: <Mail className="w-3.5 h-3.5 text-amber-400" />,
+                        payments: <CreditCard className="w-3.5 h-3.5 text-pink-400" />,
+                        production: <ShieldAlert className="w-3.5 h-3.5 text-red-400" />,
+                      };
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              {catIcons[cat] || <Shield className="w-3.5 h-3.5" />}
+                              <span className="text-xs">{cat}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{p.scope}</TableCell>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{p.resource || '*'}</TableCell>
+                          <TableCell><EffectBadge effect={p.effect} /></TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{p.expiresAt ? timeAgo(p.expiresAt) : 'Never'}</TableCell>
+                          <TableCell>
+                            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDeletePermission(p.id)}>
+                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ) : (
@@ -1197,7 +1590,7 @@ function AgentDetailView() {
                       <TableHead>Scopes</TableHead>
                       <TableHead>Expires</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-12"></TableHead>
+                      <TableHead className="w-20"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1206,13 +1599,18 @@ function AgentDetailView() {
                       const revoked = !!t.revokedAt;
                       return (
                         <TableRow key={t.id}>
-                          <TableCell className="font-mono text-xs">{t.id.slice(0, 12)}...</TableCell>
+                          <TableCell className="font-mono text-xs">
+                            <div className="flex items-center gap-1">
+                              {t.id.slice(0, 12)}...
+                              <CopyButton text={t.id} />
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {JSON.parse(t.scopes).map((s: string) => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
                             </div>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{new Date(t.expiresAt).toLocaleString()}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
                           <TableCell>
                             {revoked ? <Badge variant="outline" className="text-red-400 border-red-400/30 text-xs">Revoked</Badge> :
                              expired ? <Badge variant="outline" className="text-gray-400 border-gray-400/30 text-xs">Expired</Badge> :
@@ -1256,8 +1654,8 @@ function AgentDetailView() {
                   </TableHeader>
                   <TableBody>
                     {agent.auditEvents.slice(0, 20).map(e => (
-                      <TableRow key={e.id}>
-                        <TableCell className="text-xs text-muted-foreground">{new Date(e.createdAt).toLocaleString()}</TableCell>
+                      <TableRow key={e.id} className={e.decision === 'allow' ? 'bg-emerald-500/[0.02]' : e.decision === 'deny' ? 'bg-red-500/[0.02]' : e.decision === 'requires_approval' ? 'bg-amber-500/[0.02]' : ''}>
+                        <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
                         <TableCell className="font-mono text-xs">{e.eventType}</TableCell>
                         <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
                         <TableCell>{e.decision ? <DecisionBadge decision={e.decision} /> : '-'}</TableCell>
@@ -1276,7 +1674,7 @@ function AgentDetailView() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </motion.div>
   );
 }
 
@@ -1285,14 +1683,15 @@ function AgentDetailView() {
 function AuditView() {
   const [events, setEvents] = useState<AuditEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterDecision, setFilterDecision] = useState<string>('');
-  const [filterEventType, setFilterEventType] = useState<string>('');
+  const [filterDecision, setFilterDecision] = useState<string>('all');
+  const [filterEventType, setFilterEventType] = useState<string>('all');
+  const [exporting, setExporting] = useState(false);
 
   const loadEvents = useCallback(async () => {
     try {
       const data = await api.getAuditEvents({
-        decision: filterDecision || undefined,
-        eventType: filterEventType || undefined,
+        decision: filterDecision === 'all' ? undefined : filterDecision || undefined,
+        eventType: filterEventType === 'all' ? undefined : filterEventType || undefined,
         limit: 100,
       });
       setEvents(data);
@@ -1305,11 +1704,35 @@ function AuditView() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/audit/export');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'agentdnai-audit-export.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast({ title: 'CSV exported', description: 'Audit log has been downloaded.' });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Audit Log</h1>
-        <p className="text-muted-foreground">Hash-chained, append-only record of every authorization decision.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Audit Log</h1>
+          <p className="text-muted-foreground">Hash-chained, append-only record of every authorization decision.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+          <Download className="w-4 h-4 mr-1" /> {exporting ? 'Exporting...' : 'Export CSV'}
+        </Button>
       </div>
 
       {/* Filters */}
@@ -1317,7 +1740,7 @@ function AuditView() {
         <Select value={filterDecision} onValueChange={setFilterDecision}>
           <SelectTrigger className="w-44"><SelectValue placeholder="All Decisions" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Decisions</SelectItem>
+            <SelectItem value="all">All Decisions</SelectItem>
             <SelectItem value="allow">Allow</SelectItem>
             <SelectItem value="deny">Deny</SelectItem>
             <SelectItem value="requires_approval">Requires Approval</SelectItem>
@@ -1326,7 +1749,7 @@ function AuditView() {
         <Select value={filterEventType} onValueChange={setFilterEventType}>
           <SelectTrigger className="w-52"><SelectValue placeholder="All Event Types" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Event Types</SelectItem>
+            <SelectItem value="all">All Event Types</SelectItem>
             <SelectItem value="AGENT_CREATED">Agent Created</SelectItem>
             <SelectItem value="AGENT_REVOKED">Agent Revoked</SelectItem>
             <SelectItem value="PERMISSION_GRANTED">Permission Granted</SelectItem>
@@ -1361,8 +1784,15 @@ function AuditView() {
                 </TableHeader>
                 <TableBody>
                   {events.map(e => (
-                    <TableRow key={e.id}>
-                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{new Date(e.createdAt).toLocaleString()}</TableCell>
+                    <TableRow
+                      key={e.id}
+                      className={
+                        e.decision === 'allow' ? 'bg-emerald-500/[0.04]' :
+                        e.decision === 'deny' ? 'bg-red-500/[0.04]' :
+                        e.decision === 'requires_approval' ? 'bg-amber-500/[0.04]' : ''
+                      }
+                    >
+                      <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
                       <TableCell><Badge variant="secondary" className="font-mono text-xs">{e.eventType}</Badge></TableCell>
                       <TableCell className="font-mono text-xs">{e.agentId ? e.agentId.slice(0, 12) + '...' : '-'}</TableCell>
                       <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
@@ -1384,7 +1814,7 @@ function AuditView() {
           <Hash className="w-5 h-5 text-primary" />
           <div>
             <p className="text-sm font-semibold">Hash Chain Integrity</p>
-            <p className="text-xs text-muted-foreground">Every audit event is linked via previousHash and verified with eventHash. Tampering is detectable.</p>
+            <p className="text-xs text-muted-foreground">Every audit event is linked to the previous one via a SHA-256 hash chain. Any tampering with historical records will break the chain and be immediately detectable.</p>
           </div>
         </CardContent>
       </Card>
@@ -1400,7 +1830,7 @@ function TokensView() {
   const [showIssueDialog, setShowIssueDialog] = useState(false);
   const [issueForm, setIssueForm] = useState({ agentId: '', scopes: [''], ttlSeconds: 3600 });
   const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [issuing, setIssuing] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -1415,10 +1845,13 @@ function TokensView() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const allTokens = agents.flatMap(a => (a.tokens || []).map(t => ({ ...t, agentName: a.name })));
+  const allTokens = agents.flatMap(a =>
+    (a.tokens || []).map(t => ({ ...t, agentName: a.name, agentRuntime: a.runtime }))
+  );
 
   const handleIssue = async () => {
-    setSubmitting(true);
+    if (!issueForm.agentId) return;
+    setIssuing(true);
     try {
       const result = await api.issueToken({
         agentId: issueForm.agentId,
@@ -1426,50 +1859,52 @@ function TokensView() {
         ttlSeconds: issueForm.ttlSeconds,
       });
       setIssuedToken(result);
-      toast({ title: 'Token issued' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleRevoke = async (tokenId: string) => {
-    try {
-      await api.revokeToken(tokenId);
-      toast({ title: 'Token revoked' });
+      toast({ title: 'Token issued', description: 'Copy the token now — it will not be shown again.' });
       loadData();
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setIssuing(false);
     }
   };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Tokens</h1>
-          <p className="text-muted-foreground">Manage temporary tokens for agent authentication.</p>
+          <p className="text-muted-foreground">Manage temporary authentication tokens for agents.</p>
         </div>
         <Dialog open={showIssueDialog} onOpenChange={v => { setShowIssueDialog(v); if (!v) setIssuedToken(null); }}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground"><Plus className="w-4 h-4 mr-2" /> Issue Token</Button>
+            <Button className="bg-primary text-primary-foreground" size="sm">
+              <Plus className="w-4 h-4 mr-1" /> Issue Token
+            </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Issue Temporary Token</DialogTitle>
+              <DialogTitle>Issue Token</DialogTitle>
+              <DialogDescription>Generate a temporary token for an agent.</DialogDescription>
             </DialogHeader>
             {issuedToken ? (
               <div className="space-y-4 py-4">
                 <Alert className="border-primary/30 bg-primary/5">
                   <Key className="w-4 h-4 text-primary" />
                   <AlertTitle>Token Issued</AlertTitle>
-                  <AlertDescription>Copy now — it will not be shown again.</AlertDescription>
+                  <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
                 </Alert>
-                <div className="bg-secondary/30 rounded p-3 font-mono text-xs break-all">{issuedToken.token}</div>
-                <Button size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(issuedToken.token)}>
-                  <Copy className="w-4 h-4 mr-1" /> Copy Token
-                </Button>
+                <div className="bg-secondary/30 rounded p-3 font-mono text-xs break-all flex items-center gap-2">
+                  <span className="flex-1">{issuedToken.token}</span>
+                  <CopyButton text={issuedToken.token} />
+                </div>
+                <div className="text-sm text-muted-foreground">Expires: {new Date(issuedToken.expiresAt).toLocaleString()}</div>
+                <div className="flex flex-wrap gap-1">
+                  {issuedToken.scopes.map(s => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
+                </div>
               </div>
             ) : (
               <div className="space-y-4 py-4">
@@ -1496,15 +1931,17 @@ function TokensView() {
                       {i > 0 && <Button size="icon" variant="ghost" onClick={() => setIssueForm({ ...issueForm, scopes: issueForm.scopes.filter((_, j) => j !== i) })}><Trash2 className="w-4 h-4 text-red-400" /></Button>}
                     </div>
                   ))}
-                  <Button size="sm" variant="outline" onClick={() => setIssueForm({ ...issueForm, scopes: [...issueForm.scopes, ''] })}><Plus className="w-4 h-4 mr-1" /> Add</Button>
+                  <Button size="sm" variant="outline" onClick={() => setIssueForm({ ...issueForm, scopes: [...issueForm.scopes, ''] })}>
+                    <Plus className="w-4 h-4 mr-1" /> Add Scope
+                  </Button>
                 </div>
                 <div className="space-y-2">
                   <Label>TTL</Label>
                   <Select value={String(issueForm.ttlSeconds)} onValueChange={v => setIssueForm({ ...issueForm, ttlSeconds: Number(v) })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="300">5 min</SelectItem>
-                      <SelectItem value="900">15 min</SelectItem>
+                      <SelectItem value="300">5 minutes</SelectItem>
+                      <SelectItem value="900">15 minutes</SelectItem>
                       <SelectItem value="3600">1 hour</SelectItem>
                       <SelectItem value="86400">24 hours</SelectItem>
                     </SelectContent>
@@ -1516,7 +1953,7 @@ function TokensView() {
               {!issuedToken ? (
                 <>
                   <Button variant="outline" onClick={() => setShowIssueDialog(false)}>Cancel</Button>
-                  <Button className="bg-primary text-primary-foreground" onClick={handleIssue} disabled={submitting || !issueForm.agentId}>Issue</Button>
+                  <Button className="bg-primary text-primary-foreground" onClick={handleIssue} disabled={issuing || !issueForm.agentId}>Issue</Button>
                 </>
               ) : <Button onClick={() => setShowIssueDialog(false)}>Done</Button>}
             </DialogFooter>
@@ -1524,14 +1961,12 @@ function TokensView() {
         </Dialog>
       </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center h-64"><RefreshCw className="w-6 h-6 text-primary animate-spin" /></div>
-      ) : allTokens.length === 0 ? (
+      {allTokens.length === 0 ? (
         <Card className="bg-card/50 border-border/50">
           <CardContent className="py-16 text-center">
             <Key className="w-12 h-12 text-primary/30 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No tokens</h3>
-            <p className="text-muted-foreground">Issue a temporary token for an agent to get started.</p>
+            <h3 className="text-lg font-semibold mb-2">No tokens yet</h3>
+            <p className="text-muted-foreground">Issue a token to an active agent to get started.</p>
           </CardContent>
         </Card>
       ) : (
@@ -1544,8 +1979,6 @@ function TokensView() {
                   <TableHead>Scopes</TableHead>
                   <TableHead>Expires</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Last Used</TableHead>
-                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1554,17 +1987,22 @@ function TokensView() {
                   const revoked = !!t.revokedAt;
                   return (
                     <TableRow key={t.id}>
-                      <TableCell className="font-medium">{t.agentName}</TableCell>
-                      <TableCell><div className="flex flex-wrap gap-1">{JSON.parse(t.scopes).map((s: string) => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}</div></TableCell>
-                      <TableCell className="text-xs">{new Date(t.expiresAt).toLocaleString()}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <RuntimeIcon runtime={t.agentRuntime} className="w-4 h-4" />
+                          <span className="text-sm font-medium">{t.agentName}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {JSON.parse(t.scopes).map((s: string) => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
                       <TableCell>
                         {revoked ? <Badge variant="outline" className="text-red-400 border-red-400/30 text-xs">Revoked</Badge> :
                          expired ? <Badge variant="outline" className="text-gray-400 border-gray-400/30 text-xs">Expired</Badge> :
                          <Badge variant="outline" className="text-emerald-400 border-emerald-400/30 text-xs">Active</Badge>}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleString() : 'Never'}</TableCell>
-                      <TableCell>
-                        {!revoked && !expired && <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRevoke(t.id)}><Ban className="w-3.5 h-3.5 text-red-400" /></Button>}
                       </TableCell>
                     </TableRow>
                   );
@@ -1581,44 +2019,44 @@ function TokensView() {
 // ─── Policies View ────────────────────────────────────────────────────────────
 
 function PoliciesView() {
-  const [selectedCategory, setSelectedCategory] = useState<PermissionCategory | 'all'>('all');
-
-  const filteredPerms = selectedCategory === 'all'
-    ? PERMISSIONS
-    : PERMISSIONS.filter(p => p.category === selectedCategory);
-
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Permission Policies</h1>
-        <p className="text-muted-foreground">Browse the permission catalog and templates for agent authorization.</p>
+        <h1 className="text-2xl font-bold">Policies</h1>
+        <p className="text-muted-foreground">Permission templates and the security policy catalog.</p>
       </div>
 
-      {/* Templates */}
+      {/* Permission Templates */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Quick Templates</h2>
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {PERMISSION_TEMPLATES.map(tpl => (
-            <Card key={tpl.id} className="bg-card/50 border-border/50 hover:border-primary/30 transition-colors">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{tpl.name}</CardTitle>
-                <CardDescription className="text-xs">{tpl.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-1">
-                  {tpl.permissions.map(p => (
-                    <Badge key={p} variant="secondary" className="text-xs font-mono bg-emerald-500/10 text-emerald-400 border-emerald-500/20">{p}</Badge>
-                  ))}
-                </div>
-                {tpl.denied.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {tpl.denied.map(p => (
-                      <Badge key={p} variant="secondary" className="text-xs font-mono bg-red-500/10 text-red-400 border-red-500/20 line-through">{p}</Badge>
-                    ))}
+        <h2 className="text-lg font-semibold mb-4">Permission Templates</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {PERMISSION_TEMPLATES.map((tpl, i) => (
+            <motion.div key={tpl.id} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+              <Card className="bg-card/50 border-border/50 h-full">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">{tpl.name}</CardTitle>
+                  <CardDescription className="text-xs">{tpl.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Allows:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tpl.permissions.map(p => <Badge key={p} variant="secondary" className="text-xs font-mono bg-emerald-500/10 text-emerald-400">{p}</Badge>)}
+                      </div>
+                    </div>
+                    {tpl.denied.length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Denies:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tpl.denied.map(p => <Badge key={p} variant="secondary" className="text-xs font-mono bg-red-500/10 text-red-400">{p}</Badge>)}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -1627,41 +2065,32 @@ function PoliciesView() {
 
       {/* Permission Catalog */}
       <div>
-        <h2 className="text-lg font-semibold mb-3">Permission Catalog</h2>
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button size="sm" variant={selectedCategory === 'all' ? 'default' : 'outline'} onClick={() => setSelectedCategory('all')}>All</Button>
-          {PERMISSION_CATEGORIES.map(cat => (
-            <Button key={cat} size="sm" variant={selectedCategory === cat ? 'default' : 'outline'} onClick={() => setSelectedCategory(cat)} className="capitalize">
-              {cat}
-            </Button>
-          ))}
+        <h2 className="text-lg font-semibold mb-4">Full Permission Catalog</h2>
+        <div className="space-y-4">
+          {PERMISSION_CATEGORIES.map(cat => {
+            const perms = PERMISSIONS.filter(p => p.category === cat);
+            return (
+              <Card key={cat} className="bg-card/50 border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">{cat}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {perms.map(p => (
+                      <div key={p.scope} className="flex items-center justify-between p-2 rounded bg-secondary/20">
+                        <span className="text-xs font-mono">{p.scope}</span>
+                        <div className="flex items-center gap-2">
+                          <RiskBadge riskLevel={p.riskLevel} />
+                          {p.requiresApproval && <AlertTriangle className="w-3 h-3 text-amber-400" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
-        <Card className="bg-card/50 border-border/50">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Scope</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Risk</TableHead>
-                  <TableHead>Approval</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPerms.map(p => (
-                  <TableRow key={p.scope}>
-                    <TableCell className="font-mono text-xs">{p.scope}</TableCell>
-                    <TableCell className="capitalize text-xs">{p.category}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">{p.description}</TableCell>
-                    <TableCell><RiskBadge riskLevel={p.riskLevel} /></TableCell>
-                    <TableCell>{p.requiresApproval ? <AlertTriangle className="w-4 h-4 text-amber-400" /> : <CheckCircle2 className="w-4 h-4 text-emerald-400" />}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
@@ -1683,11 +2112,10 @@ function SettingsView() {
             <CardTitle className="text-base flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Security Policy</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Default Policy</span><Badge variant="outline" className="text-red-400 border-red-400/30">Deny All</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Token TTL Required</span><Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Yes</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Production Approval</span><Badge variant="outline" className="text-amber-400 border-amber-400/30">Required</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Max Token TTL</span><span>24 hours</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Min Token TTL</span><span>60 seconds</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Default Policy</span><Badge variant="outline" className="font-mono text-xs">DENY</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Production Approval</span><Badge variant="outline" className="text-xs text-amber-400 border-amber-400/30">Required</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Max Token TTL</span><span className="font-mono">24h</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Key Rotation</span><Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Enabled</Badge></div>
           </CardContent>
         </Card>
 
@@ -1696,10 +2124,10 @@ function SettingsView() {
             <CardTitle className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Cryptography</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Key Algorithm</span><span>SHA-256</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Token Hash</span><span>SHA-256</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Event Hash Chain</span><Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Enabled</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Raw Token Storage</span><Badge variant="outline" className="text-red-400 border-red-400/30">Never</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Hash Algorithm</span><span className="font-mono">SHA-256</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Token Storage</span><span className="font-mono">Hash-only</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Audit Chain</span><Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Active</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Key Pair</span><span className="font-mono">Ed25519*</span></div>
           </CardContent>
         </Card>
 
@@ -1708,77 +2136,344 @@ function SettingsView() {
             <CardTitle className="text-base flex items-center gap-2"><ScrollText className="w-4 h-4 text-primary" /> Audit</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Audit Mode</span><span>Append-Only</span></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Hash Chain</span><Badge variant="outline" className="text-emerald-400 border-emerald-400/30">Active</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Events Logged</span><span>All Decisions</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Log Mode</span><Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Append-Only</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Chain Integrity</span><Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Verified</Badge></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Retention</span><span className="font-mono">Unlimited</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Export</span><span className="font-mono">CSV</span></div>
           </CardContent>
         </Card>
 
         <Card className="bg-card/50 border-border/50">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2"><Layers className="w-4 h-4 text-primary" /> Integrations</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2"><Cpu className="w-4 h-4 text-primary" /> Integrations</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">OpenClaw</span><Badge variant="outline" className="text-gray-400 border-gray-400/30">Planned</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Hermes</span><Badge variant="outline" className="text-gray-400 border-gray-400/30">Planned</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">Codex</span><Badge variant="outline" className="text-gray-400 border-gray-400/30">Planned</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">SDK</span><Badge variant="outline" className="text-gray-400 border-gray-400/30">Planned</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-muted-foreground">CLI</span><Badge variant="outline" className="text-gray-400 border-gray-400/30">Planned</Badge></div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">REST API</span>
+              <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Active</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">CLI</span>
+              <Badge variant="outline" className="text-xs text-amber-400 border-amber-400/30">Planned</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">SDK</span>
+              <Badge variant="outline" className="text-xs text-amber-400 border-amber-400/30">Planned</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Webhooks</span>
+              <Badge variant="outline" className="text-xs text-muted-foreground">Coming Soon</Badge>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-4">
-          <h3 className="text-sm font-semibold mb-2">Project Status</h3>
-          <p className="text-xs text-muted-foreground mb-3">AgentDNAI is in early development (MVP v0.1). Not production-ready yet.</p>
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">Identity</div>
-              <Progress value={80} className="h-1.5" />
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">Permissions</div>
-              <Progress value={70} className="h-1.5" />
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">Audit</div>
-              <Progress value={60} className="h-1.5" />
-            </div>
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">Integrations</div>
-              <Progress value={10} className="h-1.5" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-// ─── Main Page Component ──────────────────────────────────────────────────────
+// ─── Docs View ────────────────────────────────────────────────────────────────
+
+function DocsView() {
+  const { setView } = useAppStore();
+  const [activeSection, setActiveSection] = useState('quick-start');
+
+  const sections = [
+    { id: 'quick-start', label: 'Quick Start', icon: <Zap className="w-4 h-4" /> },
+    { id: 'api-reference', label: 'API Reference', icon: <Code2 className="w-4 h-4" /> },
+    { id: 'cli-reference', label: 'CLI Reference', icon: <Terminal className="w-4 h-4" /> },
+    { id: 'permissions', label: 'Permission Catalog', icon: <Shield className="w-4 h-4" /> },
+    { id: 'security-model', label: 'Security Model', icon: <Lock className="w-4 h-4" /> },
+  ];
+
+  const apiEndpoints = [
+    { method: 'POST', path: '/api/agents', desc: 'Create a new agent identity' },
+    { method: 'GET', path: '/api/agents', desc: 'List all agents' },
+    { method: 'GET', path: '/api/agents/:id', desc: 'Get agent details' },
+    { method: 'POST', path: '/api/agents/:id/pause', desc: 'Pause an agent' },
+    { method: 'POST', path: '/api/agents/:id/resume', desc: 'Resume a paused agent' },
+    { method: 'POST', path: '/api/agents/:id/revoke', desc: 'Revoke an agent' },
+    { method: 'POST', path: '/api/agents/:id/rotate-key', desc: 'Rotate agent key pair' },
+    { method: 'POST', path: '/api/agents/:id/permissions', desc: 'Grant a permission' },
+    { method: 'GET', path: '/api/agents/:id/permissions', desc: 'List agent permissions' },
+    { method: 'DELETE', path: '/api/agents/:id/permissions', desc: 'Remove a permission' },
+    { method: 'POST', path: '/api/tokens/issue', desc: 'Issue a temporary token' },
+    { method: 'POST', path: '/api/tokens/:id/revoke', desc: 'Revoke a token' },
+    { method: 'POST', path: '/api/authz/check', desc: 'Check authorization' },
+    { method: 'GET', path: '/api/audit', desc: 'Get audit events' },
+    { method: 'GET', path: '/api/audit/export', desc: 'Export audit as CSV' },
+    { method: 'GET', path: '/api/stats', desc: 'Get dashboard statistics' },
+    { method: 'POST', path: '/api/seed', desc: 'Seed demo data' },
+  ];
+
+  const cliCommands = [
+    { cmd: 'agentdnai create <name> --runtime <runtime>', desc: 'Create a new agent identity' },
+    { cmd: 'agentdnai list', desc: 'List all agents' },
+    { cmd: 'agentdnai info <agent-id>', desc: 'Show agent details' },
+    { cmd: 'agentdnai pause <agent-id>', desc: 'Pause an agent' },
+    { cmd: 'agentdnai resume <agent-id>', desc: 'Resume a paused agent' },
+    { cmd: 'agentdnai revoke <agent-id>', desc: 'Revoke an agent permanently' },
+    { cmd: 'agentdnai rotate-key <agent-id>', desc: 'Rotate the agent key pair' },
+    { cmd: 'agentdnai grant <agent-id> <scope> [--resource <res>] [--effect ALLOW|DENY]', desc: 'Grant a permission' },
+    { cmd: 'agentdnai revoke-perm <agent-id> <permission-id>', desc: 'Remove a permission' },
+    { cmd: 'agentdnai token issue <agent-id> --scopes <scopes> --ttl <seconds>', desc: 'Issue a temporary token' },
+    { cmd: 'agentdnai token revoke <token-id>', desc: 'Revoke a token' },
+    { cmd: 'agentdnai check <agent-id> <action> [--resource <res>]', desc: 'Check authorization' },
+    { cmd: 'agentdnai audit [--agent <id>] [--decision <d>] [--export]', desc: 'View or export audit log' },
+    { cmd: 'agentdnai seed', desc: 'Seed demo data' },
+  ];
+
+  const methodColors: Record<string, string> = {
+    GET: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    POST: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+    DELETE: 'bg-red-500/15 text-red-400 border-red-500/30',
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Documentation</h1>
+          <p className="text-muted-foreground">Everything you need to use AgentDNAI.</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setView('dashboard')}>
+          <LayoutDashboard className="w-4 h-4 mr-1" /> Back to Dashboard
+        </Button>
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <Card className="bg-card/50 border-border/50 sticky top-24">
+            <CardContent className="p-3">
+              <nav className="space-y-1">
+                {sections.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => setActiveSection(s.id)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      activeSection === s.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                    }`}
+                  >
+                    {s.icon}
+                    {s.label}
+                  </button>
+                ))}
+              </nav>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Content */}
+        <div className="lg:col-span-3 space-y-6">
+          {activeSection === 'quick-start' && (
+            <motion.div {...fadeIn} className="space-y-6">
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle>Quick Start</CardTitle>
+                  <CardDescription>Get started with AgentDNAI in under 5 minutes.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex gap-3 items-start">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">1</div>
+                      <div>
+                        <p className="font-semibold text-sm">Seed Demo Data</p>
+                        <p className="text-sm text-muted-foreground mb-2">Populate the platform with 5 demo agents, tokens, and audit events.</p>
+                        <code className="text-xs font-mono bg-secondary/50 px-2 py-1 rounded">POST /api/seed</code>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">2</div>
+                      <div>
+                        <p className="font-semibold text-sm">Create an Agent</p>
+                        <p className="text-sm text-muted-foreground mb-2">Generate a unique identity with a cryptographic key pair.</p>
+                        <code className="text-xs font-mono bg-secondary/50 px-2 py-1 rounded">POST /api/agents {"{ name, runtime, description }"}</code>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">3</div>
+                      <div>
+                        <p className="font-semibold text-sm">Grant Permissions</p>
+                        <p className="text-sm text-muted-foreground mb-2">Assign scoped permissions with allow, deny, or requires_approval effects.</p>
+                        <code className="text-xs font-mono bg-secondary/50 px-2 py-1 rounded">POST /api/agents/:id/permissions {"{ scope, effect }"}</code>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">4</div>
+                      <div>
+                        <p className="font-semibold text-sm">Issue a Token</p>
+                        <p className="text-sm text-muted-foreground mb-2">Get a short-lived, hash-stored authentication token.</p>
+                        <code className="text-xs font-mono bg-secondary/50 px-2 py-1 rounded">POST /api/tokens/issue {"{ agentId, scopes, ttlSeconds }"}</code>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 items-start">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">5</div>
+                      <div>
+                        <p className="font-semibold text-sm">Check Authorization</p>
+                        <p className="text-sm text-muted-foreground mb-2">Verify that an agent is authorized to perform a specific action.</p>
+                        <code className="text-xs font-mono bg-secondary/50 px-2 py-1 rounded">POST /api/authz/check {"{ agentId, action, resource }"}</code>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeSection === 'api-reference' && (
+            <motion.div {...fadeIn} className="space-y-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle>API Reference</CardTitle>
+                  <CardDescription>All available REST API endpoints.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-20">Method</TableHead>
+                        <TableHead>Endpoint</TableHead>
+                        <TableHead>Description</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {apiEndpoints.map((ep, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <Badge variant="outline" className={`font-mono text-xs ${methodColors[ep.method] || ''}`}>{ep.method}</Badge>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{ep.path}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{ep.desc}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeSection === 'cli-reference' && (
+            <motion.div {...fadeIn} className="space-y-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle>CLI Reference</CardTitle>
+                  <CardDescription>Command-line interface commands.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {cliCommands.map((cmd, i) => (
+                    <div key={i} className="p-3 rounded-lg bg-secondary/20 space-y-1">
+                      <code className="text-xs font-mono text-primary">{cmd.cmd}</code>
+                      <p className="text-xs text-muted-foreground">{cmd.desc}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeSection === 'permissions' && (
+            <motion.div {...fadeIn} className="space-y-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle>Permission Catalog Summary</CardTitle>
+                  <CardDescription>9 categories, 47 permissions across 5 risk levels.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {PERMISSION_CATEGORIES.map(cat => {
+                    const perms = PERMISSIONS.filter(p => p.category === cat);
+                    const low = perms.filter(p => p.riskLevel === 'low').length;
+                    const med = perms.filter(p => p.riskLevel === 'medium').length;
+                    const high = perms.filter(p => p.riskLevel === 'high').length;
+                    const crit = perms.filter(p => p.riskLevel === 'critical').length;
+                    return (
+                      <div key={cat} className="p-3 rounded-lg bg-secondary/20">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-sm uppercase tracking-wider">{cat}</span>
+                          <span className="text-xs text-muted-foreground">{perms.length} permissions</span>
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {low > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">{low} low</span>}
+                          {med > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{med} medium</span>}
+                          {high > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-orange-500/10 text-orange-400">{high} high</span>}
+                          {crit > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">{crit} critical</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {activeSection === 'security-model' && (
+            <motion.div {...fadeIn} className="space-y-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardHeader>
+                  <CardTitle>Security Model</CardTitle>
+                  <CardDescription>The core security principles that govern AgentDNAI.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    { title: 'Deny by Default', desc: 'All actions are denied unless there is an explicit ALLOW permission. No implicit grants, no exceptions.' },
+                    { title: 'Explicit Deny Overrides Allow', desc: 'If both an ALLOW and DENY rule exist for the same scope, DENY always wins. This prevents accidental privilege escalation.' },
+                    { title: 'Production Requires Approval', desc: 'Any action in the production category automatically requires human approval, regardless of ALLOW permissions. This is a hard-coded policy.' },
+                    { title: 'Temporary Tokens Only', desc: 'Tokens have a maximum TTL of 24 hours. No permanent tokens exist. Expired tokens are automatically invalid.' },
+                    { title: 'Hash-Only Token Storage', desc: 'Raw tokens are never stored in the database. Only SHA-256 hashes are persisted, making token theft from the DB impossible.' },
+                    { title: 'Hash-Chained Audit Log', desc: 'Every audit event contains the hash of the previous event. Tampering with any event breaks the chain and is immediately detectable.' },
+                    { title: 'Immediate Revocation', desc: 'Agents can be paused, revoked, or blocked instantly. Revoked agents are denied all actions regardless of their permissions.' },
+                    { title: 'Key Rotation', desc: 'Agent key pairs can be rotated at any time, generating a new pair and invalidating the old one.' },
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-3 items-start p-3 rounded-lg bg-secondary/20">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function AgentDNAIApp() {
-  const { currentView } = useAppStore();
+  const { currentView, setView } = useAppStore();
 
-  // Render based on current view
-  if (currentView === 'home') {
-    return <LandingPage />;
-  }
-
-  // Dashboard layout with sidebar
   return (
-    <div className="min-h-screen flex">
-      <DashboardSidebar />
-      <main className="flex-1 p-6 overflow-auto">
-        {currentView === 'dashboard' && <DashboardView />}
-        {currentView === 'agents' && <AgentsView />}
-        {currentView === 'agent-detail' && <AgentDetailView />}
-        {currentView === 'audit' && <AuditView />}
-        {currentView === 'tokens' && <TokensView />}
-        {currentView === 'policies' && <PoliciesView />}
-        {currentView === 'settings' && <SettingsView />}
-      </main>
-    </div>
+    <AnimatePresence mode="wait">
+      {currentView === 'home' ? (
+        <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+          <LandingPage />
+        </motion.div>
+      ) : (
+        <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex">
+          <DashboardSidebar />
+          <main className="flex-1 overflow-y-auto p-6">
+            <AnimatePresence mode="wait">
+              <motion.div key={currentView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+                {currentView === 'dashboard' && <DashboardView />}
+                {currentView === 'agents' && <AgentsView />}
+                {currentView === 'agent-detail' && <AgentDetailView />}
+                {currentView === 'audit' && <AuditView />}
+                {currentView === 'tokens' && <TokensView />}
+                {currentView === 'policies' && <PoliciesView />}
+                {currentView === 'settings' && <SettingsView />}
+                {currentView === 'docs' && <DocsView />}
+              </motion.div>
+            </AnimatePresence>
+          </main>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
