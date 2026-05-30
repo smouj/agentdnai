@@ -1,0 +1,41 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "AgentDNAI — Secure Identity for AI Agents",
+  description: "AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, encrypted credentials, revocable access and a clear audit trail.",
+  keywords: ["AgentDNAI", "AI agents", "identity", "permissions", "audit", "authorization", "security"],
+  authors: [{ name: "AgentDNAI" }],
+  icons: {
+    icon: "/logo-agentdnai.png",
+  },
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning className="dark">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
+        {children}
+        <Toaster />
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agents    AgentIdentity[]
+}
+
+model AgentIdentity {
+  id          String   @id @default(cuid())
+  agentUri    String   @unique
+  name        String
+  description String?
+  runtime     String
+  publicKey   String
+  status      String   @default("ACTIVE")
+  ownerUserId String
+  owner       User     @relation(fields: [ownerUserId], references: [id])
+
+  permissions AgentPermission[]
+  tokens      AgentToken[]
+  auditEvents AuditEvent[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastSeenAt  DateTime?
+  revokedAt   DateTime?
+}
+
+model AgentPermission {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           AgentIdentity @relation(fields: [agentId], references: [id])
+  scope           String
+  resource        String?
+  effect          String   @default("ALLOW")
+  expiresAt       DateTime?
+  createdByUserId String
+  createdAt       DateTime @default(now())
+}
+
+model AgentToken {
+  id          String   @id @default(cuid())
+  agentId     String
+  agent       AgentIdentity @relation(fields: [agentId], references: [id])
+  tokenHash   String
+  scopes      String   // JSON string of scope array
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+}
+
+model AuthorizationDecision {
+  id          String   @id @default(cuid())
+  agentId     String
+  action      String
+  resource    String?
+  decision    String
+  reason      String
+  requestHash String?
+  createdAt   DateTime @default(now())
+}
+
+model AuditEvent {
+  id           String        @id @default(cuid())
+  eventType    String
+  actorType    String
+  actorId      String?
+  agentId      String?
+  agent        AgentIdentity? @relation(fields: [agentId], references: [id])
+  resource     String?
+  action       String?
+  decision     String?
+  metadata     String?   // JSON string
+  previousHash String?
+  eventHash    String
+  createdAt    DateTime  @default(now())
+}
