@@ -119,7 +119,7 @@ function DNAHelix({ className = '' }: { className?: string }) {
           <linearGradient id="dnaGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
             <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="hsl(var--primary))" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
           </linearGradient>
           <filter id="glow">
             <feGaussianBlur stdDeviation="3" result="blur" />

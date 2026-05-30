@@ -15,7 +15,9 @@ export type AppView =
   | 'tokens'
   | 'policies'
   | 'settings'
-  | 'docs';
+  | 'docs'
+  | 'playground'
+  | 'agent-compare';
 
 interface AppState {
   currentView: AppView;

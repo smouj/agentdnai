@@ -144,6 +144,27 @@
   background: oklch(0.45 0.02 240);
 }
 
+/* Custom scrollbar for ScrollArea and overflow containers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: oklch(0.15 0.01 240 / 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.03 240 / 0.8);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0.05 240 / 0.9);
+}
+
 /* Glow effect for primary elements */
 .glow-cyan {
   box-shadow: 0 0 20px oklch(0.75 0.15 195 / 0.15), 0 0 60px oklch(0.75 0.15 195 / 0.05);
@@ -182,4 +203,73 @@
 .terminal-cursor {
   border-right: 2px solid oklch(0.75 0.15 195);
   animation: blink-cursor 1s step-end infinite;
+}
+
+/* Animated grid background for hero */
+@keyframes grid-shift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(30px, 30px); }
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(oklch(0.75 0.15 195 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.75 0.15 195 / 0.05) 1px, transparent 1px);
+  background-size: 30px 30px;
+  animation: grid-shift 4s linear infinite;
+}
+
+/* Gradient border animation */
+@keyframes gradient-border-rotate {
+  0% { --gradient-angle: 0deg; }
+  100% { --gradient-angle: 360deg; }
+}
+
+.gradient-border {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(from var(--gradient-angle, 0deg), oklch(0.75 0.15 195), oklch(0.65 0.18 160), oklch(0.75 0.15 195));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gradient-border-rotate 3s linear infinite;
+}
+
+/* Glass morphism effect */
+.glass-card {
+  background: oklch(0.15 0.012 240 / 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.3 0.02 240 / 0.4);
+}
+
+/* Subtle float animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Shimmer effect for loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 0%, oklch(0.75 0.15 195 / 0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
