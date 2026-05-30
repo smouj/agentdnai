@@ -273,3 +273,34 @@
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
 }
+
+/* Gradient shift for CTA button */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glow pulse for live demo section */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px oklch(0.75 0.15 195 / 0.05); }
+  50% { box-shadow: 0 0 30px oklch(0.75 0.15 195 / 0.15), 0 0 60px oklch(0.75 0.15 195 / 0.05); }
+}
+
+/* Border shimmer for stat cards on hover */
+@keyframes border-shimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Card entrance animation */
+@keyframes card-entrance {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Global scrollbar - Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.35 0.02 240) transparent;
+}

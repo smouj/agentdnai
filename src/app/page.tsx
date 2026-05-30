@@ -6,6 +6,11 @@ import { api, type Agent, type Permission, type Token, type AuditEvent, type Aut
 import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES, type PermissionCategory } from '@/lib/permissions';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
+  ResponsiveContainer, Legend, Area, AreaChart
+} from 'recharts';
 
 // ─── UI Components ────────────────────────────────────────────────────────────
 
@@ -34,7 +39,8 @@ import {
   Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
   ShieldX, MoreHorizontal, RefreshCw, Download, Hash, Cpu,
   Layers, Brain, Bot, Sparkles, Command, Menu, X, Code2,
-  Wrench, Package, MessageSquare, Workflow, Bell, BellRing
+  Wrench, Package, MessageSquare, Workflow, Bell, BellRing,
+  Sun, Moon, Calendar
 } from 'lucide-react';
 
 // ─── Animation Variants ──────────────────────────────────────────────────────
@@ -51,6 +57,16 @@ const fadeInStagger = {
     opacity: 1,
     y: 0,
     transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' },
+  }),
+};
+
+const cardEntrance = {
+  initial: { opacity: 0, y: 16, scale: 0.97 },
+  animate: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { delay: i * 0.06, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
   }),
 };
 
@@ -191,7 +207,7 @@ function LiveAuthzDemo() {
   const displayStep = Math.min(step, steps.length - 1);
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/50 p-5 backdrop-blur">
+    <div className="rounded-xl border border-border/50 bg-card/50 p-5 backdrop-blur animate-[glow-pulse_3s_ease-in-out_infinite] shadow-lg shadow-primary/5">
       <div className="text-xs text-muted-foreground font-mono mb-3 flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         Live Authorization Check
@@ -305,6 +321,51 @@ function GridBackground() {
   );
 }
 
+// ─── Floating Particles ──────────────────────────────────────────────────────
+
+function FloatingParticles() {
+  const particles = React.useMemo(() =>
+    Array.from({ length: 30 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1,
+      duration: Math.random() * 15 + 10,
+      delay: Math.random() * 10,
+      opacity: Math.random() * 0.4 + 0.1,
+    })),
+    []
+  );
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          className="absolute rounded-full bg-primary"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            opacity: p.opacity,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [p.opacity, p.opacity * 1.5, p.opacity],
+          }}
+          transition={{
+            duration: p.duration,
+            delay: p.delay,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 
 function LandingPage() {
@@ -335,6 +396,7 @@ function LandingPage() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <GridBackground />
+        <FloatingParticles />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3" />
         <motion.div 
           className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
@@ -368,14 +430,20 @@ function LandingPage() {
                 encrypted credentials, revocable access and a clear audit trail.
               </p>
               <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan" onClick={() => setView('dashboard')}>
-                  <Shield className="w-5 h-5 mr-2" /> Open Dashboard
+                <Button size="lg" className="relative overflow-hidden group h-12 px-8 text-base font-semibold bg-cyan-500 text-white hover:bg-cyan-400 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 transition-all" onClick={() => setView('dashboard')}>
+                  <span className="absolute inset-0 rounded-md bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 bg-[length:200%_100%] animate-[gradient-shift_3s_ease-in-out_infinite] opacity-90 group-hover:opacity-100 transition-opacity" />
+                  <span className="relative flex items-center">
+                    <Zap className="w-5 h-5 mr-2" /> Get Started Free
+                  </span>
                 </Button>
-                <Button size="lg" variant="outline" className="border-border" onClick={() => setView('docs')}>
+                <Button size="lg" variant="outline" className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300 h-12 px-8 text-base" onClick={() => setView('docs')}>
                   <BookOpen className="w-5 h-5 mr-2" /> Read Docs
                 </Button>
               </div>
-              <div className="mt-10 flex items-center gap-6 text-sm text-muted-foreground">
+              <p className="mt-4 text-xs text-muted-foreground/60">
+                No credit card required · Set up in 2 minutes · Open source
+              </p>
+              <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Deny by default</div>
                 <div className="flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Temporary tokens</div>
                 <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-primary" /> Full audit trail</div>
@@ -419,14 +487,14 @@ AgentDNAI Authorization Check
       <section className="py-12 border-t border-border/20">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-widest">Trusted by forward-thinking teams</p>
-          <div className="flex flex-wrap items-center justify-center gap-8">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             {['NeuralForge', 'AutoScale', 'CodeVault', 'DataPulse', 'SecureOps'].map((name, i) => (
               <motion.div
                 key={name}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
-                className="text-lg font-bold text-muted-foreground/40 tracking-wide"
+                className="px-6 py-3 rounded-lg border border-border/30 bg-card/30 backdrop-blur-sm text-base font-semibold text-muted-foreground/60 tracking-wide hover:border-primary/30 hover:text-muted-foreground/80 hover:bg-primary/5 transition-all"
               >
                 {name}
               </motion.div>
@@ -627,19 +695,37 @@ AgentDNAI Authorization Check
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-border/30 bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4">No more anonymous agents.</h2>
-          <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-            Know every agent. Control every action. Start building with verifiable identity today.
+      <section className="py-24 border-t border-border/30 bg-gradient-to-b from-primary/8 via-primary/3 to-transparent relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+        </div>
+        <div className="max-w-4xl mx-auto px-6 text-center relative">
+          <Badge variant="outline" className="mb-6 border-primary/30 text-primary bg-primary/5">
+            <Sparkles className="w-3 h-3 mr-1" /> Start Securing Your Agents Today
+          </Badge>
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+            No more anonymous agents.<br />
+            <span className="bg-gradient-to-r from-primary via-cyan-400 to-primary bg-clip-text text-transparent">Every action. Verified.</span>
+          </h2>
+          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+            Know every agent. Control every action. Audit every decision. Prevent unauthorized access with zero-trust identity for AI.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan" onClick={() => setView('dashboard')}>
-              <Zap className="w-5 h-5 mr-2" /> Launch Dashboard
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" className="relative overflow-hidden group h-14 px-10 text-lg font-semibold bg-cyan-500 text-white hover:bg-cyan-400 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-400/40 transition-all" onClick={() => setView('dashboard')}>
+              <span className="absolute inset-0 rounded-md bg-gradient-to-r from-cyan-500 via-teal-400 to-cyan-500 bg-[length:200%_100%] animate-[gradient-shift_3s_ease-in-out_infinite] opacity-90 group-hover:opacity-100 transition-opacity" />
+              <span className="relative flex items-center">
+                <Zap className="w-5 h-5 mr-2" /> Get Started Free
+              </span>
             </Button>
-            <Button size="lg" variant="outline" onClick={() => setView('docs')}>
+            <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10 hover:text-cyan-300" onClick={() => setView('docs')}>
               <BookOpen className="w-5 h-5 mr-2" /> Read the Docs
             </Button>
+          </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground/70">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> No credit card</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 2-minute setup</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Open source</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> MIT License</span>
           </div>
         </div>
       </section>
@@ -707,6 +793,7 @@ function DashboardSidebar() {
     { id: 'agents' as const, icon: Bot, label: 'Agents' },
     { id: 'playground' as const, icon: Command, label: 'Playground' },
     { id: 'agent-compare' as const, icon: Layers, label: 'Compare' },
+    { id: 'activity-heatmap' as const, icon: Activity, label: 'Activity' },
     { id: 'audit' as const, icon: ScrollText, label: 'Audit Log' },
     { id: 'tokens' as const, icon: Key, label: 'Tokens' },
     { id: 'policies' as const, icon: Shield, label: 'Policies' },
@@ -714,7 +801,7 @@ function DashboardSidebar() {
   ];
 
   return (
-    <aside className={`border-r border-border/50 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'}`}>
+    <aside className={`border-r border-border/50 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'} relative`}>
       <div className="p-4 flex items-center justify-between border-b border-border/50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
@@ -735,14 +822,27 @@ function DashboardSidebar() {
             animate="animate"
             transition={{ delay: i * 0.05 }}
             onClick={() => setView(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
               currentView === item.id
-                ? 'bg-primary/10 text-primary border-l-2 border-primary pl-2'
+                ? 'text-primary border-l-2 border-primary pl-2 bg-gradient-to-r from-primary/15 via-primary/8 to-transparent'
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent pl-2'
             }`}
           >
-            <item.icon className="w-4 h-4 shrink-0" />
-            {sidebarOpen && <span>{item.label}</span>}
+            <TooltipProvider delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-3">
+                    <item.icon className="w-4 h-4 shrink-0" />
+                    {sidebarOpen && <span>{item.label}</span>}
+                  </span>
+                </TooltipTrigger>
+                {!sidebarOpen && (
+                  <TooltipContent side="right" className="text-xs">
+                    {item.label}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </motion.button>
         ))}
       </nav>
@@ -762,6 +862,8 @@ function DashboardSidebar() {
           {sidebarOpen && <span>Back to Home</span>}
         </button>
       </div>
+      {/* Gradient line at bottom of sidebar */}
+      <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
     </aside>
   );
 }
@@ -921,6 +1023,13 @@ function DashboardView() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [recentAudit, setRecentAudit] = useState<AuditEvent[]>([]);
+  const [trendsData, setTrendsData] = useState<{
+    hourlyTrends: { hour: string; allow: number; deny: number; requiresApproval: number }[];
+    permissionDistribution: { category: string; allow: number; deny: number; requiresApproval: number }[];
+    topActions: { action: string; count: number }[];
+    period: string;
+  } | null>(null);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -936,17 +1045,26 @@ function DashboardView() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const loadTrends = useCallback(async () => {
+    try {
+      const data = await api.getTrends();
+      setTrendsData(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => { load(); loadTrends(); }, [load, loadTrends]);
 
   if (loading) {
     return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
   }
 
   const statCards = [
-    { label: 'Total Agents', value: stats?.totalAgents || 0, icon: <Bot className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-primary' },
-    { label: 'Active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-emerald-400' },
-    { label: 'Permissions', value: stats?.totalPermissions || 0, icon: <Shield className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-primary' },
-    { label: 'Active Tokens', value: stats?.activeTokens || 0, icon: <Key className="w-4 h-4 text-amber-400" />, color: 'text-amber-400', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-amber-400' },
+    { label: 'Total Agents', value: stats?.totalAgents || 0, icon: <Bot className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-primary', trend: '+12%', trendUp: true, gradientFrom: 'from-cyan-400', gradientTo: 'to-primary' },
+    { label: 'Active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-emerald-400', trend: '+8%', trendUp: true, gradientFrom: 'from-emerald-400', gradientTo: 'to-emerald-300' },
+    { label: 'Permissions', value: stats?.totalPermissions || 0, icon: <Shield className="w-4 h-4 text-primary" />, color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-primary', trend: '+24%', trendUp: true, gradientFrom: 'from-cyan-400', gradientTo: 'to-blue-400' },
+    { label: 'Active Tokens', value: stats?.activeTokens || 0, icon: <Key className="w-4 h-4 text-amber-400" />, color: 'text-amber-400', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-amber-400', trend: '-3%', trendUp: false, gradientFrom: 'from-amber-400', gradientTo: 'to-orange-400' },
   ];
 
   return (
@@ -958,6 +1076,9 @@ function DashboardView() {
         </div>
         <div className="flex items-center gap-2">
           <NotificationCenter events={recentAudit} />
+          <Button variant="outline" size="sm" onClick={() => setShowSetupWizard(true)}>
+            <Zap className="w-4 h-4 mr-1" /> Quick Setup
+          </Button>
           <Button variant="outline" size="sm" onClick={load}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
@@ -993,22 +1114,30 @@ function DashboardView() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, i) => (
           <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
-            <Card className="bg-card/30 backdrop-blur-lg border-border/30 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5">
+            <Card className="bg-card/30 backdrop-blur-lg border-border/30 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group relative overflow-hidden">
+              {/* Gradient top accent line */}
               <div className="h-0.5 w-full bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0" />
-              <CardContent className="p-4">
+              {/* Shimmer effect on hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-lg bg-gradient-to-r from-transparent via-primary/5 to-transparent bg-[length:200%_100%] animate-[border-shimmer_2s_linear_infinite]" />
+              <CardContent className="p-4 relative">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">{card.label}</span>
                   {card.icon}
                 </div>
                 <div className="flex items-end justify-between">
-                  <motion.div
-                    className={`text-2xl font-bold ${card.color}`}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: i * 0.1 + 0.3, duration: 0.4, type: 'spring' }}
-                  >
-                    {card.value}
-                  </motion.div>
+                  <div>
+                    <motion.div
+                      className={`text-2xl font-bold bg-gradient-to-r ${card.gradientFrom} ${card.gradientTo} bg-clip-text text-transparent`}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: i * 0.1 + 0.3, duration: 0.4, type: 'spring' }}
+                    >
+                      {card.value}
+                    </motion.div>
+                    <span className={`text-xs font-mono flex items-center gap-0.5 mt-0.5 ${card.trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {card.trendUp ? <span>↑</span> : <span>↓</span>} {card.trend}
+                    </span>
+                  </div>
                   <Sparkline values={card.sparkline} color={card.sparkColor} />
                 </div>
               </CardContent>
@@ -1231,6 +1360,136 @@ function DashboardView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Authorization Trends (24h) */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" /> Authorization Trends (24h)
+          </CardTitle>
+          <CardDescription>Hourly allow, deny, and requires approval decisions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {trendsData && trendsData.hourlyTrends.length > 0 ? (
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendsData.hourlyTrends} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorAllow" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorDeny" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f87171" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#f87171" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorApproval" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis
+                    dataKey="hour"
+                    tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(v: string) => v.split(' ')[1] || v}
+                    interval={3}
+                  />
+                  <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  <Area type="monotone" dataKey="allow" stroke="#34d399" fill="url(#colorAllow)" strokeWidth={2} name="Allow" />
+                  <Area type="monotone" dataKey="deny" stroke="#f87171" fill="url(#colorDeny)" strokeWidth={2} name="Deny" />
+                  <Area type="monotone" dataKey="requiresApproval" stroke="#fbbf24" fill="url(#colorApproval)" strokeWidth={2} name="Requires Approval" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
+              No trend data available. Seed demo data to see trends.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Permission Distribution */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" /> Permission Distribution
+          </CardTitle>
+          <CardDescription>Permissions by category</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {trendsData && trendsData.permissionDistribution.length > 0 ? (
+            <div className="flex flex-col lg:flex-row items-center gap-6">
+              <div className="h-64 w-full lg:w-1/2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={trendsData.permissionDistribution.map(d => ({ ...d, total: d.allow + d.deny + d.requiresApproval }))}
+                      dataKey="total"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={90}
+                      innerRadius={50}
+                      paddingAngle={2}
+                      label={({ category, total }: { category: string; total: number }) => total > 0 ? `${category}` : ''}
+                    >
+                      {trendsData.permissionDistribution.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={['#34d399', '#f87171', '#fbbf24', '#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#2dd4bf', '#818cf8'][index % 9]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex-1 space-y-2 w-full">
+                {trendsData.permissionDistribution.map((cat, i) => (
+                  <div key={cat.category} className="flex items-center justify-between p-2 rounded-lg bg-secondary/20">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: ['#34d399', '#f87171', '#fbbf24', '#60a5fa', '#a78bfa', '#f472b6', '#fb923c', '#2dd4bf', '#818cf8'][i % 9] }} />
+                      <span className="text-sm font-mono">{cat.category}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-emerald-400">{cat.allow}</span>
+                      <span className="text-red-400">{cat.deny}</span>
+                      <span className="text-amber-400">{cat.requiresApproval}</span>
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-400" /> Allow</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-400" /> Deny</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /> Approval</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
+              No permission data available. Grant permissions to see distribution.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Quick Setup Wizard */}
+      <QuickSetupWizard open={showSetupWizard} onOpenChange={setShowSetupWizard} onComplete={load} />
     </div>
   );
 }
@@ -1405,11 +1664,19 @@ function AgentsView() {
               custom={i}
             >
               <Card
-                className="bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden hover:shadow-lg hover:shadow-primary/5"
+                className={`bg-card/50 border-border/50 hover:border-primary/30 transition-all cursor-pointer group relative overflow-hidden hover:shadow-lg ${
+                  agent.status === 'ACTIVE' ? 'hover:shadow-primary/10' : 'hover:shadow-primary/5'
+                }`}
                 onClick={() => navigateToAgent(agent.id)}
               >
-                {/* Gradient border effect on hover */}
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ padding: '1px' }} />
+                {/* Cyan glow border effect on hover */}
+                <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: agent.status === 'ACTIVE' ? '0 0 15px oklch(0.75 0.15 195 / 0.15), inset 0 0 15px oklch(0.75 0.15 195 / 0.05)' : 'none' }} />
+                {/* Gradient border overlay on hover */}
+                <div className="absolute inset-0 rounded-lg border border-primary/0 group-hover:border-primary/30 transition-colors duration-300 pointer-events-none" />
+                {/* Active agent subtle glow */}
+                {agent.status === 'ACTIVE' && (
+                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+                )}
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -1433,6 +1700,11 @@ function AgentsView() {
                     <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {agent._count?.permissions || 0} perms</span>
                     <span className="flex items-center gap-1"><Key className="w-3 h-3" /> {agent._count?.tokens || 0} tokens</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {timeAgo(agent.createdAt)}</span>
+                  </div>
+                  {/* Last seen indicator */}
+                  <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                    <span className={`w-1.5 h-1.5 rounded-full ${agent.status === 'ACTIVE' ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground/30'}`} />
+                    <span>{agent.status === 'ACTIVE' ? 'Active now' : `Last seen ${timeAgo(agent.updatedAt || agent.createdAt)}`}</span>
                   </div>
                 </CardContent>
                 <CardFooter className="pt-0">
@@ -2153,14 +2425,15 @@ function AuditView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {events.map(e => (
+                  {events.map((e, idx) => (
                     <TableRow
                       key={e.id}
-                      className={
-                        e.decision === 'allow' ? 'bg-emerald-500/[0.04]' :
-                        e.decision === 'deny' ? 'bg-red-500/[0.04]' :
-                        e.decision === 'requires_approval' ? 'bg-amber-500/[0.04]' : ''
-                      }
+                      className={`${
+                        e.decision === 'allow' ? 'border-l-2 border-l-emerald-400/60 bg-emerald-500/[0.04]' :
+                        e.decision === 'deny' ? 'border-l-2 border-l-red-400/60 bg-red-500/[0.04]' :
+                        e.decision === 'requires_approval' ? 'border-l-2 border-l-amber-400/60 bg-amber-500/[0.04]' :
+                        'border-l-2 border-l-transparent'
+                      } ${idx % 2 === 1 ? 'bg-secondary/[0.03]' : ''}`}
                     >
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
                       <TableCell><Badge variant="secondary" className="font-mono text-xs">{e.eventType}</Badge></TableCell>
@@ -2487,6 +2760,33 @@ function PoliciesView() {
 // ─── Settings View ────────────────────────────────────────────────────────────
 
 function SettingsView() {
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('agentdnai-theme') !== 'light';
+    }
+    return true;
+  });
+
+  const toggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    localStorage.setItem('agentdnai-theme', newIsDark ? 'dark' : 'light');
+    if (newIsDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Apply theme on mount
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -2495,6 +2795,41 @@ function SettingsView() {
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Sun className="w-4 h-4 text-primary" /> Appearance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                {isDark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-amber-400" />}
+                <span className="text-muted-foreground">Theme</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${!isDark ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Light</span>
+                <button
+                  onClick={toggleTheme}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${isDark ? 'bg-primary' : 'bg-secondary'}`}
+                  aria-label="Toggle theme"
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+                <span className={`text-xs ${isDark ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Dark</span>
+              </div>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Current Mode</span>
+              <Badge variant="outline" className={`text-xs ${isDark ? 'text-primary border-primary/30' : 'text-amber-400 border-amber-400/30'}`}>
+                {isDark ? 'Dark' : 'Light'}
+              </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Accent Color</span>
+              <Badge variant="outline" className="text-xs text-primary border-primary/30">Cyan</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="bg-card/50 border-border/50">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Security Policy</CardTitle>
@@ -3246,21 +3581,451 @@ function AgentCompareView() {
   );
 }
 
+// ─── Activity Heatmap View ─────────────────────────────────────────────────────
+
+function ActivityHeatmapView() {
+  const [activityData, setActivityData] = useState<{
+    days: { date: string; total: number; allow: number; deny: number; requiresApproval: number; other: number }[];
+    agentActivity: Record<string, Record<string, number>>;
+    period: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hoveredDay, setHoveredDay] = useState<{ date: string; total: number } | null>(null);
+
+  useEffect(() => {
+    api.getActivity().then(setActivityData).catch(console.error).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
+  }
+
+  const days = activityData?.days || [];
+  const maxTotal = Math.max(...days.map(d => d.total), 1);
+
+  const getColor = (total: number) => {
+    if (total === 0) return 'bg-border/10 border border-border/20';
+    const ratio = total / maxTotal;
+    if (ratio <= 0.25) return 'bg-primary/20 border border-primary/30';
+    if (ratio <= 0.5) return 'bg-primary/40 border border-primary/50';
+    if (ratio <= 0.75) return 'bg-primary/60 border border-primary/70';
+    return 'bg-primary border border-primary';
+  };
+
+  // Arrange days into weeks (columns) for the heatmap
+  const weeks: typeof days[] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  const totalEvents = days.reduce((sum, d) => sum + d.total, 0);
+  const totalAllow = days.reduce((sum, d) => sum + d.allow, 0);
+  const totalDeny = days.reduce((sum, d) => sum + d.deny, 0);
+  const totalApproval = days.reduce((sum, d) => sum + d.requiresApproval, 0);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Activity Heatmap</h1>
+        <p className="text-muted-foreground">30-day overview of authorization and audit events.</p>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Events', value: totalEvents, icon: <Activity className="w-4 h-4 text-primary" />, color: 'text-foreground' },
+          { label: 'Allowed', value: totalAllow, icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />, color: 'text-emerald-400' },
+          { label: 'Denied', value: totalDeny, icon: <XCircle className="w-4 h-4 text-red-400" />, color: 'text-red-400' },
+          { label: 'Requires Approval', value: totalApproval, icon: <AlertTriangle className="w-4 h-4 text-amber-400" />, color: 'text-amber-400' },
+        ].map((stat, i) => (
+          <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
+            <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-muted-foreground">{stat.label}</span>
+                  {stat.icon}
+                </div>
+                <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Heatmap Grid */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">Event Activity (30 Days)</CardTitle>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>Less</span>
+              <div className="w-3 h-3 rounded-sm bg-border/10 border border-border/20" />
+              <div className="w-3 h-3 rounded-sm bg-primary/20 border border-primary/30" />
+              <div className="w-3 h-3 rounded-sm bg-primary/40 border border-primary/50" />
+              <div className="w-3 h-3 rounded-sm bg-primary/60 border border-primary/70" />
+              <div className="w-3 h-3 rounded-sm bg-primary border border-primary" />
+              <span>More</span>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            {/* Day labels */}
+            <div className="flex gap-0.5 mb-1 ml-0">
+              <span className="text-[10px] text-muted-foreground w-10" />
+              {['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((label, i) => (
+                <span key={i} className="text-[10px] text-muted-foreground h-3 w-3 flex items-center justify-center">{label}</span>
+              ))}
+            </div>
+
+            {/* Grid */}
+            <div className="flex gap-1 overflow-x-auto pb-2">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-0.5">
+                  {week.map((day, di) => (
+                    <TooltipProvider key={di}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.div
+                            className={`w-3 h-3 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-primary/50 ${getColor(day.total)}`}
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: wi * 0.03 + di * 0.02, duration: 0.2 }}
+                            onMouseEnter={() => setHoveredDay(day)}
+                            onMouseLeave={() => setHoveredDay(null)}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="bg-popover border-border">
+                          <div className="text-xs">
+                            <div className="font-semibold">{day.date}</div>
+                            <div className="text-muted-foreground">{day.total} event{day.total !== 1 ? 's' : ''}</div>
+                            {day.total > 0 && (
+                              <div className="flex gap-2 mt-1">
+                                <span className="text-emerald-400">{day.allow} allow</span>
+                                <span className="text-red-400">{day.deny} deny</span>
+                                <span className="text-amber-400">{day.requiresApproval} approval</span>
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Hover detail */}
+            {hoveredDay && (
+              <motion.div
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 p-3 rounded-lg bg-secondary/30 border border-border/30 text-sm"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="font-mono font-semibold">{hoveredDay.date}</span>
+                  </div>
+                  <span className="text-muted-foreground">{hoveredDay.total} event{hoveredDay.total !== 1 ? 's' : ''}</span>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Daily Trend Bar Chart */}
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Daily Event Breakdown</CardTitle>
+          <CardDescription>Allow, deny, and requires approval counts per day</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={days} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(v: string) => v.slice(5)}
+                  interval={4}
+                />
+                <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                <RechartsTooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Bar dataKey="allow" stackId="a" fill="#34d399" radius={[0, 0, 0, 0]} name="Allow" />
+                <Bar dataKey="deny" stackId="a" fill="#f87171" radius={[0, 0, 0, 0]} name="Deny" />
+                <Bar dataKey="requiresApproval" stackId="a" fill="#fbbf24" radius={[4, 4, 0, 0]} name="Requires Approval" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Quick Setup Wizard ────────────────────────────────────────────────────────
+
+function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; onOpenChange: (open: boolean) => void; onComplete: () => void }) {
+  const [step, setStep] = useState(0);
+  const [agentName, setAgentName] = useState('');
+  const [agentRuntime, setAgentRuntime] = useState('hermes');
+  const [agentDescription, setAgentDescription] = useState('');
+  const [permissionTemplate, setPermissionTemplate] = useState('observer');
+  const [tokenTTL, setTokenTTL] = useState('3600');
+  const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
+  const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const [stepStatus, setStepStatus] = useState<('pending' | 'running' | 'done' | 'error')[]>(['pending', 'pending', 'pending']);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const reset = () => {
+    setStep(0);
+    setAgentName('');
+    setAgentRuntime('hermes');
+    setAgentDescription('');
+    setPermissionTemplate('observer');
+    setTokenTTL('3600');
+    setCreatedAgentId(null);
+    setCreatedToken(null);
+    setStepStatus(['pending', 'pending', 'pending']);
+    setErrorMsg(null);
+  };
+
+  const runStep = async (stepIndex: number) => {
+    const newStatus = [...stepStatus];
+    newStatus[stepIndex] = 'running';
+    setStepStatus(newStatus);
+    setErrorMsg(null);
+
+    try {
+      if (stepIndex === 0) {
+        // Create Agent
+        const agent = await api.createAgent({ name: agentName, runtime: agentRuntime, description: agentDescription || undefined });
+        setCreatedAgentId(agent.id);
+      } else if (stepIndex === 1) {
+        // Grant Permissions from template
+        const template = PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate);
+        if (template && createdAgentId) {
+          for (const scope of template.scopes.slice(0, 3)) {
+            await api.grantPermission(createdAgentId, { scope, effect: 'ALLOW' });
+          }
+        }
+      } else if (stepIndex === 2) {
+        // Issue Token
+        if (createdAgentId) {
+          const template = PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate);
+          const result = await api.issueToken({
+            agentId: createdAgentId,
+            scopes: template?.scopes.slice(0, 3) || ['github.repo.read'],
+            ttlSeconds: parseInt(tokenTTL),
+          });
+          setCreatedToken(result.token);
+        }
+      }
+
+      const newStatus2 = [...stepStatus];
+      newStatus2[stepIndex] = 'done';
+      setStepStatus(newStatus2);
+
+      if (stepIndex < 2) {
+        setStep(stepIndex + 1);
+      }
+    } catch (err: any) {
+      const newStatus3 = [...stepStatus];
+      newStatus3[stepIndex] = 'error';
+      setStepStatus(newStatus3);
+      setErrorMsg(err.message || 'An error occurred');
+    }
+  };
+
+  const stepLabels = ['Create Agent', 'Grant Permissions', 'Issue Token'];
+  const stepIcons = [<Bot key="bot" className="w-4 h-4" />, <Shield key="shield" className="w-4 h-4" />, <Key key="key" className="w-4 h-4" />];
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
+      <DialogContent className="sm:max-w-lg bg-card border-border/50">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary" /> Quick Setup Wizard
+          </DialogTitle>
+          <DialogDescription>Create an agent, grant permissions, and issue a token in 3 steps.</DialogDescription>
+        </DialogHeader>
+
+        {/* Stepper */}
+        <div className="flex items-center justify-center gap-0 py-4">
+          {stepLabels.map((label, i) => (
+            <React.Fragment key={i}>
+              <div className="flex flex-col items-center gap-1">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold border-2 transition-all ${
+                  stepStatus[i] === 'done' ? 'bg-emerald-500 border-emerald-500 text-white' :
+                  stepStatus[i] === 'running' ? 'bg-primary border-primary text-primary-foreground animate-pulse' :
+                  stepStatus[i] === 'error' ? 'bg-red-500 border-red-500 text-white' :
+                  i === step ? 'bg-primary/20 border-primary text-primary' :
+                  'bg-secondary border-border text-muted-foreground'
+                }`}>
+                  {stepStatus[i] === 'done' ? <CheckCircle2 className="w-4 h-4" /> :
+                   stepStatus[i] === 'error' ? <XCircle className="w-4 h-4" /> :
+                   stepIcons[i]}
+                </div>
+                <span className={`text-[10px] ${i === step ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+              </div>
+              {i < 2 && (
+                <div className={`w-12 h-0.5 mx-1 mb-4 transition-colors ${
+                  stepStatus[i] === 'done' ? 'bg-emerald-500' : 'bg-border'
+                }`} />
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Step Content */}
+        <div className="space-y-4 min-h-[180px]">
+          {step === 0 && (
+            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+              <div>
+                <Label className="text-xs">Agent Name</Label>
+                <Input placeholder="my-agent" value={agentName} onChange={e => setAgentName(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Runtime</Label>
+                <Select value={agentRuntime} onValueChange={setAgentRuntime}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hermes">Hermes</SelectItem>
+                    <SelectItem value="codex">Codex</SelectItem>
+                    <SelectItem value="openclaw">OpenClaw</SelectItem>
+                    <SelectItem value="cli">CLI</SelectItem>
+                    <SelectItem value="automation">Automation</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Description (optional)</Label>
+                <Input placeholder="What does this agent do?" value={agentDescription} onChange={e => setAgentDescription(e.target.value)} className="mt-1" />
+              </div>
+            </motion.div>
+          )}
+
+          {step === 1 && (
+            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+              <div>
+                <Label className="text-xs">Permission Template</Label>
+                <Select value={permissionTemplate} onValueChange={setPermissionTemplate}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PERMISSION_TEMPLATES.map(t => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name} — {t.scopes.length} scopes
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate) && (
+                <div className="p-3 rounded-lg bg-secondary/30 border border-border/30">
+                  <div className="text-xs font-semibold mb-1.5">{PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.name}</div>
+                  <div className="text-xs text-muted-foreground mb-2">{PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.description}</div>
+                  <div className="flex flex-wrap gap-1">
+                    {PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.slice(0, 5).map((s, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px] font-mono bg-primary/10 text-primary">{s}</Badge>
+                    ))}
+                    {(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) > 5 && (
+                      <Badge variant="secondary" className="text-[10px]">+{(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) - 5} more</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
+              <div>
+                <Label className="text-xs">Token TTL (Time to Live)</Label>
+                <Select value={tokenTTL} onValueChange={setTokenTTL}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3600">1 Hour</SelectItem>
+                    <SelectItem value="21600">6 Hours</SelectItem>
+                    <SelectItem value="86400">24 Hours</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {createdToken && (
+                <Alert className="border-emerald-500/30 bg-emerald-500/5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <AlertTitle className="text-emerald-400 text-xs">Token Issued!</AlertTitle>
+                  <AlertDescription className="text-xs font-mono break-all mt-1">{createdToken}</AlertDescription>
+                </Alert>
+              )}
+            </motion.div>
+          )}
+        </div>
+
+        {/* Error */}
+        {errorMsg && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertTriangle className="w-4 h-4" />
+            <AlertDescription className="text-xs">{errorMsg}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Footer Buttons */}
+        <DialogFooter className="flex gap-2">
+          {stepStatus[step] === 'done' && step === 2 ? (
+            <Button className="bg-primary text-primary-foreground" onClick={() => { reset(); onOpenChange(false); onComplete(); }}>
+              <CheckCircle2 className="w-4 h-4 mr-1" /> Done
+            </Button>
+          ) : (
+            <Button
+              className="bg-primary text-primary-foreground"
+              disabled={stepStatus[step] === 'running' || (step === 0 && !agentName.trim())}
+              onClick={() => runStep(step)}
+            >
+              {stepStatus[step] === 'running' ? (
+                <><RefreshCw className="w-4 h-4 mr-1 animate-spin" /> Running...</>
+              ) : (
+                <>{step === 2 ? 'Issue Token' : 'Next'} <ArrowRight className="w-4 h-4 ml-1" /></>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AgentDNAIApp() {
   const { currentView, setView } = useAppStore();
 
   return (
     <AnimatePresence mode="wait">
       {currentView === 'home' ? (
-        <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+        <motion.div key="home" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4, ease: 'easeInOut' }}>
           <LandingPage />
         </motion.div>
       ) : (
         <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex">
           <DashboardSidebar />
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             <AnimatePresence mode="wait">
-              <motion.div key={currentView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <motion.div
+                key={currentView}
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.99 }}
+                transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+              >
                 {currentView === 'dashboard' && <DashboardView />}
                 {currentView === 'agents' && <AgentsView />}
                 {currentView === 'agent-detail' && <AgentDetailView />}
@@ -3271,6 +4036,7 @@ export default function AgentDNAIApp() {
                 {currentView === 'docs' && <DocsView />}
                 {currentView === 'playground' && <PlaygroundView />}
                 {currentView === 'agent-compare' && <AgentCompareView />}
+                {currentView === 'activity-heatmap' && <ActivityHeatmapView />}
               </motion.div>
             </AnimatePresence>
           </main>

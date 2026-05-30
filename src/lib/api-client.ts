@@ -188,4 +188,21 @@ export const api = {
   // Stats
   getStats: () =>
     apiFetch<DashboardStats>('/stats'),
+
+  // Activity
+  getActivity: () =>
+    apiFetch<{
+      days: { date: string; total: number; allow: number; deny: number; requiresApproval: number; other: number }[];
+      agentActivity: Record<string, Record<string, number>>;
+      period: string;
+    }>('/activity'),
+
+  // Trends
+  getTrends: () =>
+    apiFetch<{
+      hourlyTrends: { hour: string; allow: number; deny: number; requiresApproval: number }[];
+      permissionDistribution: { category: string; allow: number; deny: number; requiresApproval: number }[];
+      topActions: { action: string; count: number }[];
+      period: string;
+    }>('/stats/trends'),
 };

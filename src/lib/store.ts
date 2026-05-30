@@ -17,7 +17,8 @@ export type AppView =
   | 'settings'
   | 'docs'
   | 'playground'
-  | 'agent-compare';
+  | 'agent-compare'
+  | 'activity-heatmap';
 
 interface AppState {
   currentView: AppView;
