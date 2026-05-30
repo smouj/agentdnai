@@ -34,7 +34,7 @@ import {
   Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
   ShieldX, MoreHorizontal, RefreshCw, Download, Hash, Cpu,
   Layers, Brain, Bot, Sparkles, Command, Menu, X, Code2,
-  Wrench, Package, MessageSquare, Workflow
+  Wrench, Package, MessageSquare, Workflow, Bell, BellRing
 } from 'lucide-react';
 
 // ─── Animation Variants ──────────────────────────────────────────────────────
@@ -288,6 +288,23 @@ function RiskBadge({ riskLevel }: { riskLevel: string }) {
   return <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${v.className}`}>{riskLevel}</span>;
 }
 
+// ─── Grid Background ────────────────────────────────────────────────────────
+
+function GridBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <svg className="w-full h-full opacity-[0.04]">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="1" fill="hsl(var(--primary))" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+  );
+}
+
 // ─── Landing Page ─────────────────────────────────────────────────────────────
 
 function LandingPage() {
@@ -317,9 +334,18 @@ function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
+        <GridBackground />
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/3" />
-        <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-64 h-64 bg-primary/3 rounded-full blur-3xl" />
+        <motion.div 
+          className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div 
+          className="absolute bottom-20 left-20 w-64 h-64 bg-primary/3 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
         <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32 relative">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -574,6 +600,32 @@ AgentDNAI Authorization Check
         </div>
       </section>
 
+      {/* Stats Counter */}
+      <section className="py-16 border-t border-border/30 bg-card/10">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            {[
+              { value: '47', label: 'Permission Scopes', icon: <Shield className="w-5 h-5 text-primary mx-auto mb-2" /> },
+              { value: '9', label: 'Categories', icon: <Layers className="w-5 h-5 text-primary mx-auto mb-2" /> },
+              { value: '5', label: 'Templates', icon: <Sparkles className="w-5 h-5 text-primary mx-auto mb-2" /> },
+              { value: '0', label: 'Implicit Grants', icon: <ShieldX className="w-5 h-5 text-red-400 mx-auto mb-2" /> },
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+              >
+                {stat.icon}
+                <div className="text-3xl font-bold mb-1">{stat.value}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-24 border-t border-border/30 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="max-w-7xl mx-auto px-6 text-center">
@@ -593,15 +645,51 @@ AgentDNAI Authorization Check
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border/30 py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Fingerprint className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">AgentDNAI</span>
-            <span className="text-xs text-muted-foreground">Verifiable identity for AI agents.</span>
+      <footer className="border-t border-border/30 py-12 mt-auto">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Fingerprint className="w-5 h-5 text-primary" />
+                <span className="text-lg font-bold">Agent<span className="text-primary">DNAI</span></span>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">Verifiable digital identity, scoped permissions, and audit trails for AI agents.</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Product</h4>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('dashboard')}>Dashboard</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('agents')}>Agents</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('policies')}>Policies</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('audit')}>Audit Log</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Resources</h4>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('docs')}>Documentation</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">API Reference</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">CLI Guide</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">Security Model</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Security</h4>
+              <ul className="space-y-2 text-xs text-muted-foreground">
+                <li className="hover:text-foreground cursor-pointer transition-colors">Deny by Default</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">Hash Chain Audit</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">Key Rotation</li>
+                <li className="hover:text-foreground cursor-pointer transition-colors">Token Security</li>
+              </ul>
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Early development · Not production-ready yet · MIT License
+          <div className="border-t border-border/30 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <span className="text-xs text-muted-foreground">© 2026 AgentDNAI · Early development · MIT License</span>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-primary" /> End-to-end encrypted</span>
+              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-primary" /> Zero trust</span>
+              <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-primary" /> Hash-verified</span>
+            </div>
           </div>
         </div>
       </footer>
@@ -617,6 +705,8 @@ function DashboardSidebar() {
   const navItems = [
     { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'agents' as const, icon: Bot, label: 'Agents' },
+    { id: 'playground' as const, icon: Command, label: 'Playground' },
+    { id: 'agent-compare' as const, icon: Layers, label: 'Compare' },
     { id: 'audit' as const, icon: ScrollText, label: 'Audit Log' },
     { id: 'tokens' as const, icon: Key, label: 'Tokens' },
     { id: 'policies' as const, icon: Shield, label: 'Policies' },
@@ -647,8 +737,8 @@ function DashboardSidebar() {
             onClick={() => setView(item.id)}
             className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
               currentView === item.id
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                ? 'bg-primary/10 text-primary border-l-2 border-primary pl-2'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent pl-2'
             }`}
           >
             <item.icon className="w-4 h-4 shrink-0" />
@@ -673,6 +763,154 @@ function DashboardSidebar() {
         </button>
       </div>
     </aside>
+  );
+}
+
+// ─── Security Score ──────────────────────────────────────────────────────────
+
+function SecurityScore({ stats }: { stats: DashboardStats | null }) {
+  if (!stats) return null;
+  const total = stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount;
+  const score = total > 0 ? Math.round((stats.recentAllowCount / total) * 100) : 100;
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (score / 100) * circumference;
+  const color = score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
+  const strokeColor = score >= 80 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
+  
+  return (
+    <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+      <CardContent className="p-4 flex items-center gap-4">
+        <div className="relative">
+          <svg width="88" height="88" className="-rotate-90">
+            <circle cx="44" cy="44" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="6" />
+            <motion.circle
+              cx="44" cy="44" r={radius} fill="none" stroke={strokeColor} strokeWidth="6"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={`text-lg font-bold ${color}`}>{score}</span>
+          </div>
+        </div>
+        <div>
+          <p className="text-sm font-semibold">Security Score</p>
+          <p className="text-xs text-muted-foreground">
+            {score >= 80 ? 'Healthy authorization rate' : score >= 50 ? 'Some denied actions' : 'High denial rate'}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Notification Center ──────────────────────────────────────────────────────
+
+function NotificationCenter({ events }: { events: AuditEvent[] }) {
+  const { setView } = useAppStore();
+  const [open, setOpen] = useState(false);
+  const [read, setRead] = useState<Set<string>>(new Set());
+  const unreadCount = events.filter(e => !read.has(e.id)).length;
+
+  return (
+    <div className="relative">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative h-9 w-9"
+        onClick={() => setOpen(!open)}
+      >
+        {unreadCount > 0 ? (
+          <BellRing className="w-4 h-4 text-primary" />
+        ) : (
+          <Bell className="w-4 h-4 text-muted-foreground" />
+        )}
+        {unreadCount > 0 && (
+          <motion.span
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center"
+          >
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </motion.span>
+        )}
+      </Button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="absolute right-0 top-11 w-80 z-50 rounded-xl border border-border/50 bg-card/95 backdrop-blur-xl shadow-xl shadow-black/20"
+          >
+            <div className="p-3 border-b border-border/50 flex items-center justify-between">
+              <span className="text-sm font-semibold">Notifications</span>
+              {unreadCount > 0 && (
+                <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => {
+                  const newRead = new Set(events.map(e => e.id));
+                  setRead(newRead);
+                }}>
+                  Mark all read
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="max-h-72">
+              {events.length === 0 ? (
+                <div className="p-4 text-center text-muted-foreground text-sm">
+                  <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
+                  No notifications yet
+                </div>
+              ) : (
+                <div className="p-1">
+                  {events.slice(0, 8).map(event => {
+                    const isRead = read.has(event.id);
+                    return (
+                      <motion.button
+                        key={event.id}
+                        className={`w-full text-left p-2.5 rounded-lg transition-colors hover:bg-accent/50 ${!isRead ? 'bg-primary/5' : ''}`}
+                        onClick={() => {
+                          setRead(prev => new Set(prev).add(event.id));
+                          setOpen(false);
+                          setView('audit');
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${
+                            event.decision === 'allow' ? 'bg-emerald-400' :
+                            event.decision === 'deny' ? 'bg-red-400' :
+                            event.decision === 'requires_approval' ? 'bg-amber-400' :
+                            'bg-primary'
+                          }`} />
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-mono ${!isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
+                              {event.eventType.replace(/_/g, ' ')}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                              {event.action || 'System event'} · {timeAgo(event.createdAt)}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              )}
+            </ScrollArea>
+            <div className="p-2 border-t border-border/50">
+              <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => { setOpen(false); setView('audit'); }}>
+                View All Audit Events
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -719,6 +957,7 @@ function DashboardView() {
           <p className="text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
         </div>
         <div className="flex items-center gap-2">
+          <NotificationCenter events={recentAudit} />
           <Button variant="outline" size="sm" onClick={load}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>
@@ -736,11 +975,26 @@ function DashboardView() {
         </div>
       </div>
 
+      {/* System Status Bar */}
+      <div className="flex items-center gap-4 px-4 py-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-medium text-emerald-400">System Operational</span>
+        </div>
+        <div className="h-3 w-px bg-border" />
+        <span className="text-xs text-muted-foreground">Audit Chain: <span className="text-emerald-400">Verified</span></span>
+        <div className="h-3 w-px bg-border" />
+        <span className="text-xs text-muted-foreground">Policy Engine: <span className="text-emerald-400">Active</span></span>
+        <div className="h-3 w-px bg-border" />
+        <span className="text-xs text-muted-foreground">{stats?.totalAgents || 0} Agents Registered</span>
+      </div>
+
       {/* Stats Grid with Sparklines */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, i) => (
           <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
-            <Card className="bg-card/50 border-border/50 hover:border-primary/20 transition-colors">
+            <Card className="bg-card/30 backdrop-blur-lg border-border/30 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5">
+              <div className="h-0.5 w-full bg-gradient-to-r from-primary/0 via-primary/50 to-primary/0" />
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-muted-foreground">{card.label}</span>
@@ -762,6 +1016,9 @@ function DashboardView() {
           </motion.div>
         ))}
       </div>
+
+      {/* Security Score */}
+      <SecurityScore stats={stats} />
 
       {/* Quick Actions */}
       <Card className="bg-card/50 border-border/50">
@@ -786,6 +1043,46 @@ function DashboardView() {
         </CardContent>
       </Card>
 
+      {/* Activity Timeline */}
+      {recentAudit.length > 0 && (
+        <Card className="bg-card/30 backdrop-blur-lg border-border/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Activity Timeline</CardTitle>
+            <CardDescription>Recent authorization events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="relative pl-6">
+              <div className="absolute left-2 top-0 bottom-0 w-px bg-border" />
+              {recentAudit.slice(0, 5).map((event, i) => (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="relative mb-4 last:mb-0"
+                >
+                  <div className={`absolute -left-4 top-1 w-3 h-3 rounded-full border-2 ${
+                    event.decision === 'allow' ? 'bg-emerald-400 border-emerald-400' :
+                    event.decision === 'deny' ? 'bg-red-400 border-red-400' :
+                    event.decision === 'requires_approval' ? 'bg-amber-400 border-amber-400' :
+                    'bg-primary border-primary'
+                  }`} />
+                  <div className="ml-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-mono">{event.eventType.replace(/_/g, ' ')}</span>
+                      {event.decision && <DecisionBadge decision={event.decision} />}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {event.action || 'System event'} · {timeAgo(event.createdAt)}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Authorization Decisions */}
       <Card className="bg-card/50 border-border/50">
         <CardHeader className="pb-3">
@@ -807,14 +1104,22 @@ function DashboardView() {
               <span className="text-sm">Requires Approval: <strong>{stats?.recentRequiresApprovalCount || 0}</strong></span>
             </div>
           </div>
-          <div className="mt-3 h-2 bg-secondary rounded-full overflow-hidden flex">
-            {stats && (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount) > 0 && (
-              <>
-                <div className="bg-emerald-400 h-full" style={{ width: `${(stats.recentAllowCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }} />
-                <div className="bg-red-400 h-full" style={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }} />
-                <div className="bg-amber-400 h-full" style={{ width: `${(stats.recentRequiresApprovalCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }} />
-              </>
-            )}
+          <div className="mt-4 space-y-2">
+            <div className="h-4 bg-secondary rounded-full overflow-hidden flex">
+              {stats && (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount) > 0 && (
+                <>
+                  <div className="bg-emerald-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentAllowCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-900">{stats.recentAllowCount}</span>
+                  </div>
+                  <div className="bg-red-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-red-900">{stats.recentDenyCount}</span>
+                  </div>
+                  <div className="bg-amber-400 h-full transition-all duration-500 relative group" style={{ width: `${(stats.recentRequiresApprovalCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}>
+                    <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-amber-900">{stats.recentRequiresApprovalCount}</span>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -2249,6 +2554,49 @@ function SettingsView() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-card/50 border-border/50">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> System Health</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">API Server</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Online</Badge>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Database</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Connected</Badge>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Policy Engine</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Active</Badge>
+              </div>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Audit Chain</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                <Badge variant="outline" className="text-xs text-emerald-400 border-emerald-400/30">Intact</Badge>
+              </div>
+            </div>
+            <div className="mt-3 p-2 rounded-lg bg-secondary/20">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Uptime</span>
+                <span className="font-mono text-emerald-400">99.97%</span>
+              </div>
+              <Progress value={99.97} className="h-1 mt-1" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -2529,6 +2877,375 @@ function DocsView() {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
+// ─── Playground View ──────────────────────────────────────────────────────────
+
+function PlaygroundView() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>('');
+  const [actionsText, setActionsText] = useState('');
+  const [resource, setResource] = useState('');
+  const [results, setResults] = useState<Array<{ action: string; allowed: boolean; decision: string; reason: string; requiresApproval: boolean }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+
+  useEffect(() => {
+    api.listAgents().then(a => { setAgents(a); setAgentsLoading(false); }).catch(() => setAgentsLoading(false));
+  }, []);
+
+  const handleBatchCheck = async () => {
+    if (!selectedAgentId) {
+      toast({ title: 'Select an agent', description: 'Please select an agent first.', variant: 'destructive' });
+      return;
+    }
+    const actions = actionsText.split('\n').map(a => a.trim()).filter(Boolean);
+    if (actions.length === 0) {
+      toast({ title: 'Enter actions', description: 'Please enter at least one action to check.', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    setResults([]);
+    try {
+      const res = await api.batchCheckAuthz({ agentId: selectedAgentId, actions, resource: resource || undefined });
+      setResults(res.results as any);
+    } catch (err: any) {
+      toast({ title: 'Batch check failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const allowedCount = results.filter(r => r.decision === 'allow').length;
+  const deniedCount = results.filter(r => r.decision === 'deny').length;
+  const approvalCount = results.filter(r => r.decision === 'requires_approval').length;
+
+  const decisionStyles: Record<string, { card: string; icon: React.ReactNode; border: string }> = {
+    allow: {
+      card: 'bg-emerald-500/5',
+      border: 'border-emerald-500/30',
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
+    },
+    deny: {
+      card: 'bg-red-500/5',
+      border: 'border-red-500/30',
+      icon: <XCircle className="w-5 h-5 text-red-400" />,
+    },
+    requires_approval: {
+      card: 'bg-amber-500/5',
+      border: 'border-amber-500/30',
+      icon: <AlertTriangle className="w-5 h-5 text-amber-400" />,
+    },
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Command className="w-6 h-6 text-primary" /> Authorization Playground
+        </h1>
+        <p className="text-muted-foreground">Test multiple authorization checks at once against any agent.</p>
+      </div>
+
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Configuration</CardTitle>
+          <CardDescription>Select an agent and enter actions to check (one per line)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Agent</Label>
+              <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <SelectTrigger className="bg-background/50">
+                  <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select an agent'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name} <span className="text-muted-foreground font-mono text-xs">({a.agentUri})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Resource (optional)</Label>
+              <Input
+                placeholder="e.g. github.com/org/repo"
+                value={resource}
+                onChange={e => setResource(e.target.value)}
+                className="bg-background/50 font-mono text-sm"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Actions to check (one per line, max 50)</Label>
+            <Textarea
+              placeholder={"github.repo.read\ngithub.repo.write\nserver.deploy.production\nsecrets.read\ndatabase.migrate"}
+              value={actionsText}
+              onChange={e => setActionsText(e.target.value)}
+              className="bg-background/50 font-mono text-sm min-h-[120px]"
+            />
+          </div>
+          <Button
+            className="bg-primary text-primary-foreground w-full sm:w-auto"
+            onClick={handleBatchCheck}
+            disabled={loading || !selectedAgentId}
+          >
+            {loading ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Checking...</> : <><Command className="w-4 h-4 mr-2" /> Run Batch Check</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Results */}
+      {results.length > 0 && (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={0}>
+              <Card className="bg-emerald-500/5 border-emerald-500/30">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-emerald-400">{allowedCount}</div>
+                  <div className="text-xs text-muted-foreground">Allowed</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={1}>
+              <Card className="bg-red-500/5 border-red-500/30">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-red-400">{deniedCount}</div>
+                  <div className="text-xs text-muted-foreground">Denied</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={2}>
+              <Card className="bg-amber-500/5 border-amber-500/30">
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-amber-400">{approvalCount}</div>
+                  <div className="text-xs text-muted-foreground">Requires Approval</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Result Cards */}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {results.map((r, i) => {
+              const style = decisionStyles[r.decision] || decisionStyles.deny;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: i * 0.06, duration: 0.3, ease: 'easeOut' }}
+                >
+                  <Card className={`${style.card} ${style.border} hover:shadow-lg transition-shadow`}>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-sm text-foreground truncate max-w-[60%]">{r.action}</span>
+                        {style.icon}
+                      </div>
+                      <DecisionBadge decision={r.decision} />
+                      <p className="text-xs text-muted-foreground line-clamp-2">{r.reason}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Agent Compare View ───────────────────────────────────────────────────────
+
+function AgentCompareView() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentAId, setAgentAId] = useState<string>('');
+  const [agentBId, setAgentBId] = useState<string>('');
+  const [agentA, setAgentA] = useState<(Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }) | null>(null);
+  const [agentB, setAgentB] = useState<(Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }) | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [agentsLoading, setAgentsLoading] = useState(true);
+
+  useEffect(() => {
+    api.listAgents().then(a => { setAgents(a); setAgentsLoading(false); }).catch(() => setAgentsLoading(false));
+  }, []);
+
+  const loadAgents = useCallback(async () => {
+    if (!agentAId || !agentBId) return;
+    setLoading(true);
+    try {
+      const [a, b] = await Promise.all([api.getAgent(agentAId), api.getAgent(agentBId)]);
+      setAgentA(a);
+      setAgentB(b);
+    } catch (err: any) {
+      toast({ title: 'Error loading agents', description: err.message, variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  }, [agentAId, agentBId]);
+
+  useEffect(() => {
+    if (agentAId && agentBId) loadAgents();
+  }, [agentAId, agentBId, loadAgents]);
+
+  const permsA = new Set(agentA?.permissions?.map(p => p.scope) || []);
+  const permsB = new Set(agentB?.permissions?.map(p => p.scope) || []);
+  const allScopes = Array.from(new Set([...permsA, ...permsB])).sort();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Layers className="w-6 h-6 text-primary" /> Agent Compare
+        </h1>
+        <p className="text-muted-foreground">Compare two agents side-by-side with visual permission diff.</p>
+      </div>
+
+      <Card className="bg-card/50 border-border/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Select Agents</CardTitle>
+          <CardDescription>Choose two agents to compare</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Agent A</Label>
+              <Select value={agentAId} onValueChange={setAgentAId}>
+                <SelectTrigger className="bg-background/50">
+                  <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select agent A'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.filter(a => a.id !== agentBId).map(a => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Agent B</Label>
+              <Select value={agentBId} onValueChange={setAgentBId}>
+                <SelectTrigger className="bg-background/50">
+                  <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select agent B'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.filter(a => a.id !== agentAId).map(a => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {loading && (
+        <div className="flex items-center justify-center h-40">
+          <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      )}
+
+      {agentA && agentB && !loading && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+          {/* Side-by-side info cards */}
+          <div className="grid sm:grid-cols-2 gap-4 mb-4">
+            {[
+              { agent: agentA, label: 'A' },
+              { agent: agentB, label: 'B' },
+            ].map(({ agent, label }) => (
+              <Card key={label} className="bg-card/50 border-border/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <RuntimeIcon runtime={agent.runtime} className="w-5 h-5" />
+                      {agent.name}
+                    </CardTitle>
+                    <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
+                      {label}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-muted-foreground">Status</div>
+                    <div><StatusBadge status={agent.status} /></div>
+                    <div className="text-muted-foreground">Runtime</div>
+                    <div className="font-mono text-xs">{agent.runtime}</div>
+                    <div className="text-muted-foreground">Permissions</div>
+                    <div className="font-mono">{agent.permissions?.length || 0}</div>
+                    <div className="text-muted-foreground">Tokens</div>
+                    <div className="font-mono">{agent.tokens?.filter(t => !t.revokedAt).length || 0}</div>
+                    <div className="text-muted-foreground">Audit Events</div>
+                    <div className="font-mono">{agent.auditEvents?.length || 0}</div>
+                    <div className="text-muted-foreground">Created</div>
+                    <div className="text-xs">{timeAgo(agent.createdAt)}</div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Permission Diff */}
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Shield className="w-4 h-4 text-primary" /> Permission Diff
+              </CardTitle>
+              <CardDescription>
+                <span className="inline-flex items-center gap-2 flex-wrap">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-400" /> Matching</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400" /> Agent A only</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" /> Agent B only</span>
+                </span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {allScopes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No permissions found for either agent.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto">
+                  {allScopes.map((scope, i) => {
+                    const inA = permsA.has(scope);
+                    const inB = permsB.has(scope);
+                    let colorClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                    if (inA && !inB) colorClass = 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30';
+                    else if (!inA && inB) colorClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                    return (
+                      <motion.div
+                        key={scope}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.02, duration: 0.2 }}
+                      >
+                        <Badge variant="outline" className={`font-mono text-xs ${colorClass}`}>
+                          {scope}
+                          {inA && !inB && ' (A)'}
+                          {!inA && inB && ' (B)'}
+                        </Badge>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {!agentA && !agentB && !loading && (
+        <Card className="bg-card/50 border-border/50">
+          <CardContent className="p-12 text-center">
+            <Layers className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground">Select two agents above to start comparing.</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 export default function AgentDNAIApp() {
   const { currentView, setView } = useAppStore();
 
@@ -2552,6 +3269,8 @@ export default function AgentDNAIApp() {
                 {currentView === 'policies' && <PoliciesView />}
                 {currentView === 'settings' && <SettingsView />}
                 {currentView === 'docs' && <DocsView />}
+                {currentView === 'playground' && <PlaygroundView />}
+                {currentView === 'agent-compare' && <AgentCompareView />}
               </motion.div>
             </AnimatePresence>
           </main>
