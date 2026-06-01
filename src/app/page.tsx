@@ -103,7 +103,7 @@ function RuntimeIcon({ runtime, className = 'w-5 h-5' }: { runtime: string; clas
  automation: <Workflow className={`${className} text-muted-foreground`} />,
  custom: <Cpu className={`${className} text-muted-foreground`} />,
  };
- return <>{iconMap[runtime] || <Bot className={`${className} text-primary`} />}</>;
+ return <>{iconMap[runtime] || <Bot className={`${className} text-crimson`} />}</>;
 }
 
 // ─── Copy Button Helper ──────────────────────────────────────────────────────
@@ -130,14 +130,14 @@ function DNAHelix({ className = '' }: { className?: string }) {
  <svg viewBox="0 0 120 400" className="w-full h-full animate-spin-slow" style={{ animationDuration: '20s' }}>
  <defs>
  <linearGradient id="dnaGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
- <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
- <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
- <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
+ <stop offset="0%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
+ <stop offset="50%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
+ <stop offset="100%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
  </linearGradient>
  <linearGradient id="dnaGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
- <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
- <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.8" />
- <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+ <stop offset="0%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
+ <stop offset="50%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
+ <stop offset="100%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
  </linearGradient>
  <filter id="glow">
  <feGaussianBlur stdDeviation="3" result="blur" />
@@ -153,7 +153,7 @@ function DNAHelix({ className = '' }: { className?: string }) {
  const x2 = 60 - Math.sin(i * 0.6) * 30;
  return (
  <g key={i}>
- <line x1={x1} y1={y} x2={x2} y2={y} stroke="hsl(var(--primary))" strokeWidth="1" opacity="0.3" />
+ <line x1={x1} y1={y} x2={x2} y2={y} stroke="hsl(var(--crimson))" strokeWidth="1" opacity="0.3" />
  <circle cx={x1} cy={y} r="3" fill="url(#dnaGrad1)" filter="url(#glow)" />
  <circle cx={x2} cy={y} r="3" fill="url(#dnaGrad2)" filter="url(#glow)" />
  </g>
@@ -166,7 +166,7 @@ function DNAHelix({ className = '' }: { className?: string }) {
  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
  }).join(' ')}
  fill="none"
- stroke="hsl(var(--primary))"
+ stroke="hsl(var(--crimson))"
  strokeWidth="2"
  opacity="0.5"
  filter="url(#glow)"
@@ -178,7 +178,7 @@ function DNAHelix({ className = '' }: { className?: string }) {
  return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
  }).join(' ')}
  fill="none"
- stroke="hsl(var(--primary))"
+ stroke="hsl(var(--crimson))"
  strokeWidth="2"
  opacity="0.5"
  filter="url(#glow)"
@@ -193,8 +193,8 @@ function DNAHelix({ className = '' }: { className?: string }) {
 function LiveAuthzDemo() {
  const [step, setStep] = useState(0);
  const steps = [
- { label: 'Agent: hermes-auditor', icon: <Bot className="w-4 h-4 text-primary" /> },
- { label: 'Action: github.repo.read', icon: <Shield className="w-4 h-4 text-primary" /> },
+ { label: 'Agent: hermes-auditor', icon: <Bot className="w-4 h-4 text-crimson" /> },
+ { label: 'Action: github.repo.read', icon: <Shield className="w-4 h-4 text-crimson" /> },
  { label: 'Checking permissions...', icon: <RefreshCw className="w-4 h-4 text-primary animate-spin" /> },
  { label: 'ALLOW ✓', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> },
  ];
@@ -209,7 +209,7 @@ function LiveAuthzDemo() {
  const displayStep = Math.min(step, steps.length - 1);
 
  return (
- <div className="rounded-none border border-border bg-card p-5 animate-[glow-pulse_3s_ease-in-out_infinite] shadow-card shadow-foreground/10">
+ <div className="rounded-none border border-crimson/20 border-border bg-card p-5 animate-[glow-pulse_3s_ease-in-out_infinite] shadow-card shadow-foreground/10">
  <div className="text-xs text-muted-foreground font-mono mb-3 flex items-center gap-2">
  <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
  Live Authorization Check
@@ -240,7 +240,7 @@ function LiveAuthzDemo() {
 
 // ─── Sparkline Mini Chart ────────────────────────────────────────────────────
 
-function Sparkline({ values, color = 'bg-primary', className = '' }: { values: number[]; color?: string; className?: string }) {
+function Sparkline({ values, color = 'bg-crimson', className = '' }: { values: number[]; color?: string; className?: string }) {
  const max = Math.max(...values, 1);
  return (
  <div className={`flex items-end gap-0.5 h-8 ${className}`}>
@@ -263,7 +263,7 @@ function StatusBadge({ status }: { status: string }) {
  PAUSED: { className: 'bg-secondary text-muted-foreground border-muted-foreground/30', icon: <Pause className="w-3 h-3" /> },
  REVOKED: { className: 'bg-secondary text-foreground border-foreground/30', icon: <XCircle className="w-3 h-3" /> },
  BLOCKED: { className: 'bg-secondary text-foreground border-foreground/30', icon: <Ban className="w-3 h-3" /> },
- EXPIRED: { className: 'bg-gray-500/15 text-gray-400 border-gray-500/30', icon: <Clock className="w-3 h-3" /> },
+ EXPIRED: { className: 'bg-muted text-muted-foreground border-muted-foreground/30', icon: <Clock className="w-3 h-3" /> },
  };
  const v = variants[status] || variants.EXPIRED;
  return (
@@ -314,7 +314,7 @@ function GridBackground() {
  <svg className="w-full h-full opacity-[0.04]">
  <defs>
  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
- <circle cx="1" cy="1" r="1" fill="hsl(var(--primary))" />
+ <circle cx="1" cy="1" r="1" fill="hsl(var(--crimson))" />
  </pattern>
  </defs>
  <rect width="100%" height="100%" fill="url(#grid)" />
@@ -354,7 +354,7 @@ function FloatingParticles() {
  {particles.map((p) => (
  <motion.div
  key={p.id}
- className="absolute rounded-none bg-primary"
+ className="absolute rounded-none bg-crimson"
  style={{
  left: `${p.x}%`,
  top: `${p.y}%`,
@@ -390,15 +390,15 @@ function LandingPage() {
  <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
  <div className="flex items-center gap-3">
  <div className="w-8 h-8 rounded-none bg-secondary flex items-center justify-center">
- <Fingerprint className="w-5 h-5 text-primary" />
+ <Fingerprint className="w-5 h-5 text-crimson" />
  </div>
- <span className="text-xl font-bold tracking-tight">Agent<span className="text-primary">DNAI</span></span>
+ <span className="text-xl font-bold tracking-tight">Agent<span className="text-crimson">DNAI</span></span>
  </div>
  <div className="flex items-center gap-3">
  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setView('docs')}>
  <BookOpen className="w-4 h-4 mr-1" /> Docs
  </Button>
- <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setView('dashboard')}>
+ <Button size="sm" className="bg-foreground text-white hover:bg-crimson transition-colors " onClick={() => setView('dashboard')}>
  <LayoutDashboard className="w-4 h-4 mr-1" /> Dashboard
  </Button>
  </div>
@@ -406,7 +406,7 @@ function LandingPage() {
  </nav>
 
  {/* Hero */}
- <section className="relative overflow-hidden">
+ <section className="relative overflow-hidden iridescent-bg">
  
  
  
@@ -427,14 +427,14 @@ function LandingPage() {
  animate={{ opacity: 1, x: 0 }}
  transition={{ duration: 0.6, ease: 'easeOut' }}
  >
- <Badge variant="outline" className="mb-6 border-border text-primary bg-primary/5">
+ <Badge variant="outline" className="mb-6 border-border text-crimson bg-crimson/5">
  <Fingerprint className="w-3 h-3 mr-1" /> Secure Identity Layer
  </Badge>
  <div className="flex items-center gap-3 mb-4">
  <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight">
  Every AI agent<br />
  needs an{' '}
- <span className="bg-gradient-to-r from-foreground via-primary to-foreground text-foreground">
+ <span className="iridescent-text">
  identity
  </span>.
  </h1>
@@ -447,7 +447,7 @@ function LandingPage() {
  encrypted credentials, revocable access and a clear audit trail.
  </p>
  <motion.p
- className="text-sm text-primary/70 mb-8 max-w-lg font-mono"
+ className="text-sm text-crimson/70 mb-8 max-w-lg font-mono"
  initial={{ opacity: 0 }}
  animate={{ opacity: 1 }}
  transition={{ delay: 1, duration: 0.5 }}
@@ -455,20 +455,20 @@ function LandingPage() {
  <span className="inline-block">
  {'> '}Identity · Authorization · Audit — unified for AI agents
  <motion.span
- className="inline-block w-0.5 h-4 bg-primary/70 ml-0.5 align-middle"
+ className="inline-block w-0.5 h-4 bg-crimson/70 ml-0.5 align-middle"
  animate={{ opacity: [1, 0, 1] }}
  transition={{ duration: 1, repeat: Infinity }}
  />
  </span>
  </motion.p>
  <div className="flex flex-wrap gap-4">
- <Button size="lg" className="relative overflow-hidden group h-12 px-8 text-base font-semibold bg-primary text-white hover:bg-foreground/80 shadow-card shadow-foreground/20 hover:shadow-foreground/30 transition-all" onClick={() => setView('dashboard')}>
+ <Button size="lg" className="relative overflow-hidden group h-12 px-8 text-base font-semibold bg-foreground text-white hover:bg-crimson hover:shadow-elevated hover:shadow-crimson/20 transition-all hover-crimson-glow" onClick={() => setView('dashboard')}>
  <span className="absolute inset-0 rounded-none bg-foreground opacity-90 group-hover:opacity-100 transition-opacity" />
  <span className="relative flex items-center">
  <Zap className="w-5 h-5 mr-2" /> Get Started Free
  </span>
  </Button>
- <Button size="lg" variant="outline" className="border-foreground/30 text-foreground hover:bg-accent hover:text-foreground h-12 px-8 text-base" onClick={() => setView('docs')}>
+ <Button size="lg" variant="outline" className="border-foreground/30 hover:border-crimson/50 hover:text-crimson h-12 px-8 text-base hover-crimson-glow" onClick={() => setView('docs')}>
  <BookOpen className="w-5 h-5 mr-2" /> Read Docs
  </Button>
  </div>
@@ -476,9 +476,9 @@ function LandingPage() {
  No credit card required · Set up in 2 minutes · Open source
  </p>
  <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
- <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Deny by default</div>
- <div className="flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Temporary tokens</div>
- <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-primary" /> Full audit trail</div>
+ <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-crimson" /> Deny by default</div>
+ <div className="flex items-center gap-2"><Key className="w-4 h-4 text-crimson" /> Temporary tokens</div>
+ <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-crimson" /> Full audit trail</div>
  </div>
  </motion.div>
  <motion.div
@@ -487,7 +487,7 @@ function LandingPage() {
  transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
  className="relative hidden lg:flex flex-col gap-6"
  >
- <div className="border border-border bg-card p-6 shadow-card">
+ <div className="border border-border bg-card p-6 shadow-elevated">
  <div className="flex items-center gap-2 mb-4">
  <div className="w-3 h-3 rounded-none bg-muted-foreground" />
  <div className="w-3 h-3 rounded-none bg-muted-foreground" />
@@ -526,7 +526,7 @@ AgentDNAI Authorization Check
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
  transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
- className="px-6 py-3 rounded-none border border-border bg-card text-base font-semibold text-muted-foreground/60 tracking-wide hover:border-border hover:text-muted-foreground/80 hover:bg-primary/5 transition-all"
+ className="px-6 py-3 rounded-none border border-border bg-card text-base font-semibold text-muted-foreground/60 tracking-wide hover:border-crimson/20 hover:text-crimson/70 transition-all"
  >
  {name}
  </motion.div>
@@ -555,7 +555,7 @@ AgentDNAI Authorization Check
  { icon: <Eye className="w-8 h-8" />, title: 'No Audit', desc: 'No record of what agents did. Impossible to investigate incidents.' },
  ].map((item, i) => (
  <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border hover:border-foreground/30 transition-colors h-full">
+ <Card className="bg-card border-border hover:border-crimson/30 hover:shadow-card-hover transition-colors h-full">
  <CardHeader>
  <div className="text-foreground mb-2">{item.icon}</div>
  <CardTitle className="text-lg">{item.title}</CardTitle>
@@ -572,7 +572,7 @@ AgentDNAI Authorization Check
  <section className="py-24 border-t border-border bg-card/20">
  <div className="max-w-7xl mx-auto px-6">
  <div className="text-center mb-16">
- <Badge variant="outline" className="mb-4 border-border text-primary bg-primary/5">
+ <Badge variant="outline" className="mb-4 border-border text-crimson bg-crimson/5">
  <ShieldCheck className="w-3 h-3 mr-1" /> The Solution
  </Badge>
  <h2 className="text-3xl font-bold mb-4">Identity, permissions and trust for AI agents.</h2>
@@ -589,9 +589,9 @@ AgentDNAI Authorization Check
  { icon: <ScrollText className="w-6 h-6" />, title: 'Audit Trail', desc: 'Hash-chained, append-only log of every decision.' },
  ].map((item, i) => (
  <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border hover:border-border transition-all hover:shadow-card hover:shadow-foreground/10 group h-full">
+ <Card className="bg-card border-border hover:border-crimson/30 hover:shadow-card-hover transition-all hover:shadow-foreground/10 group h-full">
  <CardHeader>
- <div className="w-10 h-10 rounded-none bg-primary/10 flex items-center justify-center text-primary group-hover:bg-secondary transition-colors">
+ <div className="w-10 h-10 rounded-none bg-crimson/10 flex items-center justify-center text-crimson group-hover:bg-crimson/10 group-hover:text-crimson transition-colors">
  {item.icon}
  </div>
  <CardTitle className="text-base">{item.title}</CardTitle>
@@ -619,10 +619,10 @@ AgentDNAI Authorization Check
  { step: '04', title: 'Check Authorization', desc: 'Every action is validated and recorded in the audit log.' },
  ].map((item, i) => (
  <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i} className="relative">
- <div className="text-5xl font-bold text-primary/10 mb-2">{item.step}</div>
+ <div className="text-5xl font-bold text-crimson/10 mb-2">{item.step}</div>
  <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
  <p className="text-sm text-muted-foreground">{item.desc}</p>
- {i < 3 && <ChevronRight className="hidden md:block absolute -right-3 top-1/2 text-primary/30 w-6 h-6" />}
+ {i < 3 && <ChevronRight className="hidden md:block absolute -right-3 top-1/2 text-crimson/30 w-6 h-6" />}
  </motion.div>
  ))}
  </div>
@@ -686,8 +686,8 @@ AgentDNAI Authorization Check
  ].map((item, i) => (
  <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
  <div className="flex gap-4 items-start">
- <div className="w-8 h-8 rounded-none bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
- <ShieldCheck className="w-4 h-4 text-primary" />
+ <div className="w-8 h-8 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 mt-0.5 hover:bg-crimson/10 hover:text-crimson">
+ <ShieldCheck className="w-4 h-4 text-crimson" />
  </div>
  <div>
  <h3 className="font-semibold mb-1">{item.title}</h3>
@@ -705,9 +705,9 @@ AgentDNAI Authorization Check
  <div className="max-w-7xl mx-auto px-6">
  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
  {[
- { value: '47', label: 'Permission Scopes', icon: <Shield className="w-5 h-5 text-primary mx-auto mb-2" /> },
- { value: '9', label: 'Categories', icon: <Layers className="w-5 h-5 text-primary mx-auto mb-2" /> },
- { value: '5', label: 'Templates', icon: <Sparkles className="w-5 h-5 text-primary mx-auto mb-2" /> },
+ { value: '47', label: 'Permission Scopes', icon: <Shield className="w-5 h-5 text-crimson mx-auto mb-2" /> },
+ { value: '9', label: 'Categories', icon: <Layers className="w-5 h-5 text-crimson mx-auto mb-2" /> },
+ { value: '5', label: 'Templates', icon: <Sparkles className="w-5 h-5 text-crimson mx-auto mb-2" /> },
  { value: '0', label: 'Implicit Grants', icon: <ShieldX className="w-5 h-5 text-foreground mx-auto mb-2" /> },
  ].map((stat, i) => (
  <motion.div
@@ -727,29 +727,29 @@ AgentDNAI Authorization Check
  </section>
 
  {/* CTA */}
- <section className="py-24 border-t border-border bg-gradient-to-b from-primary/8 via-primary/3 to-transparent relative overflow-hidden">
+ <section className="py-24 border-t border-border bg-gradient-to-b from-crimson/8 via-crimson/3 to-transparent relative overflow-hidden">
  <div className="absolute inset-0 pointer-events-none">
- <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-none blur-3xl" />
+ <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-crimson/5 rounded-none blur-3xl" />
  </div>
  <div className="max-w-4xl mx-auto px-6 text-center relative">
- <Badge variant="outline" className="mb-6 border-border text-primary bg-primary/5">
+ <Badge variant="outline" className="mb-6 border-border text-crimson bg-crimson/5">
  <Sparkles className="w-3 h-3 mr-1" /> Start Securing Your Agents Today
  </Badge>
  <h2 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
  No more anonymous agents.<br />
- <span className="bg-gradient-to-r from-primary via-foreground to-primary text-foreground">Every action. Verified.</span>
+ <span className="bg-gradient-to-r from-crimson via-foreground to-crimson text-foreground iridescent-text">Every action. Verified.</span>
  </h2>
  <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
  Know every agent. Control every action. Audit every decision. Prevent unauthorized access with zero-trust identity for AI.
  </p>
  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
- <Button size="lg" className="relative overflow-hidden group h-14 px-10 text-lg font-semibold bg-primary text-white hover:bg-foreground/80 shadow-card shadow-foreground/20 hover:shadow-foreground/30 transition-all" onClick={() => setView('dashboard')}>
+ <Button size="lg" className="relative overflow-hidden group h-14 px-10 text-lg font-semibold bg-foreground text-white hover:bg-crimson hover:shadow-elevated hover:shadow-crimson/20 transition-all hover-crimson-glow" onClick={() => setView('dashboard')}>
  <span className="absolute inset-0 rounded-none bg-foreground opacity-90 group-hover:opacity-100 transition-opacity" />
  <span className="relative flex items-center">
  <Zap className="w-5 h-5 mr-2" /> Get Started Free
  </span>
  </Button>
- <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-foreground/30 text-foreground hover:bg-accent hover:text-foreground" onClick={() => setView('docs')}>
+ <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-foreground/30 text-foreground hover:border-crimson/50 hover:text-crimson hover-crimson-glow" onClick={() => setView('docs')}>
  <BookOpen className="w-5 h-5 mr-2" /> Read the Docs
  </Button>
  </div>
@@ -768,8 +768,8 @@ AgentDNAI Authorization Check
  <div className="grid md:grid-cols-4 gap-8 mb-8">
  <div>
  <div className="flex items-center gap-2 mb-3">
- <Fingerprint className="w-5 h-5 text-primary" />
- <span className="text-lg font-bold">Agent<span className="text-primary">DNAI</span></span>
+ <Fingerprint className="w-5 h-5 text-crimson" />
+ <span className="text-lg font-bold">Agent<span className="text-crimson">DNAI</span></span>
  </div>
  <p className="text-xs text-muted-foreground leading-relaxed">Verifiable digital identity, scoped permissions, and audit trails for AI agents.</p>
  </div>
@@ -804,9 +804,9 @@ AgentDNAI Authorization Check
  <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
  <span className="text-xs text-muted-foreground">© 2026 AgentDNAI · Early development · MIT License</span>
  <div className="flex items-center gap-4 text-xs text-muted-foreground">
- <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-primary" /> End-to-end encrypted</span>
- <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-primary" /> Zero trust</span>
- <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-primary" /> Hash-verified</span>
+ <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-crimson" /> End-to-end encrypted</span>
+ <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-crimson" /> Zero trust</span>
+ <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-crimson" /> Hash-verified</span>
  </div>
  </div>
  </div>
@@ -853,10 +853,10 @@ function DashboardSidebar() {
  <aside className={`border-r border-border bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'} relative`}>
  <div className="p-4 flex items-center justify-between border-b border-border">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-none bg-secondary flex items-center justify-center shrink-0">
- <Fingerprint className="w-5 h-5 text-primary" />
+ <div className="w-8 h-8 rounded-none bg-secondary flex items-center justify-center shrink-0 hover:bg-crimson/10">
+ <Fingerprint className="w-5 h-5 text-crimson" />
  </div>
- {sidebarOpen && <span className="text-lg font-bold">Agent<span className="text-primary">DNAI</span></span>}
+ {sidebarOpen && <span className="text-lg font-bold">Agent<span className="text-crimson">DNAI</span></span>}
  </div>
  <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
  <Menu className="w-4 h-4" />
@@ -875,8 +875,8 @@ function DashboardSidebar() {
  onClick={() => setView(item.id)}
  className={`w-full flex items-center gap-3 px-3 py-2 rounded-none text-sm transition-all ${
  isActive
- ? 'text-primary border-l-2 border-primary pl-2 bg-gradient-to-r from-primary/15 via-primary/8 to-transparent'
- : 'text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent pl-2'
+ ? 'text-crimson border-l-2 border-crimson pl-2 bg-gradient-to-r from-crimson/15 via-crimson/8 to-transparent'
+ : 'text-muted-foreground hover:text-crimson hover:bg-crimson/5 border-l-2 border-transparent pl-2'
  }`}
  >
  <item.icon className="w-4 h-4 shrink-0" />
@@ -919,7 +919,7 @@ function DashboardSidebar() {
  </button>
  </div>
  {/* Gradient line at bottom of sidebar */}
- <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+ <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
  </aside>
  );
 }
@@ -933,10 +933,10 @@ function SecurityScore({ stats }: { stats: DashboardStats | null }) {
  const radius = 42;
  const circumference = 2 * Math.PI * radius;
  const offset = circumference - (score / 100) * circumference;
- const color = score >= 80 ? 'text-foreground' : score >= 50 ? 'text-muted-foreground' : 'text-foreground';
- const strokeColor = score >= 80 ? '#999999' : score >= 50 ? '#666666' : '#333333';
+ const color = score >= 80 ? 'text-foreground' : score >= 50 ? 'text-crimson' : 'text-crimson';
+ const strokeColor = score >= 80 ? '#999999' : score >= 50 ? '#8B2252' : '#6B1742';
  const riskLevel = score >= 80 ? 'Low Risk' : score >= 50 ? 'Medium Risk' : 'High Risk';
- const riskColor = score >= 80 ? 'bg-secondary text-foreground border-foreground/30' : score >= 50 ? 'bg-secondary text-muted-foreground border-muted-foreground/30' : 'bg-secondary text-foreground border-foreground/30';
+ const riskColor = score >= 80 ? 'bg-secondary text-foreground border-foreground/30' : score >= 50 ? 'bg-secondary text-crimson border-crimson/30' : 'bg-secondary text-crimson border-crimson/30';
  const gradientBg = score >= 80 ? 'from-foreground/[0.06] via-transparent to-transparent' : score >= 50 ? 'from-muted-foreground/[0.06] via-transparent to-transparent' : 'from-muted-foreground/[0.06] via-transparent to-muted-foreground/[0.02]';
  const description = score >= 80 ? 'Your authorization policies are performing well. Most requests are being allowed with minimal denials.' : score >= 50 ? 'There are some denied actions that may need review. Consider adjusting policies for frequently-denied agents.' : 'A high rate of denials detected. Review your permission assignments and agent configurations urgently.';
  
@@ -995,7 +995,7 @@ function NotificationCenter({ events }: { events: AuditEvent[] }) {
  onClick={() => setOpen(!open)}
  >
  {unreadCount > 0 ? (
- <BellRing className="w-4 h-4 text-primary" />
+ <BellRing className="w-4 h-4 text-crimson" />
  ) : (
  <Bell className="w-4 h-4 text-muted-foreground" />
  )}
@@ -1003,7 +1003,7 @@ function NotificationCenter({ events }: { events: AuditEvent[] }) {
  <motion.span
  initial={{ scale: 0 }}
  animate={{ scale: 1 }}
- className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-none bg-foreground text-primary-foreground text-[10px] font-bold flex items-center justify-center"
+ className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-none bg-foreground text-crimson-foreground text-[10px] font-bold flex items-center justify-center"
  >
  {unreadCount > 9 ? '9+' : unreadCount}
  </motion.span>
@@ -1043,7 +1043,7 @@ function NotificationCenter({ events }: { events: AuditEvent[] }) {
  return (
  <motion.button
  key={event.id}
- className={`w-full text-left p-2.5 rounded-none transition-colors hover:bg-accent/50 ${!isRead ? 'bg-primary/5' : ''}`}
+ className={`w-full text-left p-2.5 rounded-none transition-colors hover:bg-accent/50 ${!isRead ? 'bg-crimson/5' : ''}`}
  onClick={() => {
  setRead(prev => new Set(prev).add(event.id));
  setOpen(false);
@@ -1055,7 +1055,7 @@ function NotificationCenter({ events }: { events: AuditEvent[] }) {
  event.decision === 'allow' ? 'bg-foreground' :
  event.decision === 'deny' ? 'bg-foreground' :
  event.decision === 'requires_approval' ? 'bg-foreground' :
- 'bg-primary'
+ 'bg-crimson'
  }`} />
  <div className="min-w-0 flex-1">
  <p className={`text-xs font-mono ${!isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -1129,7 +1129,7 @@ function DashboardView() {
  }
 
  const statCards = [
- { label: 'Total Agents', subtitle: 'Registered identities', value: stats?.totalAgents || 0, icon: <Bot className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-foreground', trend: '+12%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-primary', cardBg: 'bg-gradient-to-br from-foreground/[0.07] via-transparent to-foreground/[0.03]' },
+ { label: 'Total Agents', subtitle: 'Registered identities', value: stats?.totalAgents || 0, icon: <Bot className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-foreground', trend: '+12%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-crimson', cardBg: 'bg-gradient-to-br from-foreground/[0.07] via-transparent to-foreground/[0.03]' },
  { label: 'Active', subtitle: 'Currently active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-foreground', trend: '+8%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-foreground', cardBg: 'bg-gradient-to-br from-foreground/[0.07] via-transparent to-muted' },
  { label: 'Permissions', subtitle: 'Total scope entries', value: stats?.totalPermissions || 0, icon: <Shield className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-foreground', trend: '+24%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-foreground', cardBg: 'bg-card' },
  { label: 'Active Tokens', subtitle: 'Issued & unexpired', value: stats?.activeTokens || 0, icon: <Key className="w-5 h-5 text-muted-foreground" />, iconBg: 'bg-foreground/10', color: 'text-muted-foreground', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-foreground', trend: '-3%', trendUp: false, gradientFrom: 'from-muted-foreground', gradientTo: 'to-muted-foreground', cardBg: 'bg-gradient-to-br from-muted-foreground/[0.07] via-transparent to-muted' },
@@ -1158,7 +1158,7 @@ function DashboardView() {
  <Button variant="outline" size="sm" onClick={load}>
  <RefreshCw className="w-4 h-4 mr-1" /> Refresh
  </Button>
- <Button size="sm" className="bg-primary text-primary-foreground" onClick={async () => {
+ <Button size="sm" className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={async () => {
  try {
  await fetch('/api/seed', { method: 'POST' });
  toast({ title: 'Demo data seeded', description: 'Refresh to see the new data.' });
@@ -1172,13 +1172,13 @@ function DashboardView() {
  </div>
  </div>
  {/* Animated gradient line below header */}
- <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/40 to-transparent " />
+ <div className="h-px w-full bg-gradient-to-r from-transparent via-crimson/40 to-transparent " />
 
  {/* System Status Bar */}
  <div className="flex items-center gap-4 px-4 py-2.5 rounded-none bg-muted border border-border">
  <div className="flex items-center gap-2">
  <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- <span className="text-xs font-medium text-foreground">System Operational</span>
+ <span className="text-xs font-medium text-crimson">System Operational</span>
  </div>
  <div className="h-3 w-px bg-border" />
  <span className="text-xs text-muted-foreground">Audit Chain: <span className="text-foreground">Verified</span></span>
@@ -1194,10 +1194,10 @@ function DashboardView() {
  <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
  <Card className={`bg-card border-border hover:border-border transition-all hover:shadow-card hover:shadow-foreground/10 group relative overflow-hidden ${card.cardBg}`}>
  {/* Shimmer effect on hover */}
- <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-none bg-gradient-to-r from-transparent via-primary/5 to-transparent " />
+ <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-none bg-gradient-to-r from-transparent via-crimson/5 to-transparent " />
  <CardContent className="p-4 relative">
  <div className="flex items-center justify-between mb-3">
- <div className="w-10 h-10 rounded-none flex items-center justify-center group-hover:scale-110 transition-transform" style={{ backgroundColor: card.iconBg === 'bg-foreground/10' ? 'rgba(34,211,238,0.1)' : card.iconBg === 'bg-foreground/10' ? 'rgba(52,211,153,0.1)' : card.iconBg === 'bg-foreground/10' ? 'rgba(96,165,250,0.1)' : 'rgba(251,191,36,0.1)' }}>
+ <div className="w-10 h-10 rounded-none flex items-center justify-center group-hover:scale-110 transition-transform bg-foreground/10 group-hover:bg-crimson/10 transition-colors duration-300">
  {card.icon}
  </div>
  <Sparkline values={card.sparkline} color={card.sparkColor} className="h-10" />
@@ -1237,23 +1237,23 @@ function DashboardView() {
  </CardHeader>
  <CardContent>
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-accent hover:border-foreground/30 hover:scale-[1.03] transition-all" onClick={() => setView('agents')}>
- <Plus className="w-5 h-5 text-foreground" />
+ <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('agents')}>
+ <Plus className="w-5 h-5 text-foreground hover:text-crimson" />
  <span className="text-xs font-medium">New Agent</span>
  <span className="text-[10px] text-muted-foreground/70">Register new AI agent</span>
  </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-primary/5 border-border hover:bg-primary/10 hover:border-border hover:scale-[1.03] transition-all" onClick={() => setView('security-events')}>
- <Radio className="w-5 h-5 text-primary" />
+ <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-crimson/5 border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('security-events')}>
+ <Radio className="w-5 h-5 text-crimson" />
  <span className="text-xs font-medium">Live Feed</span>
  <span className="text-[10px] text-muted-foreground/70">Monitor events</span>
  </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-accent hover:border-muted-foreground/30 hover:scale-[1.03] transition-all" onClick={() => setView('audit')}>
+ <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('audit')}>
  <ScrollText className="w-5 h-5 text-muted-foreground" />
  <span className="text-xs font-medium">View Audit</span>
  <span className="text-[10px] text-muted-foreground/70">Authorization logs</span>
  </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-accent hover:border-foreground/30 hover:scale-[1.03] transition-all" onClick={() => setView('policies')}>
- <Shield className="w-5 h-5 text-foreground" />
+ <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('policies')}>
+ <Shield className="w-5 h-5 text-foreground hover:text-crimson" />
  <span className="text-xs font-medium">Policies</span>
  <span className="text-[10px] text-muted-foreground/70">Manage permissions</span>
  </Button>
@@ -1270,7 +1270,7 @@ function DashboardView() {
  </CardHeader>
  <CardContent>
  <div className="relative pl-8">
- <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-border to-transparent" />
+ <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-crimson/30 via-border to-transparent" />
  {/* Today header */}
  <div className="relative mb-3 -ml-2">
  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 bg-card px-2 py-0.5 rounded">Today</span>
@@ -1300,7 +1300,7 @@ function DashboardView() {
  TOKEN_ISSUED: <Key className="w-3 h-3 text-muted-foreground" />,
  TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-foreground" />,
  };
- const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-primary/15', pillText: 'text-primary', borderColor: 'border-l-primary' };
+ const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-crimson/15', pillText: 'text-crimson', borderColor: 'border-l-crimson' };
  return (
  <motion.div
  key={event.id}
@@ -1360,7 +1360,7 @@ function DashboardView() {
  TOKEN_ISSUED: <Key className="w-3 h-3 text-muted-foreground" />,
  TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-foreground" />,
  };
- const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-primary/15', pillText: 'text-primary', borderColor: 'border-l-primary' };
+ const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-crimson/15', pillText: 'text-crimson', borderColor: 'border-l-crimson' };
  return (
  <motion.div
  key={event.id}
@@ -1401,7 +1401,7 @@ function DashboardView() {
  <div className="h-0.5 w-full bg-gradient-to-r from-border via-muted-foreground/40 to-border" />
  <CardHeader className="pb-3">
  <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-primary" /> Authorization Decisions
+ <Shield className="w-4 h-4 text-crimson" /> Authorization Decisions
  </CardTitle>
  <CardDescription>Allow vs deny vs requires approval</CardDescription>
  </CardHeader>
@@ -1432,7 +1432,7 @@ function DashboardView() {
  <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentAllowCount}</span>
  </motion.div>
  <motion.div
- className="bg-muted-foreground h-full relative"
+ className="bg-crimson/60 h-full relative"
  initial={{ width: 0 }}
  animate={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
@@ -1472,14 +1472,14 @@ function DashboardView() {
  className="text-center py-8 text-muted-foreground"
  >
  <div className="relative mx-auto w-16 h-16 mb-4">
- <Bot className="w-16 h-16 text-primary/20 absolute inset-0" />
+ <Bot className="w-16 h-16 text-crimson/20 absolute inset-0" />
  <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-6 h-6 rounded-none border-2 border-border border-t-primary animate-spin" />
+ <div className="w-6 h-6 rounded-none border-2 border-border border-t-crimson animate-spin" />
  </div>
  </div>
  <p className="text-sm mb-3">No agents yet. Create your first agent or seed demo data.</p>
  <div className="flex items-center justify-center gap-2">
- <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => setView('agents')}>
+ <Button size="sm" className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={() => setView('agents')}>
  <Plus className="w-4 h-4 mr-1" /> Create Agent
  </Button>
  <Button size="sm" variant="outline" onClick={async () => {
@@ -1499,15 +1499,15 @@ function DashboardView() {
  initial="initial"
  animate="animate"
  custom={i}
- className="flex items-center justify-between p-3 rounded-none bg-secondary hover:bg-primary/5 cursor-pointer transition-all group border border-transparent hover:border-border hover:scale-[1.01]"
+ className="flex items-center justify-between p-3 rounded-none bg-secondary hover:bg-crimson/5 cursor-pointer transition-all group border border-transparent hover:border-crimson/20 hover:scale-[1.01]"
  onClick={() => navigateToAgent(agent.id)}
  >
  <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-none bg-primary/10 flex items-center justify-center group-hover:bg-secondary transition-colors group-hover:shadow-md group-hover:shadow-foreground/15">
+ <div className="w-9 h-9 rounded-none bg-crimson/10 flex items-center justify-center group-hover:bg-crimson/10 group-hover:text-crimson transition-colors group-hover:shadow-md group-hover:shadow-foreground/15">
  <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
  </div>
  <div>
- <div className="text-sm font-medium group-hover:text-primary transition-colors">{agent.name}</div>
+ <div className="text-sm font-medium group-hover:text-crimson transition-colors">{agent.name}</div>
  <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
  <span className={agent.status === 'ACTIVE' ? 'text-foreground' : agent.status === 'PAUSED' ? 'text-muted-foreground' : agent.status === 'REVOKED' ? 'text-foreground' : 'text-muted-foreground'}>
  {agent.status === 'ACTIVE' && <span className="inline-block w-1.5 h-1.5 rounded-none bg-foreground mr-0.5 animate-pulse" />}
@@ -1545,7 +1545,7 @@ function DashboardView() {
  ) : (
  <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
  {recentAudit.map((event, i) => {
- const eventStyle = event.decision === 'allow' ? 'border-l-foreground' : event.decision === 'deny' ? 'border-l-foreground' : event.decision === 'requires_approval' ? 'border-l-muted-foreground' : 'border-l-primary/30';
+ const eventStyle = event.decision === 'allow' ? 'border-l-foreground' : event.decision === 'deny' ? 'border-l-foreground' : event.decision === 'requires_approval' ? 'border-l-muted-foreground' : 'border-l-crimson/30';
  return (
  <motion.div
  key={event.id}
@@ -1581,7 +1581,7 @@ function DashboardView() {
  <Card className="bg-card border-border overflow-hidden">
  <CardHeader className="pb-3">
  <CardTitle className="text-base flex items-center gap-2">
- <Activity className="w-4 h-4 text-primary" /> Authorization Trends (24h)
+ <Activity className="w-4 h-4 text-crimson" /> Authorization Trends (24h)
  </CardTitle>
  <CardDescription>Hourly allow, deny, and requires approval decisions</CardDescription>
  </CardHeader>
@@ -1645,7 +1645,7 @@ function DashboardView() {
  <Card className="bg-card border-border overflow-hidden">
  <CardHeader className="pb-3">
  <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-primary" /> Permission Distribution
+ <Shield className="w-4 h-4 text-crimson" /> Permission Distribution
  </CardTitle>
  <CardDescription>Permissions by category</CardDescription>
  </CardHeader>
@@ -1772,7 +1772,7 @@ function AgentsView() {
  </div>
  <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
  <DialogTrigger asChild>
- <Button className="bg-primary text-primary-foreground">
+ <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80">
  <Plus className="w-4 h-4 mr-2" /> Create Agent
  </Button>
  </DialogTrigger>
@@ -1807,7 +1807,7 @@ function AgentsView() {
  </div>
  <DialogFooter>
  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
- <Button className="bg-primary text-primary-foreground" onClick={handleCreate} disabled={creating || !newAgent.name || !newAgent.runtime}>
+ <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={handleCreate} disabled={creating || !newAgent.name || !newAgent.runtime}>
  {creating ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Fingerprint className="w-4 h-4 mr-2" />}
  Create Agent
  </Button>
@@ -1863,14 +1863,14 @@ function AgentsView() {
  <Card className="bg-card border-border">
  <CardContent className="py-16 text-center">
  <div className="relative mx-auto w-20 h-20 mb-6">
- <Bot className="w-20 h-20 text-primary/20 absolute inset-0" />
+ <Bot className="w-20 h-20 text-crimson/20 absolute inset-0" />
  <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-8 h-8 rounded-none border-2 border-border border-t-primary animate-spin" />
+ <div className="w-8 h-8 rounded-none border-2 border-border border-t-crimson animate-spin" />
  </div>
  </div>
  <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
  <p className="text-muted-foreground mb-4">Create your first AI agent identity to get started.</p>
- <Button className="bg-primary text-primary-foreground" onClick={() => setShowCreateDialog(true)}>
+ <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={() => setShowCreateDialog(true)}>
  <Plus className="w-4 h-4 mr-2" /> Create Agent
  </Button>
  </CardContent>
@@ -1892,18 +1892,18 @@ function AgentsView() {
  }`}
  onClick={() => navigateToAgent(agent.id)}
  >
- {/* Cyan glow border effect on hover */}
- <div className="absolute inset-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: agent.status === 'ACTIVE' ? '0 0 15px oklch(0.75 0.15 195 / 0.15), inset 0 0 15px oklch(0.75 0.15 195 / 0.05)' : 'none' }} />
- {/* Gradient border overlay on hover */}
- <div className="absolute inset-0 rounded-none border border-primary/0 group-hover:border-border transition-colors duration-300 pointer-events-none" />
+ {/* Iridescent crimson glow border effect on hover */}
+ <div className="absolute inset-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: agent.status === 'ACTIVE' ? '0 0 15px oklch(0.38 0.17 12 / 0.12), inset 0 0 15px oklch(0.38 0.17 12 / 0.04)' : 'none' }} />
+ {/* Border overlay on hover with crimson tint */}
+ <div className="absolute inset-0 rounded-none border border-crimson/0 group-hover:border-crimson/30 transition-colors duration-300 pointer-events-none" />
  {/* Active agent subtle glow */}
  {agent.status === 'ACTIVE' && (
- <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+ <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
  )}
  <CardHeader className="pb-3">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-none bg-primary/10 flex items-center justify-center group-hover:bg-secondary transition-colors">
+ <div className="w-10 h-10 rounded-none bg-crimson/10 flex items-center justify-center group-hover:bg-secondary transition-colors">
  <RuntimeIcon runtime={agent.runtime} className="w-5 h-5" />
  </div>
  <div>
@@ -1972,9 +1972,9 @@ function AgentRiskProfile({ agentId }: { agentId: string }) {
 
  const riskColors: Record<string, { stroke: string; text: string; bg: string }> = {
  low: { stroke: '#888888', text: 'text-foreground', bg: 'bg-accent' },
- medium: { stroke: '#666666', text: 'text-muted-foreground', bg: 'bg-accent' },
- high: { stroke: '#555555', text: 'text-muted-foreground', bg: 'bg-muted' },
- critical: { stroke: '#333333', text: 'text-foreground', bg: 'bg-accent' },
+ medium: { stroke: '#8B2252', text: 'text-crimson', bg: 'bg-accent' },
+ high: { stroke: '#6B1742', text: 'text-crimson', bg: 'bg-muted' },
+ critical: { stroke: '#4B0A2A', text: 'text-crimson', bg: 'bg-accent' },
  };
 
  if (loading) {
@@ -1989,7 +1989,7 @@ function AgentRiskProfile({ agentId }: { agentId: string }) {
  return (
  <Card className="bg-card border-border">
  <CardContent className="p-8 text-center">
- <TrendingUp className="w-12 h-12 mx-auto mb-4 text-primary opacity-30" />
+ <TrendingUp className="w-12 h-12 mx-auto mb-4 text-crimson opacity-30" />
  <h3 className="text-lg font-semibold mb-2">Risk analysis coming soon</h3>
  <p className="text-sm text-muted-foreground mb-4">The risk scoring engine is being calibrated. Check back later.</p>
  <Button variant="outline" size="sm" onClick={loadRisk}>
@@ -2062,14 +2062,14 @@ function AgentRiskProfile({ agentId }: { agentId: string }) {
  <CardContent className="p-4">
  <div className="flex items-center justify-between mb-2">
  <span className="text-sm font-medium">{factor.name}</span>
- <span className={`text-xs font-mono ${factor.impact > 20 ? 'text-foreground' : factor.impact > 10 ? 'text-muted-foreground' : factor.impact > 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
+ <span className={`text-xs font-mono ${factor.impact > 20 ? 'text-crimson' : factor.impact > 10 ? 'text-muted-foreground' : factor.impact > 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
  +{factor.impact}
  </span>
  </div>
  <div className="w-full h-2 bg-secondary rounded-none overflow-hidden mb-2">
  <motion.div
  className={`h-full rounded-none ${
- factor.impact > 20 ? 'bg-foreground' : factor.impact > 10 ? 'bg-foreground' : factor.impact > 0 ? 'bg-foreground' : 'bg-foreground'
+ factor.impact > 20 ? 'bg-crimson' : factor.impact > 10 ? 'bg-foreground' : factor.impact > 0 ? 'bg-foreground' : 'bg-foreground'
  }`}
  initial={{ width: 0 }}
  animate={{ width: `${Math.min((factor.impact / 30) * 100, 100)}%` }}
@@ -2228,7 +2228,7 @@ function AgentDetailView() {
  if (!agent) {
  return (
  <div className="text-center py-16">
- <Bot className="w-12 h-12 text-primary/30 mx-auto mb-4" />
+ <Bot className="w-12 h-12 text-crimson/30 mx-auto mb-4" />
  <h3 className="text-lg font-semibold mb-2">Agent not found</h3>
  <Button variant="outline" onClick={() => setView('agents')}>Back to Agents</Button>
  </div>
@@ -2251,7 +2251,7 @@ function AgentDetailView() {
  <Button variant="ghost" size="icon" onClick={() => setView('agents')}>
  <ArrowLeft className="w-5 h-5" />
  </Button>
- <div className="w-12 h-12 rounded-none bg-primary/10 flex items-center justify-center">
+ <div className="w-12 h-12 rounded-none bg-crimson/10 flex items-center justify-center">
  <RuntimeIcon runtime={agent.runtime} className="w-6 h-6" />
  </div>
  <div>
@@ -2300,7 +2300,7 @@ function AgentDetailView() {
  <AlertDialogFooter>
  <AlertDialogCancel>Cancel</AlertDialogCancel>
  <AlertDialogAction
- className="bg-foreground text-primary-foreground hover:bg-foreground/80"
+ className="bg-foreground text-crimson-foreground hover:bg-foreground/80"
  onClick={async () => {
  setSubmitting(true);
  try {
@@ -2326,7 +2326,7 @@ function AgentDetailView() {
  <div className="grid md:grid-cols-3 gap-4">
  <Card className="bg-card border-border">
  <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Fingerprint className="w-4 h-4 text-primary" /> Identity</h3>
+ <h3 className="text-sm font-semibold flex items-center gap-2"><Fingerprint className="w-4 h-4 text-crimson" /> Identity</h3>
  <div className="space-y-2 text-sm">
  <div className="flex justify-between"><span className="text-muted-foreground">Runtime</span><span className="font-mono flex items-center gap-1"><RuntimeIcon runtime={agent.runtime} className="w-3 h-3" /> {agent.runtime}</span></div>
  <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span title={new Date(agent.createdAt).toLocaleString()}>{timeAgo(agent.createdAt)}</span></div>
@@ -2336,7 +2336,7 @@ function AgentDetailView() {
  </Card>
  <Card className="bg-card border-border">
  <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Key className="w-4 h-4 text-primary" /> Public Key</h3>
+ <h3 className="text-sm font-semibold flex items-center gap-2"><Key className="w-4 h-4 text-crimson" /> Public Key</h3>
  <div className="bg-secondary rounded p-2 font-mono text-xs break-all max-h-24 overflow-y-auto text-muted-foreground">
  {agent.publicKey}
  </div>
@@ -2344,7 +2344,7 @@ function AgentDetailView() {
  </Card>
  <Card className="bg-card border-border">
  <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> Stats</h3>
+ <h3 className="text-sm font-semibold flex items-center gap-2"><Activity className="w-4 h-4 text-crimson" /> Stats</h3>
  <div className="space-y-2 text-sm">
  <div className="flex justify-between"><span className="text-muted-foreground">Permissions</span><span>{agent.permissions?.length || 0}</span></div>
  <div className="flex justify-between"><span className="text-muted-foreground">Tokens</span><span>{agent.tokens?.length || 0}</span></div>
@@ -2409,7 +2409,7 @@ function AgentDetailView() {
  </div>
  <DialogFooter>
  <Button variant="outline" onClick={() => setShowGrantDialog(false)}>Cancel</Button>
- <Button className="bg-primary text-primary-foreground" onClick={handleGrantPermission} disabled={submitting || !grantForm.scope}>
+ <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleGrantPermission} disabled={submitting || !grantForm.scope}>
  Grant
  </Button>
  </DialogFooter>
@@ -2427,8 +2427,8 @@ function AgentDetailView() {
  </DialogHeader>
  {issuedToken ? (
  <div className="space-y-4 py-4">
- <Alert className="border-border bg-primary/5">
- <Key className="w-4 h-4 text-primary" />
+ <Alert className="border-border bg-crimson/5">
+ <Key className="w-4 h-4 text-crimson" />
  <AlertTitle>Token Issued</AlertTitle>
  <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
  </Alert>
@@ -2481,7 +2481,7 @@ function AgentDetailView() {
  {!issuedToken && (
  <>
  <Button variant="outline" onClick={() => setShowTokenDialog(false)}>Cancel</Button>
- <Button className="bg-primary text-primary-foreground" onClick={handleIssueToken} disabled={submitting}>
+ <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleIssueToken} disabled={submitting}>
  Issue Token
  </Button>
  </>
@@ -2546,7 +2546,7 @@ function AgentDetailView() {
  </div>
  <DialogFooter>
  <Button variant="outline" onClick={() => { setShowAuthzDialog(false); setAuthzResult(null); }}>Close</Button>
- <Button className="bg-primary text-primary-foreground" onClick={handleCheckAuthz} disabled={submitting || !authzForm.action}>
+ <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleCheckAuthz} disabled={submitting || !authzForm.action}>
  Check
  </Button>
  </DialogFooter>
@@ -2658,7 +2658,7 @@ function AgentDetailView() {
  <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
  <TableCell>
  {revoked ? <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Revoked</Badge> :
- expired ? <Badge variant="outline" className="text-gray-400 border-gray-400/30 text-xs">Expired</Badge> :
+ expired ? <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 text-xs">Expired</Badge> :
  <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Active</Badge>}
  </TableCell>
  <TableCell>
@@ -2837,7 +2837,7 @@ function AuditView() {
  key={e.id}
  className={`${
  e.decision === 'allow' ? 'border-l-2 border-l-foreground/60 bg-secondary' :
- e.decision === 'deny' ? 'border-l-2 border-l-foreground/60 bg-secondary' :
+ e.decision === 'deny' ? 'border-l-2 border-l-crimson/60 bg-secondary' :
  e.decision === 'requires_approval' ? 'border-l-2 border-l-muted-foreground/60 bg-secondary' :
  'border-l-2 border-l-transparent'
  } ${idx % 2 === 1 ? 'bg-secondary/[0.03]' : ''}`}
@@ -2859,17 +2859,17 @@ function AuditView() {
  )}
 
  {/* Chain Integrity Verification */}
- <Card className="bg-primary/5 border-border">
+ <Card className="bg-crimson/5 border-border">
  <CardContent className="p-4">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-3">
- <Hash className="w-5 h-5 text-primary" />
+ <Hash className="w-5 h-5 text-crimson" />
  <div>
  <p className="text-sm font-semibold">Hash Chain Integrity</p>
  <p className="text-xs text-muted-foreground">Every audit event is linked via SHA-256 hash chain. Tampering breaks the chain and is immediately detectable.</p>
  </div>
  </div>
- <Button variant="outline" size="sm" onClick={async () => {
+ <Button variant="outline" size="sm" className="hover:bg-crimson/5 hover:text-crimson" onClick={async () => {
  try {
  const result = await api.verifyAuditChain();
  if (result.valid) {
@@ -2949,7 +2949,7 @@ function TokensView() {
  </div>
  <Dialog open={showIssueDialog} onOpenChange={v => { setShowIssueDialog(v); if (!v) setIssuedToken(null); }}>
  <DialogTrigger asChild>
- <Button className="bg-primary text-primary-foreground" size="sm">
+ <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" size="sm">
  <Plus className="w-4 h-4 mr-1" /> Issue Token
  </Button>
  </DialogTrigger>
@@ -2960,8 +2960,8 @@ function TokensView() {
  </DialogHeader>
  {issuedToken ? (
  <div className="space-y-4 py-4">
- <Alert className="border-border bg-primary/5">
- <Key className="w-4 h-4 text-primary" />
+ <Alert className="border-border bg-crimson/5">
+ <Key className="w-4 h-4 text-crimson" />
  <AlertTitle>Token Issued</AlertTitle>
  <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
  </Alert>
@@ -3021,7 +3021,7 @@ function TokensView() {
  {!issuedToken ? (
  <>
  <Button variant="outline" onClick={() => setShowIssueDialog(false)}>Cancel</Button>
- <Button className="bg-primary text-primary-foreground" onClick={handleIssue} disabled={issuing || !issueForm.agentId}>Issue</Button>
+ <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleIssue} disabled={issuing || !issueForm.agentId}>Issue</Button>
  </>
  ) : <Button onClick={() => setShowIssueDialog(false)}>Done</Button>}
  </DialogFooter>
@@ -3032,7 +3032,7 @@ function TokensView() {
  {allTokens.length === 0 ? (
  <Card className="bg-card border-border">
  <CardContent className="py-16 text-center">
- <Key className="w-12 h-12 text-primary/30 mx-auto mb-4" />
+ <Key className="w-12 h-12 text-crimson/30 mx-auto mb-4" />
  <h3 className="text-lg font-semibold mb-2">No tokens yet</h3>
  <p className="text-muted-foreground">Issue a token to an active agent to get started.</p>
  </CardContent>
@@ -3069,7 +3069,7 @@ function TokensView() {
  <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
  <TableCell>
  {revoked ? <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Revoked</Badge> :
- expired ? <Badge variant="outline" className="text-gray-400 border-gray-400/30 text-xs">Expired</Badge> :
+ expired ? <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 text-xs">Expired</Badge> :
  <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Active</Badge>}
  </TableCell>
  </TableRow>
@@ -3204,19 +3204,19 @@ function SettingsView() {
  <div className="grid md:grid-cols-2 gap-6">
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Sun className="w-4 h-4 text-primary" /> Appearance</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Sun className="w-4 h-4 text-crimson" /> Appearance</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between items-center">
  <div className="flex items-center gap-2">
- {isDark ? <Moon className="w-4 h-4 text-primary" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+ {isDark ? <Moon className="w-4 h-4 text-crimson" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
  <span className="text-muted-foreground">Theme</span>
  </div>
  <div className="flex items-center gap-2">
  <span className={`text-xs ${!isDark ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Light</span>
  <button
  onClick={toggleTheme}
- className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${isDark ? 'bg-primary' : 'bg-secondary'}`}
+ className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${isDark ? 'bg-crimson' : 'bg-secondary'}`}
  aria-label="Toggle theme"
  >
  <span className={`inline-block h-4 w-4 transform rounded-none bg-white transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -3226,20 +3226,20 @@ function SettingsView() {
  </div>
  <div className="flex justify-between">
  <span className="text-muted-foreground">Current Mode</span>
- <Badge variant="outline" className={`text-xs ${isDark ? 'text-primary border-border' : 'text-muted-foreground border-muted-foreground/30'}`}>
+ <Badge variant="outline" className={`text-xs ${isDark ? 'text-crimson border-border' : 'text-muted-foreground border-muted-foreground/30'}`}>
  {isDark ? 'Dark' : 'Light'}
  </Badge>
  </div>
  <div className="flex justify-between">
  <span className="text-muted-foreground">Accent Color</span>
- <Badge variant="outline" className="text-xs text-primary border-border">Cyan</Badge>
+ <Badge variant="outline" className="text-xs text-crimson border-border">Crimson</Badge>
  </div>
  </CardContent>
  </Card>
 
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Shield className="w-4 h-4 text-primary" /> Security Policy</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Shield className="w-4 h-4 text-crimson" /> Security Policy</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between"><span className="text-muted-foreground">Default Policy</span><Badge variant="outline" className="font-mono text-xs">DENY</Badge></div>
@@ -3251,7 +3251,7 @@ function SettingsView() {
 
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-primary" /> Cryptography</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-crimson" /> Cryptography</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between"><span className="text-muted-foreground">Hash Algorithm</span><span className="font-mono">SHA-256</span></div>
@@ -3263,7 +3263,7 @@ function SettingsView() {
 
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><ScrollText className="w-4 h-4 text-primary" /> Audit</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><ScrollText className="w-4 h-4 text-crimson" /> Audit</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between"><span className="text-muted-foreground">Log Mode</span><Badge variant="outline" className="text-xs text-foreground border-foreground/30">Append-Only</Badge></div>
@@ -3275,7 +3275,7 @@ function SettingsView() {
 
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Cpu className="w-4 h-4 text-primary" /> Integrations</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Cpu className="w-4 h-4 text-crimson" /> Integrations</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between items-center">
@@ -3299,7 +3299,7 @@ function SettingsView() {
 
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4 text-primary" /> System Health</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4 text-crimson" /> System Health</CardTitle>
  </CardHeader>
  <CardContent className="space-y-3 text-sm">
  <div className="flex justify-between items-center">
@@ -3343,7 +3343,7 @@ function SettingsView() {
  {/* Data Management */}
  <Card className="bg-card border-border">
  <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-primary" /> Data Management</CardTitle>
+ <CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-crimson" /> Data Management</CardTitle>
  </CardHeader>
  <CardContent className="space-y-4">
  <div className="space-y-3">
@@ -3500,7 +3500,7 @@ function DocsView() {
  key={s.id}
  onClick={() => setActiveSection(s.id)}
  className={`w-full flex items-center gap-2 px-3 py-2 rounded-none text-sm transition-colors ${
- activeSection === s.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+ activeSection === s.id ? 'bg-crimson/10 text-crimson' : 'text-muted-foreground hover:text-crimson hover:bg-accent'
  }`}
  >
  {s.icon}
@@ -3524,7 +3524,7 @@ function DocsView() {
  <CardContent className="space-y-4">
  <div className="space-y-3">
  <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">1</div>
+ <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">1</div>
  <div>
  <p className="font-semibold text-sm">Seed Demo Data</p>
  <p className="text-sm text-muted-foreground mb-2">Populate the platform with 5 demo agents, tokens, and audit events.</p>
@@ -3532,7 +3532,7 @@ function DocsView() {
  </div>
  </div>
  <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">2</div>
+ <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">2</div>
  <div>
  <p className="font-semibold text-sm">Create an Agent</p>
  <p className="text-sm text-muted-foreground mb-2">Generate a unique identity with a cryptographic key pair.</p>
@@ -3540,7 +3540,7 @@ function DocsView() {
  </div>
  </div>
  <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">3</div>
+ <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">3</div>
  <div>
  <p className="font-semibold text-sm">Grant Permissions</p>
  <p className="text-sm text-muted-foreground mb-2">Assign scoped permissions with allow, deny, or requires_approval effects.</p>
@@ -3548,7 +3548,7 @@ function DocsView() {
  </div>
  </div>
  <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">4</div>
+ <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">4</div>
  <div>
  <p className="font-semibold text-sm">Issue a Token</p>
  <p className="text-sm text-muted-foreground mb-2">Get a short-lived, hash-stored authentication token.</p>
@@ -3556,7 +3556,7 @@ function DocsView() {
  </div>
  </div>
  <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">5</div>
+ <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">5</div>
  <div>
  <p className="font-semibold text-sm">Check Authorization</p>
  <p className="text-sm text-muted-foreground mb-2">Verify that an agent is authorized to perform a specific action.</p>
@@ -3612,7 +3612,7 @@ function DocsView() {
  <CardContent className="space-y-3">
  {cliCommands.map((cmd, i) => (
  <div key={i} className="p-3 rounded-none bg-secondary space-y-1">
- <code className="text-xs font-mono text-primary">{cmd.cmd}</code>
+ <code className="text-xs font-mono text-crimson">{cmd.cmd}</code>
  <p className="text-xs text-muted-foreground">{cmd.desc}</p>
  </div>
  ))}
@@ -3673,9 +3673,9 @@ function DocsView() {
  { title: 'Immediate Revocation', desc: 'Agents can be paused, revoked, or blocked instantly. Revoked agents are denied all actions regardless of their permissions.' },
  { title: 'Key Rotation', desc: 'Agent key pairs can be rotated at any time, generating a new pair and invalidating the old one.' },
  ].map((item, i) => (
- <div key={i} className="flex gap-3 items-start p-3 rounded-none bg-secondary">
- <div className="w-6 h-6 rounded-none bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
- <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+ <div key={i} className="flex gap-3 items-start p-3 rounded-none bg-secondary border-l-2 border-l-crimson/20">
+ <div className="w-6 h-6 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 mt-0.5">
+ <ShieldCheck className="w-3.5 h-3.5 text-crimson" />
  </div>
  <div>
  <h4 className="font-semibold text-sm">{item.title}</h4>
@@ -3758,7 +3758,7 @@ function PlaygroundView() {
  <div className="space-y-6">
  <div>
  <h1 className="text-2xl font-bold flex items-center gap-2">
- <Command className="w-6 h-6 text-primary" /> Authorization Playground
+ <Command className="w-6 h-6 text-crimson" /> Authorization Playground
  </h1>
  <p className="text-muted-foreground">Test multiple authorization checks at once against any agent.</p>
  </div>
@@ -3805,7 +3805,7 @@ function PlaygroundView() {
  />
  </div>
  <Button
- className="bg-primary text-primary-foreground w-full sm:w-auto"
+ className="bg-foreground text-white hover:bg-crimson transition-colors w-full sm:w-auto"
  onClick={handleBatchCheck}
  disabled={loading || !selectedAgentId}
  >
@@ -3917,7 +3917,7 @@ function AgentCompareView() {
  <div className="space-y-6">
  <div>
  <h1 className="text-2xl font-bold flex items-center gap-2">
- <Layers className="w-6 h-6 text-primary" /> Agent Compare
+ <Layers className="w-6 h-6 text-crimson" /> Agent Compare
  </h1>
  <p className="text-muted-foreground">Compare two agents side-by-side with visual permission diff.</p>
  </div>
@@ -4009,7 +4009,7 @@ function AgentCompareView() {
  <Card className="bg-card border-border">
  <CardHeader className="pb-3">
  <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-primary" /> Permission Diff
+ <Shield className="w-4 h-4 text-crimson" /> Permission Diff
  </CardTitle>
  <CardDescription>
  <span className="inline-flex items-center gap-2 flex-wrap">
@@ -4090,9 +4090,9 @@ function ActivityHeatmapView() {
  if (total === 0) return 'bg-border/10 border border-border/20';
  const ratio = total / maxTotal;
  if (ratio <= 0.25) return 'bg-secondary border border-border';
- if (ratio <= 0.5) return 'bg-primary/40 border border-primary/50';
- if (ratio <= 0.75) return 'bg-primary/60 border border-primary/70';
- return 'bg-primary border border-primary';
+ if (ratio <= 0.5) return 'bg-crimson/40 border border-crimson/50';
+ if (ratio <= 0.75) return 'bg-crimson/60 border border-crimson/70';
+ return 'bg-crimson border border-crimson';
  };
 
  // Arrange days into weeks (columns) for the heatmap
@@ -4116,7 +4116,7 @@ function ActivityHeatmapView() {
  {/* Summary Stats */}
  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
  {[
- { label: 'Total Events', value: totalEvents, icon: <Activity className="w-4 h-4 text-primary" />, color: 'text-foreground' },
+ { label: 'Total Events', value: totalEvents, icon: <Activity className="w-4 h-4 text-crimson" />, color: 'text-foreground' },
  { label: 'Allowed', value: totalAllow, icon: <CheckCircle2 className="w-4 h-4 text-foreground" />, color: 'text-foreground' },
  { label: 'Denied', value: totalDeny, icon: <XCircle className="w-4 h-4 text-foreground" />, color: 'text-foreground' },
  { label: 'Requires Approval', value: totalApproval, icon: <AlertTriangle className="w-4 h-4 text-muted-foreground" />, color: 'text-muted-foreground' },
@@ -4144,9 +4144,9 @@ function ActivityHeatmapView() {
  <span>Less</span>
  <div className="w-3 h-3 rounded-none bg-border/10 border border-border/20" />
  <div className="w-3 h-3 rounded-none bg-secondary border border-border" />
- <div className="w-3 h-3 rounded-none bg-primary/40 border border-primary/50" />
- <div className="w-3 h-3 rounded-none bg-primary/60 border border-primary/70" />
- <div className="w-3 h-3 rounded-none bg-primary border border-primary" />
+ <div className="w-3 h-3 rounded-none bg-crimson/40 border border-crimson/50" />
+ <div className="w-3 h-3 rounded-none bg-crimson/60 border border-crimson/70" />
+ <div className="w-3 h-3 rounded-none bg-crimson border border-crimson" />
  <span>More</span>
  </div>
  </div>
@@ -4170,7 +4170,7 @@ function ActivityHeatmapView() {
  <Tooltip>
  <TooltipTrigger asChild>
  <motion.div
- className={`w-3 h-3 rounded-none cursor-pointer transition-all hover:ring-1 hover:ring-primary/50 ${getColor(day.total)}`}
+ className={`w-3 h-3 rounded-none cursor-pointer transition-all hover:ring-1 hover:ring-crimson/50 ${getColor(day.total)}`}
  initial={{ opacity: 0, scale: 0.5 }}
  animate={{ opacity: 1, scale: 1 }}
  transition={{ delay: wi * 0.03 + di * 0.02, duration: 0.2 }}
@@ -4207,7 +4207,7 @@ function ActivityHeatmapView() {
  >
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2">
- <Calendar className="w-4 h-4 text-primary" />
+ <Calendar className="w-4 h-4 text-crimson" />
  <span className="font-mono font-semibold">{hoveredDay.date}</span>
  </div>
  <span className="text-muted-foreground">{hoveredDay.total} event{hoveredDay.total !== 1 ? 's' : ''}</span>
@@ -4244,9 +4244,9 @@ function ActivityHeatmapView() {
  fontSize: '12px',
  }}
  />
- <Bar dataKey="allow" stackId="a" fill="#888888" radius={[0, 0, 0, 0]} name="Allow" />
- <Bar dataKey="deny" stackId="a" fill="#999999" radius={[0, 0, 0, 0]} name="Deny" />
- <Bar dataKey="requiresApproval" stackId="a" fill="#666666" radius={[0, 0, 0, 0]} name="Requires Approval" />
+ <Bar dataKey="allow" stackId="a" fill="#8B2252" radius={[0, 0, 0, 0]} name="Allow" />
+ <Bar dataKey="deny" stackId="a" fill="#666666" radius={[0, 0, 0, 0]} name="Deny" />
+ <Bar dataKey="requiresApproval" stackId="a" fill="#999999" radius={[0, 0, 0, 0]} name="Requires Approval" />
  </BarChart>
  </ResponsiveContainer>
  </div>
@@ -4338,7 +4338,7 @@ function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; o
  <DialogContent className="sm:max-w-lg bg-card border-border">
  <DialogHeader>
  <DialogTitle className="flex items-center gap-2">
- <Zap className="w-5 h-5 text-primary" /> Quick Setup Wizard
+ <Zap className="w-5 h-5 text-crimson" /> Quick Setup Wizard
  </DialogTitle>
  <DialogDescription>Create an agent, grant permissions, and issue a token in 3 steps.</DialogDescription>
  </DialogHeader>
@@ -4349,17 +4349,17 @@ function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; o
  <React.Fragment key={i}>
  <div className="flex flex-col items-center gap-1">
  <div className={`w-8 h-8 rounded-none flex items-center justify-center text-sm font-semibold border-2 transition-all ${
- stepStatus[i] === 'done' ? 'bg-foreground border-foreground text-primary-foreground' :
- stepStatus[i] === 'running' ? 'bg-primary border-primary text-primary-foreground animate-pulse' :
- stepStatus[i] === 'error' ? 'bg-foreground border-foreground text-primary-foreground' :
- i === step ? 'bg-secondary border-primary text-primary' :
+ stepStatus[i] === 'done' ? 'bg-foreground border-foreground text-crimson-foreground' :
+ stepStatus[i] === 'running' ? 'bg-crimson border-crimson text-crimson-foreground animate-pulse' :
+ stepStatus[i] === 'error' ? 'bg-foreground border-foreground text-crimson-foreground' :
+ i === step ? 'bg-secondary border-crimson text-crimson' :
  'bg-secondary border-border text-muted-foreground'
  }`}>
  {stepStatus[i] === 'done' ? <CheckCircle2 className="w-4 h-4" /> :
  stepStatus[i] === 'error' ? <XCircle className="w-4 h-4" /> :
  stepIcons[i]}
  </div>
- <span className={`text-[10px] ${i === step ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>{label}</span>
+ <span className={`text-[10px] ${i === step ? 'text-crimson font-semibold' : 'text-muted-foreground'}`}>{label}</span>
  </div>
  {i < 2 && (
  <div className={`w-12 h-0.5 mx-1 mb-4 transition-colors ${
@@ -4420,7 +4420,7 @@ function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; o
  <div className="text-xs text-muted-foreground mb-2">{PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.description}</div>
  <div className="flex flex-wrap gap-1">
  {PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.slice(0, 5).map((s, i) => (
- <Badge key={i} variant="secondary" className="text-[10px] font-mono bg-primary/10 text-primary">{s}</Badge>
+ <Badge key={i} variant="secondary" className="text-[10px] font-mono bg-crimson/10 text-crimson">{s}</Badge>
  ))}
  {(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) > 5 && (
  <Badge variant="secondary" className="text-[10px]">+{(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) - 5} more</Badge>
@@ -4466,12 +4466,12 @@ function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; o
  {/* Footer Buttons */}
  <DialogFooter className="flex gap-2">
  {stepStatus[step] === 'done' && step === 2 ? (
- <Button className="bg-primary text-primary-foreground" onClick={() => { reset(); onOpenChange(false); onComplete(); }}>
+ <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={() => { reset(); onOpenChange(false); onComplete(); }}>
  <CheckCircle2 className="w-4 h-4 mr-1" /> Done
  </Button>
  ) : (
  <Button
- className="bg-primary text-primary-foreground"
+ className="bg-foreground text-white hover:bg-crimson transition-colors"
  disabled={stepStatus[step] === 'running' || (step === 0 && !agentName.trim())}
  onClick={() => runStep(step)}
  >
@@ -4598,14 +4598,14 @@ function SecurityEventsView() {
  }, [agents]);
 
  const eventTypeIcons: Record<string, React.ReactNode> = {
- PERMISSION_GRANTED: <ShieldCheck className="w-3.5 h-3.5 text-primary" />,
+ PERMISSION_GRANTED: <ShieldCheck className="w-3.5 h-3.5 text-crimson" />,
  PERMISSION_REVOKED: <ShieldX className="w-3.5 h-3.5 text-foreground" />,
- AUTHORIZATION_CHECK: <Shield className="w-3.5 h-3.5 text-primary" />,
+ AUTHORIZATION_CHECK: <Shield className="w-3.5 h-3.5 text-crimson" />,
  AGENT_CREATED: <Plus className="w-3.5 h-3.5 text-foreground" />,
  AGENT_REVOKED: <Ban className="w-3.5 h-3.5 text-foreground" />,
  AGENT_PAUSED: <Pause className="w-3.5 h-3.5 text-muted-foreground" />,
  AGENT_RESUMED: <Play className="w-3.5 h-3.5 text-foreground" />,
- KEY_ROTATED: <RotateCcw className="w-3.5 h-3.5 text-primary" />,
+ KEY_ROTATED: <RotateCcw className="w-3.5 h-3.5 text-crimson" />,
  TOKEN_ISSUED: <Key className="w-3.5 h-3.5 text-muted-foreground" />,
  TOKEN_REVOKED: <Trash2 className="w-3.5 h-3.5 text-foreground" />,
  };
@@ -4621,14 +4621,14 @@ function SecurityEventsView() {
  {/* Connection status */}
  <div className="flex items-center gap-2 px-3 py-1.5 rounded-none border border-border bg-card">
  <div className={`w-2 h-2 rounded-none ${
- connectionStatus === 'connected' ? 'bg-foreground animate-pulse' :
- connectionStatus === 'reconnecting' ? 'bg-foreground animate-pulse' :
- 'bg-foreground'
+ connectionStatus === 'connected' ? 'bg-crimson animate-pulse' :
+ connectionStatus === 'reconnecting' ? 'bg-crimson animate-pulse' :
+ 'bg-crimson'
  }`} />
  <span className={`text-xs font-mono ${
- connectionStatus === 'connected' ? 'text-foreground' :
+ connectionStatus === 'connected' ? 'text-crimson' :
  connectionStatus === 'reconnecting' ? 'text-muted-foreground' :
- 'text-foreground'
+ 'text-crimson'
  }`}>
  {connectionStatus === 'connected' ? 'LIVE' : connectionStatus === 'reconnecting' ? 'RECONNECTING' : 'DISCONNECTED'}
  </span>
@@ -4662,7 +4662,7 @@ function SecurityEventsView() {
  <CardHeader className="pb-3">
  <div className="flex items-center justify-between">
  <CardTitle className="text-base flex items-center gap-2">
- <Radio className="w-4 h-4 text-primary" /> Live Feed
+ <Radio className="w-4 h-4 text-crimson" /> Live Feed
  </CardTitle>
  <Badge variant="outline" className="text-xs font-mono">{liveEvents.length} events</Badge>
  </div>
@@ -4694,13 +4694,13 @@ function SecurityEventsView() {
  <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
  {new Date(event.createdAt).toLocaleTimeString()}
  </span>
- <Badge variant="outline" className="text-[10px] font-mono bg-primary/5 border-border">
+ <Badge variant="outline" className="text-[10px] font-mono bg-crimson/5 border-border">
  {event.eventType.replace(/_/g, ' ')}
  </Badge>
  {event.decision && <DecisionBadge decision={event.decision} />}
  {event.agentId && (
  <button
- className="text-xs font-mono text-primary hover:underline"
+ className="text-xs font-mono text-crimson hover:underline"
  onClick={() => navigateToAgent(event.agentId!)}
  >
  {agentNameMap[event.agentId] || event.agentId.slice(0, 8)}
@@ -4723,7 +4723,7 @@ function SecurityEventsView() {
  <Card className="bg-card border-border">
  <CardHeader className="pb-3">
  <CardTitle className="text-base flex items-center gap-2">
- <ScrollText className="w-4 h-4 text-primary" /> Recent Events (Last 50)
+ <ScrollText className="w-4 h-4 text-crimson" /> Recent Events (Last 50)
  </CardTitle>
  </CardHeader>
  <CardContent>
@@ -4745,7 +4745,7 @@ function SecurityEventsView() {
  <TableCell className="font-mono text-xs">{e.eventType.replace(/_/g, ' ')}</TableCell>
  <TableCell className="font-mono text-xs">
  {e.agentId ? (
- <button className="text-primary hover:underline" onClick={() => navigateToAgent(e.agentId!)}>
+ <button className="text-crimson hover:underline" onClick={() => navigateToAgent(e.agentId!)}>
  {agentNameMap[e.agentId] || e.agentId.slice(0, 8)}
  </button>
  ) : '-'}
@@ -4927,7 +4927,7 @@ export default function AgentDNAIApp() {
  key={item.id}
  onClick={() => setView(item.id)}
  className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
- currentView === item.id ? 'text-primary' : 'text-muted-foreground'
+ currentView === item.id ? 'text-crimson' : 'text-muted-foreground'
  }`}
  >
  <item.icon className="w-5 h-5" />
