@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthzSchema } from '@/lib/schemas';
-import { checkAuthorization, recordDecision } from '@/lib/policy';
+import { checkAuthorization, recordDecision, type Decision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 
 /**
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       agentId: parsed.data.agentId,
       action: parsed.data.action,
       resource: parsed.data.resource,
+      tokenScopes: parsed.data.tokenScopes,
     };
 
     // Check authorization
@@ -41,6 +42,18 @@ export async function POST(request: NextRequest) {
         break;
       case 'requires_approval':
         auditEventType = AUDIT_EVENTS.AUTHZ_REQUIRES_APPROVAL;
+        break;
+      case 'agent_inactive':
+        auditEventType = AUDIT_EVENTS.AUTHZ_DENY;
+        break;
+      case 'token_invalid':
+        auditEventType = AUDIT_EVENTS.AUTHZ_DENY;
+        break;
+      case 'token_expired':
+        auditEventType = AUDIT_EVENTS.AUTHZ_DENY;
+        break;
+      case 'insufficient_scope':
+        auditEventType = AUDIT_EVENTS.AUTHZ_DENY;
         break;
       default:
         auditEventType = AUDIT_EVENTS.AUTHZ_CHECK;
@@ -67,6 +80,7 @@ export async function POST(request: NextRequest) {
       reason: result.reason,
       requiresApproval: result.requiresApproval,
       expiresAt: result.expiresAt,
+      matchedRule: result.matchedRule,
       decisionId: decision.id,
     });
   } catch (error) {

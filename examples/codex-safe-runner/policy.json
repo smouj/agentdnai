@@ -1,0 +1,34 @@
+{
+  "name": "codex-safe-runner",
+  "version": "1.0.0",
+  "description": "Safe runner for Codex agents with AgentDNAI policy enforcement",
+  "policy": {
+    "defaultDecision": "DENY",
+    "requireApprovalFor": [
+      "production.*",
+      "secrets.*",
+      "server.command.exec"
+    ],
+    "autoApproveFor": [
+      "github.repo.read",
+      "github.issue.read",
+      "github.pr.read",
+      "docs.read"
+    ],
+    "maxActionsPerSession": 100,
+    "sessionTimeoutMinutes": 60,
+    "auditAllActions": true
+  },
+  "agent": {
+    "runtime": "codex",
+    "template": "dev-read",
+    "scopes": [
+      "github.repo.read",
+      "github.issue.read",
+      "github.issue.create",
+      "github.pr.read",
+      "github.pr.create",
+      "docs.read"
+    ]
+  }
+}

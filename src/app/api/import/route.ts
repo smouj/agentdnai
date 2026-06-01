@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
             data: {
               email: agentData.owner.email,
               name: agentData.owner.name || agentData.owner.email.split('@')[0],
+              passwordHash: 'import-no-login',
             },
           });
           ownerUserId = newUser.id;
@@ -132,6 +133,7 @@ export async function POST(request: NextRequest) {
             data: {
               email: 'default@agentdnai.io',
               name: 'Default User',
+              passwordHash: 'import-no-login',
             },
           });
           ownerUserId = newUser.id;

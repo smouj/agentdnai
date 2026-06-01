@@ -172,6 +172,47 @@ export const PERMISSION_TEMPLATES: PermissionTemplate[] = [
     ],
     denied: ['production.write', 'production.secret.access'],
   },
+  {
+    id: 'local-dev',
+    name: 'Local Dev Agent',
+    description: 'Agent for local development with read/write filesystem, terminal, and GitHub read.',
+    permissions: ['github.repo.read', 'github.issue.read', 'github.pull_request.read', 'filesystem.read', 'filesystem.write', 'server.logs.read', 'database.read'],
+    denied: ['filesystem.delete', 'filesystem.execute', 'server.command.sudo', 'production.*', 'secrets.*'],
+  },
+  {
+    id: 'deploy-agent',
+    name: 'Deploy Agent',
+    description: 'Agent for managing deployments to staging and production.',
+    permissions: ['server.deploy.staging', 'server.deploy.production', 'server.service.restart', 'server.logs.read', 'production.read'],
+    denied: ['secrets.*', 'production.secret.access'],
+  },
+  {
+    id: 'security-audit',
+    name: 'Security Audit Agent',
+    description: 'Agent for security auditing with read access everywhere.',
+    permissions: ['github.repo.read', 'server.logs.read', 'database.read', 'production.read', 'browser.read', 'browser.open'],
+    denied: ['filesystem.write', 'filesystem.delete', 'server.command.run', 'secrets.write', 'production.write'],
+  },
+  {
+    id: 'documentation',
+    name: 'Documentation Agent',
+    description: 'Agent for writing documentation with safe file operations.',
+    permissions: ['github.repo.read', 'github.repo.write', 'filesystem.read', 'filesystem.write', 'browser.read', 'browser.open'],
+    denied: ['filesystem.delete', 'filesystem.execute', 'server.command.*', 'production.*', 'secrets.*'],
+  },
+  {
+    id: 'full-dev-approval',
+    name: 'Full Dev Agent (with approvals)',
+    description: 'Agent with broad permissions but production/secrets require approval.',
+    permissions: [
+      'github.repo.read', 'github.repo.write', 'github.issue.create', 'github.pull_request.create', 'github.pull_request.merge',
+      'filesystem.read', 'filesystem.write',
+      'server.logs.read', 'server.deploy.staging',
+      'database.read', 'database.write', 'database.migrate',
+      'browser.open', 'browser.read',
+    ],
+    denied: ['filesystem.execute', 'server.command.sudo'],
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -212,4 +253,21 @@ export function getPermissionsByCategory(category: PermissionCategory): Permissi
  */
 export function getAllScopes(): string[] {
   return PERMISSIONS.map(p => p.scope);
+}
+
+/**
+ * Check if a permission scope matches a pattern
+ * Supports wildcards:
+ * - "*" matches everything
+ * - "github.*" matches "github.repo.read", "github.issue.create", etc.
+ * - "github.repo.*" matches "github.repo.read", "github.repo.write", etc.
+ * - "production.*" matches all production actions
+ */
+export function matchesScope(pattern: string, scope: string): boolean {
+  if (pattern === '*' || pattern === scope) return true;
+  if (pattern.endsWith('.*')) {
+    const prefix = pattern.slice(0, -2);
+    return scope.startsWith(prefix + '.');
+  }
+  return false;
 }

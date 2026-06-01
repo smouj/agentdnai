@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  agentdnai-web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:./db/custom.db
+      - TOKEN_PEPPER=change-this-in-production
+      - AUTH_PEPPER=change-this-in-production
+      - NODE_ENV=production
+      - ALLOW_DEMO_SEED=false
+    volumes:
+      - agentdnai-data:/app/db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  agentdnai-data:

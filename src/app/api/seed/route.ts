@@ -18,7 +18,7 @@ export async function POST() {
     let user = await db.user.findUnique({ where: { email: 'default@agentdnai.io' } });
     if (!user) {
       user = await db.user.create({
-        data: { email: 'default@agentdnai.io', name: 'Default User' },
+        data: { email: 'default@agentdnai.io', name: 'Default User', passwordHash: 'seed-only-no-login' },
       });
     }
 
@@ -36,6 +36,7 @@ export async function POST() {
         description: 'Audit agent for repository and log analysis',
         runtime: 'hermes',
         publicKey: keyPair1.publicKey,
+        fingerprint: keyPair1.fingerprint,
         status: 'ACTIVE',
         ownerUserId: user.id,
       },
@@ -101,6 +102,7 @@ export async function POST() {
         description: 'Safe builder agent for feature development',
         runtime: 'codex',
         publicKey: keyPair2.publicKey,
+        fingerprint: keyPair2.fingerprint,
         status: 'ACTIVE',
         ownerUserId: user.id,
       },
@@ -141,6 +143,7 @@ export async function POST() {
         description: 'Staging deployment operator - currently paused for review',
         runtime: 'automation',
         publicKey: keyPair3.publicKey,
+        fingerprint: keyPair3.fingerprint,
         status: 'PAUSED',
         ownerUserId: user.id,
       },
@@ -180,6 +183,7 @@ export async function POST() {
         description: 'Read-only agent for monitoring and reporting',
         runtime: 'openclaw',
         publicKey: keyPair4.publicKey,
+        fingerprint: keyPair4.fingerprint,
         status: 'ACTIVE',
         ownerUserId: user.id,
       },
@@ -208,6 +212,7 @@ export async function POST() {
         description: 'Legacy CLI agent - revoked due to security concerns',
         runtime: 'cli',
         publicKey: keyPair5.publicKey,
+        fingerprint: keyPair5.fingerprint,
         status: 'REVOKED',
         ownerUserId: user.id,
         revokedAt: new Date(),

@@ -7,84 +7,254 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ─── Enums (stored as String for SQLite compatibility) ────────────────────────
 
-  agents    AgentIdentity[]
+// AgentStatus: ACTIVE | PAUSED | REVOKED | BLOCKED | EXPIRED
+// PermissionEffect: ALLOW | DENY | REQUIRES_APPROVAL
+// AuthzDecision: ALLOW | DENY | REQUIRES_APPROVAL | EXPIRED | REVOKED | INSUFFICIENT_SCOPE | AGENT_INACTIVE | TOKEN_INVALID | TOKEN_EXPIRED
+// RuntimeType: openclaw | codex | hermes | cursor | aider | windsurf | ollama | cli | automation | custom
+// EnvironmentType: local | development | staging | production
+// AuditEventType: see AUDIT_EVENTS constant in lib/audit.ts
+// ApprovalStatus: PENDING | APPROVED | REJECTED | EXPIRED
+// OrgRole: OWNER | ADMIN | SECURITY_MANAGER | DEVELOPER | VIEWER
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  passwordHash   String
+  isActive       Boolean  @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  agents           AgentIdentity[]
+  organizationMemberships OrganizationMember[]
+  createdPermissions AgentPermission[]
+  reviewedApprovals ApprovalRequest[] @relation("ApprovalReviewer")
+  requestedApprovals ApprovalRequest[] @relation("ApprovalRequester")
+  auditEventsAsActor AuditEvent[]
+  apiKeys          ApiKey[]
+  sessions         Session[]
 }
 
-model AgentIdentity {
-  id          String   @id @default(cuid())
-  agentUri    String   @unique
-  name        String
-  description String?
-  runtime     String
-  publicKey   String
-  status      String   @default("ACTIVE")
-  ownerUserId String
-  owner       User     @relation(fields: [ownerUserId], references: [id])
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  expiresAt  DateTime
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 
-  permissions AgentPermission[]
-  tokens      AgentToken[]
+  @@index([token])
+  @@index([userId])
+}
+
+// ─── Organizations ────────────────────────────────────────────────────────────
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members     OrganizationMember[]
+  agents      AgentIdentity[]
   auditEvents AuditEvent[]
+  webhooks    WebhookEndpoint[]
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role           String   @default("DEVELOPER") // OWNER | ADMIN | SECURITY_MANAGER | DEVELOPER | VIEWER
+  invitedBy      String?
+  joinedAt       DateTime @default(now())
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+// ─── Agent Identity ──────────────────────────────────────────────────────────
+
+model AgentIdentity {
+  id              String   @id @default(cuid())
+  agentUri        String   @unique
+  name            String
+  description     String?
+  runtime         String   // openclaw | codex | hermes | cursor | aider | windsurf | ollama | cli | automation | custom
+  environment     String   @default("development") // local | development | staging | production
+  publicKey       String
+  fingerprint     String?
+  status          String   @default("ACTIVE") // ACTIVE | PAUSED | REVOKED | BLOCKED | EXPIRED
+  ownerUserId     String
+  owner           User     @relation(fields: [ownerUserId], references: [id])
+  organizationId  String?
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+
+  permissions       AgentPermission[]
+  tokens            AgentToken[]
+  auditEvents       AuditEvent[]
+  approvalRequests  ApprovalRequest[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   lastSeenAt  DateTime?
   revokedAt   DateTime?
+
+  @@index([ownerUserId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([runtime])
 }
+
+// ─── Permissions ─────────────────────────────────────────────────────────────
 
 model AgentPermission {
   id              String   @id @default(cuid())
   agentId         String
-  agent           AgentIdentity @relation(fields: [agentId], references: [id])
+  agent           AgentIdentity @relation(fields: [agentId], references: [id], onDelete: Cascade)
   scope           String
   resource        String?
-  effect          String   @default("ALLOW")
+  effect          String   @default("ALLOW") // ALLOW | DENY | REQUIRES_APPROVAL
   expiresAt       DateTime?
   createdByUserId String
+  createdBy       User     @relation(fields: [createdByUserId], references: [id])
   createdAt       DateTime @default(now())
+
+  @@index([agentId, scope, effect])
+  @@index([agentId])
 }
+
+// ─── Tokens ──────────────────────────────────────────────────────────────────
 
 model AgentToken {
   id          String   @id @default(cuid())
   agentId     String
-  agent       AgentIdentity @relation(fields: [agentId], references: [id])
-  tokenHash   String
+  agent       AgentIdentity @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  tokenHash   String   // HMAC-SHA256 with pepper
   scopes      String   // JSON string of scope array
   expiresAt   DateTime
   revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
   lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  createdBy   String?   // userId who issued the token
+
+  @@index([tokenHash])
+  @@index([agentId])
+  @@index([expiresAt])
 }
+
+// ─── Authorization ───────────────────────────────────────────────────────────
 
 model AuthorizationDecision {
   id          String   @id @default(cuid())
   agentId     String
   action      String
   resource    String?
-  decision    String
+  decision    String   // ALLOW | DENY | REQUIRES_APPROVAL | EXPIRED | REVOKED | INSUFFICIENT_SCOPE | AGENT_INACTIVE | TOKEN_INVALID | TOKEN_EXPIRED
   reason      String
   requestHash String?
   createdAt   DateTime @default(now())
+
+  @@index([agentId])
+  @@index([decision])
+  @@index([createdAt])
 }
 
+// ─── Approval Queue ──────────────────────────────────────────────────────────
+
+model ApprovalRequest {
+  id             String   @id @default(cuid())
+  agentId        String
+  agent          AgentIdentity @relation(fields: [agentId], references: [id])
+  action         String
+  resource       String?
+  status         String   @default("PENDING") // PENDING | APPROVED | REJECTED | EXPIRED
+  requestedBy    String?  // userId or 'system'
+  requester      User?    @relation("ApprovalRequester", fields: [requestedBy], references: [id])
+  reviewedBy     String?  // userId who approved/rejected
+  reviewer       User?    @relation("ApprovalReviewer", fields: [reviewedBy], references: [id])
+  reviewNote     String?
+  expiresAt      DateTime?
+  reviewedAt     DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([status])
+  @@index([agentId])
+  @@index([createdAt])
+}
+
+// ─── Audit Chain ─────────────────────────────────────────────────────────────
+
 model AuditEvent {
-  id           String        @id @default(cuid())
-  eventType    String
-  actorType    String
-  actorId      String?
-  agentId      String?
-  agent        AgentIdentity? @relation(fields: [agentId], references: [id])
-  resource     String?
-  action       String?
-  decision     String?
-  metadata     String?   // JSON string
-  previousHash String?
-  eventHash    String
-  createdAt    DateTime  @default(now())
+  id             String        @id @default(cuid())
+  sequence       Int           @unique
+  eventType      String
+  actorType      String        // user | agent | system
+  actorId        String?
+  actor          User?         @relation(fields: [actorId], references: [id])
+  agentId        String?
+  agent          AgentIdentity? @relation(fields: [agentId], references: [id])
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  resource       String?
+  action         String?
+  decision       String?
+  metadata       String?   // JSON string
+  previousHash   String?
+  eventHash      String
+  createdAt      DateTime  @default(now())
+
+  @@index([agentId])
+  @@index([organizationId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([sequence])
+}
+
+// ─── API Keys ────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  keyHash     String   // HMAC-SHA256 hash
+  keyPrefix   String   // First 8 chars for identification
+  permissions String   // JSON string of permission array
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([keyHash])
+  @@index([userId])
+}
+
+// ─── Webhooks ────────────────────────────────────────────────────────────────
+
+model WebhookEndpoint {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  url            String
+  events         String   // JSON array of event types
+  secret         String   // HMAC secret for verification
+  isActive       Boolean  @default(true)
+  lastTriggeredAt DateTime?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
 }

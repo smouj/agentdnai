@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       userId = existingUser.id;
     } else {
       const newUser = await db.user.create({
-        data: { email: 'import@agentdnai.local', name: 'Import User' },
+        data: { email: 'import@agentdnai.local', name: 'Import User', passwordHash: 'import-no-login' },
       });
       userId = newUser.id;
     }
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Generate a new key pair for the imported agent
-        const { publicKey } = await generateKeyPair();
+        // Generate a new RSA-PSS key pair for the imported agent
+        const keyPair = generateKeyPair();
 
         const agent = await db.agentIdentity.create({
           data: {
@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
             name: agentData.name,
             description: agentData.description || null,
             runtime: agentData.runtime,
-            publicKey,
+            publicKey: keyPair.publicKey,
+            fingerprint: keyPair.fingerprint,
             status: agentData.status || 'ACTIVE',
             ownerUserId: userId,
           },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthorization, recordDecision } from '@/lib/policy';
+import { checkAuthorization, recordDecision, type Decision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 
 /**
@@ -13,7 +13,7 @@ import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agentId, actions, resource } = body;
+    const { agentId, actions, resource, tokenScopes } = body;
 
     if (!agentId || typeof agentId !== 'string') {
       return NextResponse.json(
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const results = [];
 
     for (const action of actions) {
-      const input = { agentId, action, resource };
+      const input = { agentId, action, resource, tokenScopes };
 
       // Check authorization
       const authzResult = await checkAuthorization(input);
@@ -68,6 +68,12 @@ export async function POST(request: NextRequest) {
           break;
         case 'requires_approval':
           auditEventType = AUDIT_EVENTS.AUTHZ_REQUIRES_APPROVAL;
+          break;
+        case 'agent_inactive':
+        case 'token_invalid':
+        case 'token_expired':
+        case 'insufficient_scope':
+          auditEventType = AUDIT_EVENTS.AUTHZ_DENY;
           break;
         default:
           auditEventType = AUDIT_EVENTS.AUTHZ_CHECK;
@@ -95,6 +101,7 @@ export async function POST(request: NextRequest) {
         decision: authzResult.decision,
         reason: authzResult.reason,
         requiresApproval: authzResult.requiresApproval,
+        matchedRule: authzResult.matchedRule,
       });
     }
 

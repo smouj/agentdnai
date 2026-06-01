@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       agentId: parsed.data.agentId,
       scopes: parsed.data.scopes,
       ttlSeconds: parsed.data.ttlSeconds,
+      createdBy: parsed.data.createdBy,
     });
 
     return NextResponse.json(result, { status: 201 });

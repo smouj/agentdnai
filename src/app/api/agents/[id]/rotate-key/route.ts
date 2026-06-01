@@ -31,13 +31,16 @@ export async function POST(
       );
     }
 
-    // Generate new key pair
+    // Generate new RSA-PSS key pair
     const keyPair = generateKeyPair();
 
-    // Update public key
+    // Update public key and fingerprint
     const updated = await db.agentIdentity.update({
       where: { id },
-      data: { publicKey: keyPair.publicKey },
+      data: {
+        publicKey: keyPair.publicKey,
+        fingerprint: keyPair.fingerprint,
+      },
     });
 
     // Create audit event

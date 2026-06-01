@@ -2,17 +2,23 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
-import { api, type Agent, type Permission, type Token, type AuditEvent, type AuthzResult, type DashboardStats, type IssuedToken } from '@/lib/api-client';
+import { api, type Agent, type Permission, type Token, type AuditEvent, type AuthzResult, type DashboardStats, type IssuedToken, type ApprovalRequest } from '@/lib/api-client';
 import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES, type PermissionCategory } from '@/lib/permissions';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
- LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
- XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
- ResponsiveContainer, Legend, Area, AreaChart
-} from 'recharts';
-
-// ─── UI Components ────────────────────────────────────────────────────────────
+  Shield, Key, Activity, Eye, Ban, Play, Pause, RotateCw, Plus,
+  ChevronRight, Terminal, Lock, Fingerprint, Database, FileText,
+  AlertTriangle, CheckCircle2, XCircle, Clock, Search, Filter,
+  Copy, ExternalLink, Server, Globe, Mail, CreditCard,
+  HardDrive, Trash2, Zap, ArrowRight, ArrowLeft, Home, LayoutDashboard,
+  Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
+  ShieldX, RefreshCw, Download, Hash, Cpu,
+  Layers, Bot, Sparkles, Command, Menu, X, Code2,
+  Wrench, Package, Workflow, Bell,
+  Sun, Moon, Upload, FileDown, LogOut, Building2, User,
+  RotateCcw
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -20,4924 +26,2361 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator } from '@/components/ui/command';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import {
- Shield, Key, Activity, Eye, Ban, Play, Pause, RotateCcw, Plus,
- ChevronRight, Terminal, Lock, Fingerprint, Database, FileText,
- AlertTriangle, CheckCircle2, XCircle, Clock, Search, Filter,
- Copy, ExternalLink, Github, Server, Globe, Mail, CreditCard,
- HardDrive, Trash2, Zap, ArrowRight, ArrowLeft, Home, LayoutDashboard,
- Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
- ShieldX, MoreHorizontal, RefreshCw, Download, Hash, Cpu,
- Layers, Brain, Bot, Sparkles, Command, Menu, X, Code2,
- Wrench, Package, MessageSquare, Workflow, Bell, BellRing,
- Sun, Moon, Calendar, Radio, TrendingUp, Upload, FileDown
-} from 'lucide-react';
 
-// ─── Animation Variants ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// ANIMATION VARIANTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const pageTransition = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+};
+
+const stagger = {
+  animate: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+  }),
+  initial: { opacity: 0, y: 16 },
+};
 
 const fadeIn = {
- initial: { opacity: 0, y: 20 },
- animate: { opacity: 1, y: 0 },
- exit: { opacity: 0, y: -20 },
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.3 } },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
 };
 
-const fadeInStagger = {
- initial: { opacity: 0, y: 20 },
- animate: (i: number) => ({
- opacity: 1,
- y: 0,
- transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' },
- }),
-};
-
-const cardEntrance = {
- initial: { opacity: 0, y: 16, scale: 0.97 },
- animate: (i: number) => ({
- opacity: 1,
- y: 0,
- scale: 1,
- transition: { delay: i * 0.06, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] },
- }),
-};
-
-const scaleIn = {
- initial: { opacity: 0, scale: 0.8 },
- animate: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: 'easeOut' } },
-};
-
-const slideInLeft = {
- initial: { opacity: 0, x: -20 },
- animate: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-};
-
-// ─── Helper: Relative Time ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function timeAgo(date: string | Date): string {
- try {
- return formatDistanceToNow(new Date(date), { addSuffix: true });
- } catch {
- return 'unknown';
- }
+  try { return formatDistanceToNow(new Date(date), { addSuffix: true }); } catch { return 'unknown'; }
 }
 
-// ─── Runtime Icon Helper ─────────────────────────────────────────────────────
-
-function RuntimeIcon({ runtime, className = 'w-5 h-5' }: { runtime: string; className?: string }) {
- const iconMap: Record<string, React.ReactNode> = {
- hermes: <Zap className={`${className} text-muted-foreground`} />,
- codex: <Code2 className={`${className} text-foreground`} />,
- openclaw: <Package className={`${className} text-foreground`} />,
- cli: <Terminal className={`${className} text-muted-foreground`} />,
- automation: <Workflow className={`${className} text-muted-foreground`} />,
- custom: <Cpu className={`${className} text-muted-foreground`} />,
- };
- return <>{iconMap[runtime] || <Bot className={`${className} text-crimson`} />}</>;
+function RuntimeIcon({ runtime, className = 'w-4 h-4' }: { runtime: string; className?: string }) {
+  const m: Record<string, React.ReactNode> = {
+    hermes: <Zap className={className} />,
+    codex: <Code2 className={className} />,
+    openclaw: <Package className={className} />,
+    cli: <Terminal className={className} />,
+    automation: <Workflow className={className} />,
+    custom: <Cpu className={className} />,
+  };
+  return <>{m[runtime] || <Bot className={className} />}</>;
 }
 
-// ─── Copy Button Helper ──────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// REUSABLE COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function CopyButton({ text, className = '' }: { text: string; className?: string }) {
- const [copied, setCopied] = useState(false);
- const handleCopy = () => {
- navigator.clipboard.writeText(text);
- setCopied(true);
- setTimeout(() => setCopied(false), 2000);
- };
- return (
- <Button size="icon" variant="ghost" className={`h-7 w-7 ${className}`} onClick={handleCopy}>
- {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-foreground" /> : <Copy className="w-3.5 h-3.5" />}
- </Button>
- );
+  const [copied, setCopied] = useState(false);
+  const copy = () => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return (
+    <Button size="icon" variant="ghost" className={`h-6 w-6 ${className}`} onClick={copy}>
+      {copied ? <CheckCircle2 className="w-3 h-3 text-crimson" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+    </Button>
+  );
 }
-
-// ─── Animated DNA Helix SVG ──────────────────────────────────────────────────
-
-function DNAHelix({ className = '' }: { className?: string }) {
- return (
- <div className={`relative ${className}`}>
- <svg viewBox="0 0 120 400" className="w-full h-full animate-spin-slow" style={{ animationDuration: '20s' }}>
- <defs>
- <linearGradient id="dnaGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
- <stop offset="0%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
- <stop offset="50%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
- <stop offset="100%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
- </linearGradient>
- <linearGradient id="dnaGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
- <stop offset="0%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
- <stop offset="50%" stopColor="hsl(var(--crimson))" stopOpacity="0.8" />
- <stop offset="100%" stopColor="hsl(var(--crimson))" stopOpacity="0.2" />
- </linearGradient>
- <filter id="glow">
- <feGaussianBlur stdDeviation="3" result="blur" />
- <feMerge>
- <feMergeNode in="blur" />
- <feMergeNode in="SourceGraphic" />
- </feMerge>
- </filter>
- </defs>
- {[...Array(20)].map((_, i) => {
- const y = i * 20;
- const x1 = 60 + Math.sin(i * 0.6) * 30;
- const x2 = 60 - Math.sin(i * 0.6) * 30;
- return (
- <g key={i}>
- <line x1={x1} y1={y} x2={x2} y2={y} stroke="hsl(var(--crimson))" strokeWidth="1" opacity="0.3" />
- <circle cx={x1} cy={y} r="3" fill="url(#dnaGrad1)" filter="url(#glow)" />
- <circle cx={x2} cy={y} r="3" fill="url(#dnaGrad2)" filter="url(#glow)" />
- </g>
- );
- })}
- <path
- d={Array.from({ length: 20 }, (_, i) => {
- const y = i * 20;
- const x = 60 + Math.sin(i * 0.6) * 30;
- return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
- }).join(' ')}
- fill="none"
- stroke="hsl(var(--crimson))"
- strokeWidth="2"
- opacity="0.5"
- filter="url(#glow)"
- />
- <path
- d={Array.from({ length: 20 }, (_, i) => {
- const y = i * 20;
- const x = 60 - Math.sin(i * 0.6) * 30;
- return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
- }).join(' ')}
- fill="none"
- stroke="hsl(var(--crimson))"
- strokeWidth="2"
- opacity="0.5"
- filter="url(#glow)"
- />
- </svg>
- </div>
- );
-}
-
-// ─── Live Demo Authorization Animation ───────────────────────────────────────
-
-function LiveAuthzDemo() {
- const [step, setStep] = useState(0);
- const steps = [
- { label: 'Agent: hermes-auditor', icon: <Bot className="w-4 h-4 text-crimson" /> },
- { label: 'Action: github.repo.read', icon: <Shield className="w-4 h-4 text-crimson" /> },
- { label: 'Checking permissions...', icon: <RefreshCw className="w-4 h-4 text-primary animate-spin" /> },
- { label: 'ALLOW ✓', icon: <CheckCircle2 className="w-4 h-4 text-foreground" /> },
- ];
-
- useEffect(() => {
- const interval = setInterval(() => {
- setStep(s => (s + 1) % (steps.length + 2));
- }, 1500);
- return () => clearInterval(interval);
- }, [steps.length]);
-
- const displayStep = Math.min(step, steps.length - 1);
-
- return (
- <div className="rounded-none border border-crimson/20 border-border bg-card p-5 animate-[glow-pulse_3s_ease-in-out_infinite] shadow-card shadow-foreground/10">
- <div className="text-xs text-muted-foreground font-mono mb-3 flex items-center gap-2">
- <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- Live Authorization Check
- </div>
- <div className="space-y-2">
- {steps.map((s, i) => (
- <motion.div
- key={i}
- initial={{ opacity: 0, x: -10 }}
- animate={{ opacity: i <= displayStep ? 1 : 0.2, x: 0 }}
- transition={{ delay: i * 0.1, duration: 0.3 }}
- className={`flex items-center gap-2 text-sm font-mono px-3 py-1.5 rounded-none transition-colors ${
- i === 3 && displayStep === 3
- ? 'bg-accent text-foreground'
- : i <= displayStep
- ? 'text-foreground/80'
- : 'text-muted-foreground/40'
- }`}
- >
- {s.icon}
- {s.label}
- </motion.div>
- ))}
- </div>
- </div>
- );
-}
-
-// ─── Sparkline Mini Chart ────────────────────────────────────────────────────
-
-function Sparkline({ values, color = 'bg-crimson', className = '' }: { values: number[]; color?: string; className?: string }) {
- const max = Math.max(...values, 1);
- return (
- <div className={`flex items-end gap-0.5 h-8 ${className}`}>
- {values.map((v, i) => (
- <div
- key={i}
- className={`${color} rounded-t-sm min-w-[3px] transition-all duration-500`}
- style={{ height: `${(v / max) * 100}%`, width: '5px' }}
- />
- ))}
- </div>
- );
-}
-
-// ─── Status Badge Component ───────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
- const variants: Record<string, { className: string; icon: React.ReactNode }> = {
- ACTIVE: { className: 'bg-secondary text-foreground border-foreground/30', icon: <CheckCircle2 className="w-3 h-3" /> },
- PAUSED: { className: 'bg-secondary text-muted-foreground border-muted-foreground/30', icon: <Pause className="w-3 h-3" /> },
- REVOKED: { className: 'bg-secondary text-foreground border-foreground/30', icon: <XCircle className="w-3 h-3" /> },
- BLOCKED: { className: 'bg-secondary text-foreground border-foreground/30', icon: <Ban className="w-3 h-3" /> },
- EXPIRED: { className: 'bg-muted text-muted-foreground border-muted-foreground/30', icon: <Clock className="w-3 h-3" /> },
- };
- const v = variants[status] || variants.EXPIRED;
- return (
- <Badge variant="outline" className={`${v.className} gap-1 font-mono text-xs`}>
- {status === 'ACTIVE' && <span className="w-1.5 h-1.5 rounded-none bg-foreground animate-pulse" />}
- {status !== 'ACTIVE' && v.icon}
- {status}
- </Badge>
- );
-}
-
-function EffectBadge({ effect }: { effect: string }) {
- const variants: Record<string, { className: string }> = {
- ALLOW: { className: 'bg-secondary text-foreground border-foreground/30' },
- DENY: { className: 'bg-secondary text-foreground border-foreground/30' },
- REQUIRES_APPROVAL: { className: 'bg-secondary text-muted-foreground border-muted-foreground/30' },
- };
- const v = variants[effect] || variants.DENY;
- return <Badge variant="outline" className={`${v.className} font-mono text-xs`}>{effect.replace('_', ' ')}</Badge>;
+  const map: Record<string, { dot: string; icon?: React.ReactNode }> = {
+    ACTIVE: { dot: 'bg-foreground animate-pulse' },
+    PAUSED: { dot: 'bg-muted-foreground', icon: <Pause className="w-3 h-3" /> },
+    REVOKED: { dot: 'bg-crimson', icon: <XCircle className="w-3 h-3" /> },
+    BLOCKED: { dot: 'bg-crimson', icon: <Ban className="w-3 h-3" /> },
+  };
+  const v = map[status] || { dot: 'bg-muted-foreground' };
+  return (
+    <Badge variant="outline" className="gap-1 font-mono text-xs border-border/60">
+      <span className={`w-1.5 h-1.5 rounded-full ${v.dot}`} />
+      {status}
+    </Badge>
+  );
 }
 
 function DecisionBadge({ decision }: { decision: string }) {
- const variants: Record<string, { className: string; icon: React.ReactNode }> = {
- allow: { className: 'bg-secondary text-foreground border-foreground/30', icon: <CheckCircle2 className="w-3 h-3" /> },
- deny: { className: 'bg-secondary text-foreground border-foreground/30', icon: <ShieldX className="w-3 h-3" /> },
- requires_approval: { className: 'bg-secondary text-muted-foreground border-muted-foreground/30', icon: <AlertTriangle className="w-3 h-3" /> },
- };
- const v = variants[decision] || variants.deny;
- return <Badge variant="outline" className={`${v.className} gap-1 font-mono text-xs`}>{v.icon} {decision.replace('_', ' ')}</Badge>;
+  const cls = decision === 'allow'
+    ? 'border-foreground/20 text-foreground'
+    : decision === 'deny'
+      ? 'border-crimson/40 text-crimson'
+      : 'border-border text-muted-foreground';
+  const icon = decision === 'allow'
+    ? <CheckCircle2 className="w-3 h-3" />
+    : decision === 'deny'
+      ? <ShieldX className="w-3 h-3" />
+      : <AlertTriangle className="w-3 h-3" />;
+  return (
+    <Badge variant="outline" className={`gap-1 font-mono text-xs ${cls}`}>
+      {icon} {decision.replace('_', ' ')}
+    </Badge>
+  );
 }
 
 function RiskBadge({ riskLevel }: { riskLevel: string }) {
- const variants: Record<string, { className: string }> = {
- low: { className: 'bg-accent text-foreground' },
- medium: { className: 'bg-accent text-muted-foreground' },
- high: { className: 'bg-muted text-muted-foreground' },
- critical: { className: 'bg-accent text-foreground' },
- };
- const v = variants[riskLevel] || variants.low;
- return <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${v.className}`}>{riskLevel}</span>;
+  const cls = riskLevel === 'critical' ? 'text-crimson' : riskLevel === 'high' ? 'text-crimson/80' : riskLevel === 'medium' ? 'text-muted-foreground' : 'text-foreground/60';
+  return <span className={`text-xs font-mono px-1.5 py-0.5 rounded bg-secondary/50 ${cls}`}>{riskLevel.toUpperCase()}</span>;
 }
 
-// ─── Grid Background ────────────────────────────────────────────────────────
-
-function GridBackground() {
- return (
- <div className="absolute inset-0 overflow-hidden pointer-events-none">
- <svg className="w-full h-full opacity-[0.04]">
- <defs>
- <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
- <circle cx="1" cy="1" r="1" fill="hsl(var(--crimson))" />
- </pattern>
- </defs>
- <rect width="100%" height="100%" fill="url(#grid)" />
- </svg>
- </div>
- );
+function CircularRiskScore({ score, size = 80 }: { score: number; size?: number }) {
+  const r = (size - 8) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (score / 100) * circ;
+  const color = score >= 75 ? 'var(--crimson)' : score >= 50 ? 'oklch(0.6 0.08 40)' : score >= 25 ? 'oklch(0.65 0.05 60)' : 'oklch(0.7 0.02 280)';
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="oklch(0.25 0.01 280)" strokeWidth="4" />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="4" strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-700" />
+    </svg>
+  );
 }
 
-// ─── Floating Particles ──────────────────────────────────────────────────────
-
-function FloatingParticles() {
- const [mounted, setMounted] = React.useState(false);
- // Deterministic seeded random to avoid hydration mismatch
- const seededRandom = (seed: number) => {
- const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
- return x - Math.floor(x);
- };
- const particles = React.useMemo(() =>
- Array.from({ length: 30 }, (_, i) => ({
- id: i,
- x: seededRandom(i * 2) * 100,
- y: seededRandom(i * 2 + 1) * 100,
- size: seededRandom(i * 3) * 3 + 1,
- duration: seededRandom(i * 3 + 1) * 15 + 10,
- delay: seededRandom(i * 3 + 2) * 10,
- opacity: seededRandom(i * 5) * 0.4 + 0.1,
- })),
- []
- );
-
- React.useEffect(() => { setMounted(true); }, []);
-
- if (!mounted) return null;
-
- return (
- <div className="absolute inset-0 overflow-hidden pointer-events-none">
- {particles.map((p) => (
- <motion.div
- key={p.id}
- className="absolute rounded-none bg-crimson"
- style={{
- left: `${p.x}%`,
- top: `${p.y}%`,
- width: p.size,
- height: p.size,
- opacity: p.opacity,
- }}
- animate={{
- y: [0, -30, 0],
- opacity: [p.opacity, p.opacity * 1.5, p.opacity],
- }}
- transition={{
- duration: p.duration,
- delay: p.delay,
- repeat: Infinity,
- ease: 'easeInOut',
- }}
- />
- ))}
- </div>
- );
+function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+      </div>
+      {action}
+    </div>
+  );
 }
 
-// ─── Landing Page ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1. LANDING PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function LandingPage() {
- const { setView } = useAppStore();
+  const { setView } = useAppStore();
 
- return (
- <div className="min-h-screen flex flex-col">
- {/* Navbar */}
- <nav className="border-b border-border bg-background sticky top-0 z-50">
- <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
- <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-none bg-secondary flex items-center justify-center">
- <Fingerprint className="w-5 h-5 text-crimson" />
- </div>
- <span className="text-xl font-bold tracking-tight">Agent<span className="text-crimson">DNAI</span></span>
- </div>
- <div className="flex items-center gap-3">
- <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setView('docs')}>
- <BookOpen className="w-4 h-4 mr-1" /> Docs
- </Button>
- <Button size="sm" className="bg-foreground text-white hover:bg-crimson transition-colors " onClick={() => setView('dashboard')}>
- <LayoutDashboard className="w-4 h-4 mr-1" /> Dashboard
- </Button>
- </div>
- </div>
- </nav>
+  const valueProps = [
+    { icon: <Fingerprint className="w-6 h-6" />, title: 'Verify Identity', desc: 'Every agent gets a unique URI, cryptographic key pair, and verifiable identity card.' },
+    { icon: <Shield className="w-6 h-6" />, title: 'Control Permissions', desc: 'Granular allow/deny rules with production actions requiring human approval.' },
+    { icon: <Eye className="w-6 h-6" />, title: 'Audit Everything', desc: 'Hash-chained, append-only log of every authorization decision and action.' },
+    { icon: <Ban className="w-6 h-6" />, title: 'Revoke Instantly', desc: 'Pause, revoke, or block any agent in seconds. No lingering access.' },
+  ];
 
- {/* Hero */}
- <section className="relative overflow-hidden iridescent-bg">
- 
- 
- 
- {/* Noise texture overlay */}
- <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")', backgroundRepeat: 'repeat', backgroundSize: '256px 256px' }} />
- <motion.div 
- animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
- transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
- />
- <motion.div 
- animate={{ scale: [1, 1.2, 1], opacity: [0.2, 0.4, 0.2] }}
- transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
- />
- <div className="max-w-7xl mx-auto px-6 py-24 lg:py-32 relative">
- <div className="grid lg:grid-cols-2 gap-16 items-center">
- <motion.div
- initial={{ opacity: 0, x: -30 }}
- animate={{ opacity: 1, x: 0 }}
- transition={{ duration: 0.6, ease: 'easeOut' }}
- >
- <Badge variant="outline" className="mb-6 border-border text-crimson bg-crimson/5">
- <Fingerprint className="w-3 h-3 mr-1" /> Secure Identity Layer
- </Badge>
- <div className="flex items-center gap-3 mb-4">
- <h1 className="text-5xl lg:text-7xl font-bold tracking-tight leading-tight">
- Every AI agent<br />
- needs an{' '}
- <span className="iridescent-text">
- identity
- </span>.
- </h1>
- </div>
- <Badge variant="outline" className="mb-4 border-foreground/30 text-foreground bg-muted w-fit text-[10px]">
- v2.0 · Open Source
- </Badge>
- <p className="text-lg text-muted-foreground mb-2 max-w-lg">
- AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions,
- encrypted credentials, revocable access and a clear audit trail.
- </p>
- <motion.p
- className="text-sm text-crimson/70 mb-8 max-w-lg font-mono"
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- transition={{ delay: 1, duration: 0.5 }}
- >
- <span className="inline-block">
- {'> '}Identity · Authorization · Audit — unified for AI agents
- <motion.span
- className="inline-block w-0.5 h-4 bg-crimson/70 ml-0.5 align-middle"
- animate={{ opacity: [1, 0, 1] }}
- transition={{ duration: 1, repeat: Infinity }}
- />
- </span>
- </motion.p>
- <div className="flex flex-wrap gap-4">
- <Button size="lg" className="relative overflow-hidden group h-12 px-8 text-base font-semibold bg-foreground text-white hover:bg-crimson hover:shadow-elevated hover:shadow-crimson/20 transition-all hover-crimson-glow" onClick={() => setView('dashboard')}>
- <span className="absolute inset-0 rounded-none bg-foreground opacity-90 group-hover:opacity-100 transition-opacity" />
- <span className="relative flex items-center">
- <Zap className="w-5 h-5 mr-2" /> Get Started Free
- </span>
- </Button>
- <Button size="lg" variant="outline" className="border-foreground/30 hover:border-crimson/50 hover:text-crimson h-12 px-8 text-base hover-crimson-glow" onClick={() => setView('docs')}>
- <BookOpen className="w-5 h-5 mr-2" /> Read Docs
- </Button>
- </div>
- <p className="mt-4 text-xs text-muted-foreground/60">
- No credit card required · Set up in 2 minutes · Open source
- </p>
- <div className="mt-8 flex items-center gap-6 text-sm text-muted-foreground">
- <div className="flex items-center gap-2"><Lock className="w-4 h-4 text-crimson" /> Deny by default</div>
- <div className="flex items-center gap-2"><Key className="w-4 h-4 text-crimson" /> Temporary tokens</div>
- <div className="flex items-center gap-2"><Eye className="w-4 h-4 text-crimson" /> Full audit trail</div>
- </div>
- </motion.div>
- <motion.div
- initial={{ opacity: 0, x: 30 }}
- animate={{ opacity: 1, x: 0 }}
- transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
- className="relative hidden lg:flex flex-col gap-6"
- >
- <div className="border border-border bg-card p-6 shadow-elevated">
- <div className="flex items-center gap-2 mb-4">
- <div className="w-3 h-3 rounded-none bg-muted-foreground" />
- <div className="w-3 h-3 rounded-none bg-muted-foreground" />
- <div className="w-3 h-3 rounded-none bg-foreground" />
- <span className="ml-2 text-xs text-muted-foreground font-mono">agentdnai check</span>
- </div>
- <pre className="text-sm font-mono text-foreground/80 leading-relaxed">
-{`$ agentdnai check hermes-auditor github.repo.read \\
- --resource github.com/org/repo
+  const steps = [
+    { num: '01', title: 'Register Agent', desc: 'Create a unique digital identity with cryptographic key pair.' },
+    { num: '02', title: 'Set Permissions', desc: 'Assign scoped allow/deny rules or apply permission templates.' },
+    { num: '03', title: 'Monitor & Audit', desc: 'Every action is validated and recorded in a tamper-evident log.' },
+  ];
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Navbar */}
+      <nav className="border-b border-border/60 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-8 w-auto" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-crimson" onClick={() => setView('docs')}>
+              <BookOpen className="w-4 h-4 mr-1" /> Docs
+            </Button>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-crimson" onClick={() => setView('login')}>
+              Sign In
+            </Button>
+            <Button size="sm" className="bg-foreground text-background hover:bg-crimson hover:text-crimson-foreground" onClick={() => setView('register')}>
+              Get Started
+            </Button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden iridescent-bg">
+        <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")', backgroundRepeat: 'repeat', backgroundSize: '256px' }} />
+        <div className="max-w-7xl mx-auto px-6 py-24 lg:py-36 relative">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+              <Badge variant="outline" className="mb-6 border-crimson/30 text-crimson bg-crimson/5">
+                <Lock className="w-3 h-3 mr-1" /> Zero-Trust Identity Layer
+              </Badge>
+              <h1 className="text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+                Digital Identity &<br />
+                Access Control for{' '}
+                <span className="iridescent-text">AI Agents</span>
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
+                AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions,
+                encrypted credentials, revocable access and a tamper-evident audit trail.
+                No more anonymous agents. No more blanket access.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Button size="lg" className="bg-crimson text-crimson-foreground hover:brightness-110 h-12 px-8 text-base font-semibold" onClick={() => setView('register')}>
+                  Get Started <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+                <Button size="lg" variant="outline" className="border-border hover:border-crimson/40 hover:text-crimson h-12 px-8 text-base" onClick={() => setView('docs')}>
+                  View Docs
+                </Button>
+              </div>
+              <p className="mt-4 text-xs text-muted-foreground/60">No credit card · Set up in 2 minutes · Open source</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.15 }} className="hidden lg:block">
+              <div className="border border-border/60 bg-card p-5 shadow-elevated">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-foreground/60" />
+                  <span className="ml-2 text-xs text-muted-foreground font-mono">agentdnai check</span>
+                </div>
+                <pre className="text-sm font-mono text-foreground/70 leading-relaxed whitespace-pre-wrap">{`$ agentdnai check hermes-auditor github.repo.read \\
+  --resource github.com/org/repo
 
 AgentDNAI Authorization Check
 
- Agent: hermes-auditor
- Action: github.repo.read
- Resource: github.com/org/repo
+  Agent:    hermes-auditor
+  Action:   github.repo.read
+  Resource: github.com/org/repo
 
- Decision: ALLOW ✓
- Reason: Explicit permission found.
- Expires: 2026-06-30 23:59:59 UTC`}
- </pre>
- </div>
- <LiveAuthzDemo />
- </motion.div>
- </div>
- </div>
- </section>
+  Decision: ALLOW ✓
+  Reason:   Explicit permission found
+  Expires:  2026-12-31 23:59:59 UTC`}</pre>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
 
- {/* Trusted By */}
- <section className="py-12 border-t border-border/20">
- <div className="max-w-7xl mx-auto px-6">
- <p className="text-center text-xs text-muted-foreground mb-6 uppercase tracking-widest">Trusted by forward-thinking teams</p>
- <div className="flex flex-wrap items-center justify-center gap-4">
- {['NeuralForge', 'AutoScale', 'CodeVault', 'DataPulse', 'SecureOps'].map((name, i) => (
- <motion.div
- key={name}
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ delay: 0.8 + i * 0.1, duration: 0.5 }}
- className="px-6 py-3 rounded-none border border-border bg-card text-base font-semibold text-muted-foreground/60 tracking-wide hover:border-crimson/20 hover:text-crimson/70 transition-all"
- >
- {name}
- </motion.div>
- ))}
- </div>
- </div>
- </section>
+      {/* Value Props */}
+      <section className="py-24 border-t border-border/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Identity, permissions and trust for AI agents</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Every agent gets a verifiable identity, scoped permissions, temporary tokens and a tamper-evident audit trail.</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {valueProps.map((item, i) => (
+              <motion.div key={i} variants={stagger} initial="initial" animate="animate" custom={i}>
+                <Card className="bg-card border-border/60 hover:border-crimson/30 hover:shadow-card-hover transition-all group h-full">
+                  <CardHeader>
+                    <div className="w-10 h-10 rounded bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:text-crimson group-hover:bg-crimson/10 transition-colors">
+                      {item.icon}
+                    </div>
+                    <CardTitle className="text-base">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent><p className="text-sm text-muted-foreground">{item.desc}</p></CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
- {/* Problem Section */}
- <section className="py-24 border-t border-border">
- <div className="max-w-7xl mx-auto px-6">
- <div className="text-center mb-16">
- <Badge variant="outline" className="mb-4 border-foreground/30 text-foreground bg-muted">
- <AlertTriangle className="w-3 h-3 mr-1" /> The Problem
- </Badge>
- <h2 className="text-3xl font-bold mb-4">AI agents are powerful. But uncontrolled.</h2>
- <p className="text-muted-foreground max-w-2xl mx-auto">
- Agents read repositories, modify files, create PRs, access secrets and automate infrastructure.
- Without a proper identity layer, they become hard to control, hard to audit and hard to revoke.
- </p>
- </div>
- <div className="grid md:grid-cols-3 gap-8">
- {[
- { icon: <ShieldAlert className="w-8 h-8" />, title: 'No Identity', desc: 'Agents operate anonymously. You can\'t tell which agent did what.' },
- { icon: <Key className="w-8 h-8" />, title: 'No Scoping', desc: 'Agents get blanket access. One compromised key exposes everything.' },
- { icon: <Eye className="w-8 h-8" />, title: 'No Audit', desc: 'No record of what agents did. Impossible to investigate incidents.' },
- ].map((item, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border hover:border-crimson/30 hover:shadow-card-hover transition-colors h-full">
- <CardHeader>
- <div className="text-foreground mb-2">{item.icon}</div>
- <CardTitle className="text-lg">{item.title}</CardTitle>
- </CardHeader>
- <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
- </div>
- </section>
+      {/* How It Works */}
+      <section className="py-24 border-t border-border/40 bg-card/30">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">How it works</h2>
+            <p className="text-muted-foreground">Three steps to secure your AI agents.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {steps.map((item, i) => (
+              <motion.div key={i} variants={stagger} initial="initial" animate="animate" custom={i} className="relative text-center">
+                <div className="text-5xl font-bold text-crimson/15 mb-3">{item.num}</div>
+                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                {i < 2 && <ChevronRight className="hidden md:block absolute -right-4 top-1/3 text-border w-6 h-6" />}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
 
- {/* Solution Section */}
- <section className="py-24 border-t border-border bg-card/20">
- <div className="max-w-7xl mx-auto px-6">
- <div className="text-center mb-16">
- <Badge variant="outline" className="mb-4 border-border text-crimson bg-crimson/5">
- <ShieldCheck className="w-3 h-3 mr-1" /> The Solution
- </Badge>
- <h2 className="text-3xl font-bold mb-4">Identity, permissions and trust for AI agents.</h2>
- <p className="text-muted-foreground max-w-2xl mx-auto">
- AgentDNAI provides a complete identity and authorization layer — every agent gets a verifiable identity,
- scoped permissions, temporary tokens and a tamper-evident audit trail.
- </p>
- </div>
- <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
- {[
- { icon: <Fingerprint className="w-6 h-6" />, title: 'Agent Identity', desc: 'Unique URI, key pair, and status for every agent.' },
- { icon: <Shield className="w-6 h-6" />, title: 'Scoped Permissions', desc: 'Granular allow/deny rules per resource and action.' },
- { icon: <Key className="w-6 h-6" />, title: 'Temporary Tokens', desc: 'Short-lived, hash-stored tokens. Never permanent.' },
- { icon: <ScrollText className="w-6 h-6" />, title: 'Audit Trail', desc: 'Hash-chained, append-only log of every decision.' },
- ].map((item, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border hover:border-crimson/30 hover:shadow-card-hover transition-all hover:shadow-foreground/10 group h-full">
- <CardHeader>
- <div className="w-10 h-10 rounded-none bg-crimson/10 flex items-center justify-center text-crimson group-hover:bg-crimson/10 group-hover:text-crimson transition-colors">
- {item.icon}
- </div>
- <CardTitle className="text-base">{item.title}</CardTitle>
- </CardHeader>
- <CardContent><p className="text-muted-foreground text-sm">{item.desc}</p></CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
- </div>
- </section>
+      {/* CTA */}
+      <section className="py-24 border-t border-border/40 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-crimson/5 blur-3xl" />
+        </div>
+        <div className="max-w-3xl mx-auto px-6 text-center relative">
+          <h2 className="text-4xl font-bold mb-6">Every agent. Verified. Every action. Controlled.</h2>
+          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">Stop giving AI agents blanket access. Start with zero-trust identity and scoped permissions.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button size="lg" className="bg-crimson text-crimson-foreground hover:brightness-110 h-14 px-10 text-lg font-semibold" onClick={() => setView('register')}>
+              Get Started <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <Button size="lg" variant="outline" className="border-border hover:border-crimson/40 hover:text-crimson h-14 px-10 text-lg" onClick={() => setView('docs')}>
+              View Docs
+            </Button>
+          </div>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground/60">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> No credit card</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> 2-minute setup</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> Open source</span>
+          </div>
+        </div>
+      </section>
 
- {/* How it works */}
- <section className="py-24 border-t border-border">
- <div className="max-w-7xl mx-auto px-6">
- <div className="text-center mb-16">
- <h2 className="text-3xl font-bold mb-4">How it works</h2>
- <p className="text-muted-foreground">Four steps to secure your AI agents.</p>
- </div>
- <div className="grid md:grid-cols-4 gap-8">
- {[
- { step: '01', title: 'Create Agent', desc: 'Generate a unique identity with cryptographic key pair.' },
- { step: '02', title: 'Grant Permissions', desc: 'Assign scoped permissions: allow, deny, or require approval.' },
- { step: '03', title: 'Issue Token', desc: 'Get a temporary token for the agent to authenticate.' },
- { step: '04', title: 'Check Authorization', desc: 'Every action is validated and recorded in the audit log.' },
- ].map((item, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i} className="relative">
- <div className="text-5xl font-bold text-crimson/10 mb-2">{item.step}</div>
- <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
- <p className="text-sm text-muted-foreground">{item.desc}</p>
- {i < 3 && <ChevronRight className="hidden md:block absolute -right-3 top-1/2 text-crimson/30 w-6 h-6" />}
- </motion.div>
- ))}
- </div>
- </div>
- </section>
-
- {/* Permissions Preview */}
- <section className="py-24 border-t border-border bg-card/20">
- <div className="max-w-7xl mx-auto px-6">
- <div className="text-center mb-16">
- <h2 className="text-3xl font-bold mb-4">Granular Permission Catalog</h2>
- <p className="text-muted-foreground">Every scope is defined. Every risk level is labeled. Production always requires approval.</p>
- </div>
- <div className="grid md:grid-cols-3 gap-8">
- {[
- { icon: <Github className="w-5 h-5" />, name: 'GitHub', scopes: ['repo.read', 'repo.write', 'issue.create', 'pr.merge'], color: 'text-muted-foreground' },
- { icon: <Server className="w-5 h-5" />, name: 'Server', scopes: ['logs.read', 'command.run', 'deploy.staging', 'deploy.production'], color: 'text-muted-foreground' },
- { icon: <HardDrive className="w-5 h-5" />, name: 'Filesystem', scopes: ['read', 'write', 'delete', 'execute'], color: 'text-foreground' },
- { icon: <Database className="w-5 h-5" />, name: 'Database', scopes: ['read', 'write', 'migrate', 'backup'], color: 'text-foreground' },
- { icon: <Globe className="w-5 h-5" />, name: 'Browser', scopes: ['open', 'read', 'click', 'form.submit'], color: 'text-foreground' },
- { icon: <Lock className="w-5 h-5" />, name: 'Secrets', scopes: ['read', 'write', 'rotate'], color: 'text-foreground' },
- ].map((cat, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border h-full">
- <CardHeader className="pb-3">
- <div className="flex items-center gap-2">
- <span className={cat.color}>{cat.icon}</span>
- <CardTitle className="text-base">{cat.name}</CardTitle>
- </div>
- </CardHeader>
- <CardContent>
- <div className="flex flex-wrap gap-1.5">
- {cat.scopes.map((s, j) => (
- <Badge key={j} variant="secondary" className="text-xs font-mono bg-secondary">
- {cat.name.toLowerCase()}.{s}
- </Badge>
- ))}
- </div>
- </CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
- </div>
- </section>
-
- {/* Security Principles */}
- <section className="py-24 border-t border-border">
- <div className="max-w-7xl mx-auto px-6">
- <div className="text-center mb-16">
- <h2 className="text-3xl font-bold mb-4">Security by Design</h2>
- </div>
- <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
- {[
- { title: 'Deny by Default', desc: 'Everything is denied unless explicitly allowed. No exceptions.' },
- { title: 'Least Privilege', desc: 'Agents receive only the minimum permissions needed.' },
- { title: 'Immediate Revocation', desc: 'Pause, revoke or block any agent instantly.' },
- { title: 'Temporary Tokens', desc: 'No permanent tokens. TTL is mandatory.' },
- { title: 'Production Guarded', desc: 'Production actions always require human approval.' },
- { title: 'Audit Integrity', desc: 'Hash-chained append-only log detects tampering.' },
- ].map((item, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <div className="flex gap-4 items-start">
- <div className="w-8 h-8 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 mt-0.5 hover:bg-crimson/10 hover:text-crimson">
- <ShieldCheck className="w-4 h-4 text-crimson" />
- </div>
- <div>
- <h3 className="font-semibold mb-1">{item.title}</h3>
- <p className="text-sm text-muted-foreground">{item.desc}</p>
- </div>
- </div>
- </motion.div>
- ))}
- </div>
- </div>
- </section>
-
- {/* Stats Counter */}
- <section className="py-16 border-t border-border bg-card/10">
- <div className="max-w-7xl mx-auto px-6">
- <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
- {[
- { value: '47', label: 'Permission Scopes', icon: <Shield className="w-5 h-5 text-crimson mx-auto mb-2" /> },
- { value: '9', label: 'Categories', icon: <Layers className="w-5 h-5 text-crimson mx-auto mb-2" /> },
- { value: '5', label: 'Templates', icon: <Sparkles className="w-5 h-5 text-crimson mx-auto mb-2" /> },
- { value: '0', label: 'Implicit Grants', icon: <ShieldX className="w-5 h-5 text-foreground mx-auto mb-2" /> },
- ].map((stat, i) => (
- <motion.div
- key={i}
- initial={{ opacity: 0, y: 20 }}
- whileInView={{ opacity: 1, y: 0 }}
- viewport={{ once: true }}
- transition={{ delay: i * 0.1, duration: 0.5 }}
- >
- {stat.icon}
- <div className="text-3xl font-bold mb-1">{stat.value}</div>
- <div className="text-sm text-muted-foreground">{stat.label}</div>
- </motion.div>
- ))}
- </div>
- </div>
- </section>
-
- {/* CTA */}
- <section className="py-24 border-t border-border bg-gradient-to-b from-crimson/8 via-crimson/3 to-transparent relative overflow-hidden">
- <div className="absolute inset-0 pointer-events-none">
- <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-crimson/5 rounded-none blur-3xl" />
- </div>
- <div className="max-w-4xl mx-auto px-6 text-center relative">
- <Badge variant="outline" className="mb-6 border-border text-crimson bg-crimson/5">
- <Sparkles className="w-3 h-3 mr-1" /> Start Securing Your Agents Today
- </Badge>
- <h2 className="text-4xl lg:text-5xl font-bold mb-6 leading-tight">
- No more anonymous agents.<br />
- <span className="bg-gradient-to-r from-crimson via-foreground to-crimson text-foreground iridescent-text">Every action. Verified.</span>
- </h2>
- <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
- Know every agent. Control every action. Audit every decision. Prevent unauthorized access with zero-trust identity for AI.
- </p>
- <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
- <Button size="lg" className="relative overflow-hidden group h-14 px-10 text-lg font-semibold bg-foreground text-white hover:bg-crimson hover:shadow-elevated hover:shadow-crimson/20 transition-all hover-crimson-glow" onClick={() => setView('dashboard')}>
- <span className="absolute inset-0 rounded-none bg-foreground opacity-90 group-hover:opacity-100 transition-opacity" />
- <span className="relative flex items-center">
- <Zap className="w-5 h-5 mr-2" /> Get Started Free
- </span>
- </Button>
- <Button size="lg" variant="outline" className="h-14 px-10 text-lg border-foreground/30 text-foreground hover:border-crimson/50 hover:text-crimson hover-crimson-glow" onClick={() => setView('docs')}>
- <BookOpen className="w-5 h-5 mr-2" /> Read the Docs
- </Button>
- </div>
- <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground/70">
- <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground" /> No credit card</span>
- <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground" /> 2-minute setup</span>
- <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground" /> Open source</span>
- <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground" /> MIT License</span>
- </div>
- </div>
- </section>
-
- {/* Footer */}
- <footer className="border-t border-border py-12 mt-auto">
- <div className="max-w-7xl mx-auto px-6">
- <div className="grid md:grid-cols-4 gap-8 mb-8">
- <div>
- <div className="flex items-center gap-2 mb-3">
- <Fingerprint className="w-5 h-5 text-crimson" />
- <span className="text-lg font-bold">Agent<span className="text-crimson">DNAI</span></span>
- </div>
- <p className="text-xs text-muted-foreground leading-relaxed">Verifiable digital identity, scoped permissions, and audit trails for AI agents.</p>
- </div>
- <div>
- <h4 className="text-sm font-semibold mb-3">Product</h4>
- <ul className="space-y-2 text-xs text-muted-foreground">
- <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('dashboard')}>Dashboard</li>
- <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('agents')}>Agents</li>
- <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('policies')}>Policies</li>
- <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('audit')}>Audit Log</li>
- </ul>
- </div>
- <div>
- <h4 className="text-sm font-semibold mb-3">Resources</h4>
- <ul className="space-y-2 text-xs text-muted-foreground">
- <li className="hover:text-foreground cursor-pointer transition-colors" onClick={() => setView('docs')}>Documentation</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">API Reference</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">CLI Guide</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">Security Model</li>
- </ul>
- </div>
- <div>
- <h4 className="text-sm font-semibold mb-3">Security</h4>
- <ul className="space-y-2 text-xs text-muted-foreground">
- <li className="hover:text-foreground cursor-pointer transition-colors">Deny by Default</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">Hash Chain Audit</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">Key Rotation</li>
- <li className="hover:text-foreground cursor-pointer transition-colors">Token Security</li>
- </ul>
- </div>
- </div>
- <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
- <span className="text-xs text-muted-foreground">© 2026 AgentDNAI · Early development · MIT License</span>
- <div className="flex items-center gap-4 text-xs text-muted-foreground">
- <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-crimson" /> End-to-end encrypted</span>
- <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-crimson" /> Zero trust</span>
- <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-crimson" /> Hash-verified</span>
- </div>
- </div>
- </div>
- </footer>
- </div>
- );
+      {/* Footer */}
+      <footer className="border-t border-border/40 py-10 mt-auto">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Fingerprint className="w-4 h-4 text-crimson" />
+              <span className="text-sm font-semibold">Agent<span className="text-crimson">DNAI</span></span>
+            </div>
+            <span className="text-xs text-muted-foreground">© 2026 AgentDNAI · MIT License</span>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-crimson/60" /> Zero trust</span>
+              <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-crimson/60" /> Hash-verified</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
-// ─── Dashboard Sidebar ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2. LOGIN VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function LoginView() {
+  const { setView, setSession } = useAppStore();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.login({ email, password });
+      setSession(res.session.token, { id: res.user.id, email: res.user.email, name: res.user.name });
+      setView('dashboard');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <motion.div {...pageTransition} className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-10 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold">Sign In</h1>
+          <p className="text-sm text-muted-foreground mt-1">Welcome back to AgentDNAI</p>
+        </div>
+        <Card className="bg-card border-border/60">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="text-sm text-crimson bg-crimson/10 border border-crimson/20 px-3 py-2 rounded">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="login-email" className="text-sm">Email</Label>
+                <Input id="login-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-secondary/50 border-border/60" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-pass" className="text-sm">Password</Label>
+                <Input id="login-pass" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required className="bg-secondary/50 border-border/60" />
+              </div>
+              <Button type="submit" className="w-full bg-crimson text-crimson-foreground hover:brightness-110" disabled={loading}>
+                {loading ? 'Signing in...' : 'Sign In'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          Don&apos;t have an account?{' '}
+          <button className="text-crimson hover:underline" onClick={() => setView('register')}>Register</button>
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3. REGISTER VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function RegisterView() {
+  const { setView, setSession } = useAppStore();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.register({ email, password, name });
+      setSession(res.session.token, { id: res.user.id, email: res.user.email, name: res.user.name });
+      setView('onboarding');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <motion.div {...pageTransition} className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-10 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold">Create Account</h1>
+          <p className="text-sm text-muted-foreground mt-1">Set up your AgentDNAI organization</p>
+        </div>
+        <Card className="bg-card border-border/60">
+          <CardContent className="pt-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="text-sm text-crimson bg-crimson/10 border border-crimson/20 px-3 py-2 rounded">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="reg-name" className="text-sm">Full Name</Label>
+                <Input id="reg-name" value={name} onChange={e => setName(e.target.value)} placeholder="Jane Smith" required className="bg-secondary/50 border-border/60" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-email" className="text-sm">Email</Label>
+                <Input id="reg-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required className="bg-secondary/50 border-border/60" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-pass" className="text-sm">Password</Label>
+                <Input id="reg-pass" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required minLength={8} className="bg-secondary/50 border-border/60" />
+              </div>
+              <Button type="submit" className="w-full bg-crimson text-crimson-foreground hover:brightness-110" disabled={loading}>
+                {loading ? 'Creating account...' : 'Create Account'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        <p className="text-center text-sm text-muted-foreground mt-4">
+          Already have an account?{' '}
+          <button className="text-crimson hover:underline" onClick={() => setView('login')}>Sign In</button>
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4. ONBOARDING VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function OnboardingView() {
+  const { setView, user } = useAppStore();
+  const [step, setStep] = useState(0);
+  const [agentName, setAgentName] = useState('');
+  const [agentRuntime, setAgentRuntime] = useState('hermes');
+  const [agentDesc, setAgentDesc] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [createdAgent, setCreatedAgent] = useState<Agent | null>(null);
+  const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const steps = ['Welcome', 'Create Agent', 'Permissions', 'Done'];
+
+  const runtimes = [
+    { value: 'hermes', label: 'Hermes' },
+    { value: 'codex', label: 'Codex' },
+    { value: 'openclaw', label: 'OpenClaw' },
+    { value: 'cli', label: 'CLI' },
+    { value: 'automation', label: 'Automation' },
+    { value: 'custom', label: 'Custom' },
+  ];
+
+  const templates = PERMISSION_TEMPLATES.slice(0, 5);
+
+  const createFirstAgent = async () => {
+    if (!agentName.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const agent = await api.createAgent({ name: agentName, runtime: agentRuntime, description: agentDesc || undefined });
+      setCreatedAgent(agent);
+
+      // Apply template if selected
+      if (selectedTemplate) {
+        const tpl = PERMISSION_TEMPLATES.find(t => t.id === selectedTemplate);
+        if (tpl) {
+          for (const scope of tpl.permissions) {
+            await api.grantPermission(agent.id, { scope, effect: 'ALLOW' });
+          }
+          for (const scope of tpl.denied) {
+            await api.grantPermission(agent.id, { scope, effect: 'DENY' });
+          }
+        }
+      }
+      setStep(3);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create agent');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const issueFirstToken = async () => {
+    if (!createdAgent) return;
+    setLoading(true);
+    try {
+      const token = await api.issueToken({ agentId: createdAgent.id, scopes: ['*'], ttlSeconds: 86400 });
+      setIssuedToken(token);
+    } catch {
+      // Non-critical
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <motion.div {...pageTransition} className="w-full max-w-lg">
+        <div className="text-center mb-6">
+          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-8 mx-auto mb-3" />
+        </div>
+
+        {/* Progress */}
+        <div className="flex items-center justify-center gap-2 mb-8">
+          {steps.map((s, i) => (
+            <React.Fragment key={i}>
+              <div className={`flex items-center gap-2 ${i <= step ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${i < step ? 'bg-crimson text-crimson-foreground' : i === step ? 'bg-foreground text-background' : 'bg-secondary text-muted-foreground'}`}>
+                  {i < step ? <CheckCircle2 className="w-4 h-4" /> : i + 1}
+                </div>
+                <span className="text-sm hidden sm:inline">{s}</span>
+              </div>
+              {i < steps.length - 1 && <div className={`w-8 h-px ${i < step ? 'bg-crimson' : 'bg-border'}`} />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <Card className="bg-card border-border/60">
+          <CardContent className="pt-6">
+            {error && <div className="text-sm text-crimson bg-crimson/10 border border-crimson/20 px-3 py-2 rounded mb-4">{error}</div>}
+
+            {/* Step 0: Welcome */}
+            {step === 0 && (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 rounded-full bg-crimson/10 flex items-center justify-center mx-auto mb-4">
+                  <Building2 className="w-8 h-8 text-crimson" />
+                </div>
+                <h2 className="text-xl font-bold mb-2">Welcome, {user?.name || 'there'}!</h2>
+                <p className="text-sm text-muted-foreground mb-6">Your organization is ready. Let&apos;s set up your first AI agent.</p>
+                <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setStep(1)}>
+                  Set Up First Agent <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+                <div className="mt-3">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setView('dashboard')}>Skip for now</Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 1: Create Agent */}
+            {step === 1 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-bold">Register Your First Agent</h2>
+                <p className="text-sm text-muted-foreground">Give your AI agent a unique identity.</p>
+                <div className="space-y-2">
+                  <Label className="text-sm">Agent Name</Label>
+                  <Input value={agentName} onChange={e => setAgentName(e.target.value)} placeholder="e.g. hermes-auditor" className="bg-secondary/50 border-border/60" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Runtime</Label>
+                  <Select value={agentRuntime} onValueChange={setAgentRuntime}>
+                    <SelectTrigger className="bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {runtimes.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm">Description (optional)</Label>
+                  <Textarea value={agentDesc} onChange={e => setAgentDesc(e.target.value)} placeholder="What does this agent do?" className="bg-secondary/50 border-border/60" rows={2} />
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => setStep(0)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+                  <Button className="flex-1 bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setStep(2)} disabled={!agentName.trim()}>
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Choose Template */}
+            {step === 2 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-bold">Choose Permission Template</h2>
+                <p className="text-sm text-muted-foreground">Apply a pre-configured set of permissions. You can customize later.</p>
+                <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                  {templates.map(tpl => (
+                    <button
+                      key={tpl.id}
+                      onClick={() => setSelectedTemplate(tpl.id === selectedTemplate ? null : tpl.id)}
+                      className={`w-full text-left p-3 rounded border transition-colors ${selectedTemplate === tpl.id ? 'border-crimson/50 bg-crimson/5' : 'border-border/60 bg-secondary/30 hover:border-crimson/30'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold">{tpl.name}</span>
+                        {selectedTemplate === tpl.id && <CheckCircle2 className="w-4 h-4 text-crimson" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{tpl.description}</p>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {tpl.permissions.slice(0, 4).map(p => (
+                          <Badge key={p} variant="secondary" className="text-[10px] font-mono">{p}</Badge>
+                        ))}
+                        {tpl.permissions.length > 4 && <Badge variant="secondary" className="text-[10px]">+{tpl.permissions.length - 4}</Badge>}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => setStep(1)}><ArrowLeft className="w-4 h-4 mr-1" /> Back</Button>
+                  <Button className="flex-1 bg-crimson text-crimson-foreground hover:brightness-110" onClick={createFirstAgent} disabled={loading}>
+                    {loading ? 'Creating...' : 'Create Agent'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Done */}
+            {step === 3 && (
+              <div className="space-y-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-crimson/10 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-8 h-8 text-crimson" />
+                </div>
+                <h2 className="text-xl font-bold">Agent Created!</h2>
+                {createdAgent && (
+                  <div className="bg-secondary/30 border border-border/60 rounded p-4 text-left space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-mono text-muted-foreground">URI</span>
+                      <CopyButton text={createdAgent.agentUri} />
+                    </div>
+                    <p className="text-sm font-mono break-all">{createdAgent.agentUri}</p>
+                    {createdAgent.fingerprint && (
+                      <>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm font-mono text-muted-foreground">Fingerprint</span>
+                          <CopyButton text={createdAgent.fingerprint} />
+                        </div>
+                        <p className="text-xs font-mono break-all text-muted-foreground">{createdAgent.fingerprint}</p>
+                      </>
+                    )}
+                  </div>
+                )}
+                {issuedToken ? (
+                  <div className="bg-crimson/5 border border-crimson/20 rounded p-3 text-left">
+                    <p className="text-xs text-muted-foreground mb-1">Token (copy now — won&apos;t be shown again)</p>
+                    <p className="text-xs font-mono break-all text-crimson">{issuedToken.token}</p>
+                  </div>
+                ) : (
+                  <Button variant="outline" className="border-crimson/30 text-crimson hover:bg-crimson/5" onClick={issueFirstToken} disabled={loading}>
+                    <Key className="w-4 h-4 mr-1" /> Issue Token
+                  </Button>
+                )}
+                <Button className="w-full bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setView('dashboard')}>
+                  Go to Dashboard <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5. SIDEBAR (authenticated layout)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function DashboardSidebar() {
- const { currentView, setView, sidebarOpen, setSidebarOpen } = useAppStore();
- const [isMobile, setIsMobile] = useState(false);
+  const { currentView, setView, sidebarOpen, setSidebarOpen, user, logout } = useAppStore();
+  const [isMobile, setIsMobile] = useState(false);
 
- // Auto-collapse sidebar on mobile
- useEffect(() => {
- const check = () => {
- const mobile = window.innerWidth < 768;
- setIsMobile(mobile);
- if (mobile && sidebarOpen) setSidebarOpen(false);
- };
- check();
- window.addEventListener('resize', check);
- return () => window.removeEventListener('resize', check);
- }, [sidebarOpen, setSidebarOpen]);
+  useEffect(() => {
+    const check = () => { setIsMobile(window.innerWidth < 768); if (window.innerWidth < 768 && sidebarOpen) setSidebarOpen(false); };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [sidebarOpen, setSidebarOpen]);
 
- const navItems = [
- { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
- { id: 'agents' as const, icon: Bot, label: 'Agents' },
- { id: 'playground' as const, icon: Command, label: 'Playground' },
- { id: 'agent-compare' as const, icon: Layers, label: 'Compare' },
- { id: 'activity-heatmap' as const, icon: Activity, label: 'Activity' },
- { id: 'security-events' as const, icon: Radio, label: 'Live Feed' },
- { id: 'audit' as const, icon: ScrollText, label: 'Audit Log' },
- { id: 'tokens' as const, icon: Key, label: 'Tokens' },
- { id: 'policies' as const, icon: Shield, label: 'Policies' },
- { id: 'settings' as const, icon: Settings, label: 'Settings' },
- ];
+  const navItems = [
+    { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'agents' as const, icon: Bot, label: 'Agents' },
+    { id: 'approvals' as const, icon: Bell, label: 'Approvals' },
+    { id: 'audit' as const, icon: ScrollText, label: 'Audit Log' },
+    { id: 'policies' as const, icon: Shield, label: 'Policies' },
+    { id: 'settings' as const, icon: Settings, label: 'Settings' },
+  ];
 
- // Hide sidebar on mobile (we use bottom nav instead)
- if (isMobile) return null;
+  if (isMobile) return null;
 
- return (
- <aside className={`border-r border-border bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-16'} relative`}>
- <div className="p-4 flex items-center justify-between border-b border-border">
- <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-none bg-secondary flex items-center justify-center shrink-0 hover:bg-crimson/10">
- <Fingerprint className="w-5 h-5 text-crimson" />
- </div>
- {sidebarOpen && <span className="text-lg font-bold">Agent<span className="text-crimson">DNAI</span></span>}
- </div>
- <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
- <Menu className="w-4 h-4" />
- </Button>
- </div>
- <nav className="flex-1 p-3 space-y-1 overflow-y-auto custom-scrollbar">
- {navItems.map((item, i) => {
- const isActive = currentView === item.id;
- const btn = (
- <motion.button
- key={item.id}
- variants={slideInLeft}
- initial="initial"
- animate="animate"
- transition={{ delay: i * 0.05 }}
- onClick={() => setView(item.id)}
- className={`w-full flex items-center gap-3 px-3 py-2 rounded-none text-sm transition-all ${
- isActive
- ? 'text-crimson border-l-2 border-crimson pl-2 bg-gradient-to-r from-crimson/15 via-crimson/8 to-transparent'
- : 'text-muted-foreground hover:text-crimson hover:bg-crimson/5 border-l-2 border-transparent pl-2'
- }`}
- >
- <item.icon className="w-4 h-4 shrink-0" />
- {sidebarOpen && <span>{item.label}</span>}
- </motion.button>
- );
-
- if (!sidebarOpen) {
- return (
- <TooltipProvider key={item.id} delayDuration={0}>
- <Tooltip>
- <TooltipTrigger asChild>
- {btn}
- </TooltipTrigger>
- <TooltipContent side="right" className="text-xs">
- {item.label}
- </TooltipContent>
- </Tooltip>
- </TooltipProvider>
- );
- }
-
- return btn;
- })}
- </nav>
- <div className="p-3 border-t border-border">
- <button
- onClick={() => setView('docs')}
- className={`w-full flex items-center gap-3 px-3 py-2 rounded-none text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors mb-1`}
- >
- <BookOpen className="w-4 h-4 shrink-0" />
- {sidebarOpen && <span>Docs</span>}
- </button>
- <button
- onClick={() => setView('home')}
- className="w-full flex items-center gap-3 px-3 py-2 rounded-none text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
- >
- <Home className="w-4 h-4 shrink-0" />
- {sidebarOpen && <span>Back to Home</span>}
- </button>
- </div>
- {/* Gradient line at bottom of sidebar */}
- <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
- </aside>
- );
+  return (
+    <aside className={`border-r border-border/60 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-56' : 'w-14'}`}>
+      <div className="p-3 flex items-center justify-between border-b border-border/60">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <img src="/logo-agentdnai.png" alt="" className="h-7 w-auto shrink-0" />
+          {sidebarOpen && <span className="text-sm font-bold whitespace-nowrap">Agent<span className="text-crimson">DNAI</span></span>}
+        </div>
+        <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Menu className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto custom-scrollbar">
+        {navItems.map(item => {
+          const isActive = currentView === item.id;
+          const btn = (
+            <button
+              key={item.id}
+              onClick={() => setView(item.id)}
+              className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-sm transition-all ${
+                isActive
+                  ? 'text-crimson bg-crimson/10 border-l-2 border-crimson'
+                  : 'text-muted-foreground hover:text-crimson hover:bg-crimson/5 border-l-2 border-transparent'
+              }`}
+            >
+              <item.icon className="w-4 h-4 shrink-0" />
+              {sidebarOpen && <span className="truncate">{item.label}</span>}
+            </button>
+          );
+          if (!sidebarOpen) {
+            return (
+              <TooltipProvider key={item.id} delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                  <TooltipContent side="right" className="text-xs">{item.label}</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+          return btn;
+        })}
+      </nav>
+      <div className="p-2 border-t border-border/60 space-y-0.5">
+        <button onClick={() => setView('docs')} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+          <BookOpen className="w-4 h-4 shrink-0" />
+          {sidebarOpen && <span>Docs</span>}
+        </button>
+      </div>
+      {sidebarOpen && (
+        <div className="p-3 border-t border-border/60">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shrink-0">
+              <User className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{user?.name || 'User'}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{user?.email || ''}</p>
+            </div>
+            <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-crimson" onClick={logout}>
+              <LogOut className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </aside>
+  );
 }
 
-// ─── Security Score ──────────────────────────────────────────────────────────
-
-function SecurityScore({ stats }: { stats: DashboardStats | null }) {
- if (!stats) return null;
- const total = stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount;
- const score = total > 0 ? Math.round((stats.recentAllowCount / total) * 100) : 100;
- const radius = 42;
- const circumference = 2 * Math.PI * radius;
- const offset = circumference - (score / 100) * circumference;
- const color = score >= 80 ? 'text-foreground' : score >= 50 ? 'text-crimson' : 'text-crimson';
- const strokeColor = score >= 80 ? '#999999' : score >= 50 ? '#8B2252' : '#6B1742';
- const riskLevel = score >= 80 ? 'Low Risk' : score >= 50 ? 'Medium Risk' : 'High Risk';
- const riskColor = score >= 80 ? 'bg-secondary text-foreground border-foreground/30' : score >= 50 ? 'bg-secondary text-crimson border-crimson/30' : 'bg-secondary text-crimson border-crimson/30';
- const gradientBg = score >= 80 ? 'from-foreground/[0.06] via-transparent to-transparent' : score >= 50 ? 'from-muted-foreground/[0.06] via-transparent to-transparent' : 'from-muted-foreground/[0.06] via-transparent to-muted-foreground/[0.02]';
- const description = score >= 80 ? 'Your authorization policies are performing well. Most requests are being allowed with minimal denials.' : score >= 50 ? 'There are some denied actions that may need review. Consider adjusting policies for frequently-denied agents.' : 'A high rate of denials detected. Review your permission assignments and agent configurations urgently.';
- 
- return (
- <Card className={`bg-card border-border bg-gradient-to-r ${gradientBg}`}>
- <CardContent className="p-5 flex items-center gap-6">
- <div className="relative flex-shrink-0">
- <svg width="100" height="100" className="-rotate-90">
- <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="7" />
- <motion.circle
- cx="50" cy="50" r={radius} fill="none" stroke={strokeColor} strokeWidth="7"
- strokeLinecap="round"
- strokeDasharray={circumference}
- initial={{ strokeDashoffset: circumference }}
- animate={{ strokeDashoffset: offset }}
- transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
- />
- </svg>
- <div className="absolute inset-0 flex items-center justify-center">
- <span className={`text-xl font-bold ${color}`}>{score}</span>
- </div>
- </div>
- <div className="flex-1 min-w-0">
- <div className="flex items-center gap-2 mb-1">
- <p className="text-sm font-semibold">Security Score</p>
- <Badge variant="outline" className={`${riskColor} gap-1 text-[10px] px-1.5 py-0`}>
- {riskLevel}
- </Badge>
- </div>
- <p className="text-xs text-muted-foreground mb-2">{description}</p>
- <div className="flex items-center gap-4 text-xs text-muted-foreground">
- <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-none bg-foreground" /> {stats.recentAllowCount} allowed</span>
- <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-none bg-foreground" /> {stats.recentDenyCount} denied</span>
- <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-none bg-foreground" /> {stats.recentRequiresApprovalCount} pending</span>
- </div>
- </div>
- </CardContent>
- </Card>
- );
+// Mobile Bottom Nav
+function MobileBottomNav() {
+  const { currentView, setView } = useAppStore();
+  const items = [
+    { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Home' },
+    { id: 'agents' as const, icon: Bot, label: 'Agents' },
+    { id: 'approvals' as const, icon: Bell, label: 'Approvals' },
+    { id: 'audit' as const, icon: ScrollText, label: 'Audit' },
+    { id: 'settings' as const, icon: Settings, label: 'Settings' },
+  ];
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t border-border/60 z-50 md:hidden safe-area-bottom">
+      <div className="flex items-center justify-around py-1.5">
+        {items.map(item => (
+          <button key={item.id} onClick={() => setView(item.id)} className={`flex flex-col items-center gap-0.5 px-3 py-1 rounded text-xs transition-colors ${currentView === item.id ? 'text-crimson' : 'text-muted-foreground'}`}>
+            <item.icon className="w-5 h-5" />
+            <span className="text-[10px]">{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
 }
 
-// ─── Notification Center ──────────────────────────────────────────────────────
-
-function NotificationCenter({ events }: { events: AuditEvent[] }) {
- const { setView } = useAppStore();
- const [open, setOpen] = useState(false);
- const [read, setRead] = useState<Set<string>>(new Set());
- const unreadCount = events.filter(e => !read.has(e.id)).length;
-
- return (
- <div className="relative">
- <Button
- variant="ghost"
- size="icon"
- className="relative h-9 w-9"
- onClick={() => setOpen(!open)}
- >
- {unreadCount > 0 ? (
- <BellRing className="w-4 h-4 text-crimson" />
- ) : (
- <Bell className="w-4 h-4 text-muted-foreground" />
- )}
- {unreadCount > 0 && (
- <motion.span
- initial={{ scale: 0 }}
- animate={{ scale: 1 }}
- className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-none bg-foreground text-crimson-foreground text-[10px] font-bold flex items-center justify-center"
- >
- {unreadCount > 9 ? '9+' : unreadCount}
- </motion.span>
- )}
- </Button>
-
- <AnimatePresence>
- {open && (
- <motion.div
- initial={{ opacity: 0, y: -8, scale: 0.95 }}
- animate={{ opacity: 1, y: 0, scale: 1 }}
- exit={{ opacity: 0, y: -8, scale: 0.95 }}
- transition={{ duration: 0.15 }}
- className="absolute right-0 top-11 w-80 z-50 rounded-none border border-border bg-card/95 -xl shadow-xl shadow-black/20"
- >
- <div className="p-3 border-b border-border flex items-center justify-between">
- <span className="text-sm font-semibold">Notifications</span>
- {unreadCount > 0 && (
- <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => {
- const newRead = new Set(events.map(e => e.id));
- setRead(newRead);
- }}>
- Mark all read
- </Button>
- )}
- </div>
- <ScrollArea className="max-h-72">
- {events.length === 0 ? (
- <div className="p-4 text-center text-muted-foreground text-sm">
- <Bell className="w-6 h-6 mx-auto mb-2 opacity-30" />
- No notifications yet
- </div>
- ) : (
- <div className="p-1">
- {events.slice(0, 8).map(event => {
- const isRead = read.has(event.id);
- return (
- <motion.button
- key={event.id}
- className={`w-full text-left p-2.5 rounded-none transition-colors hover:bg-accent/50 ${!isRead ? 'bg-crimson/5' : ''}`}
- onClick={() => {
- setRead(prev => new Set(prev).add(event.id));
- setOpen(false);
- setView('audit');
- }}
- >
- <div className="flex items-start gap-2">
- <div className={`mt-0.5 w-2 h-2 rounded-none shrink-0 ${
- event.decision === 'allow' ? 'bg-foreground' :
- event.decision === 'deny' ? 'bg-foreground' :
- event.decision === 'requires_approval' ? 'bg-foreground' :
- 'bg-crimson'
- }`} />
- <div className="min-w-0 flex-1">
- <p className={`text-xs font-mono ${!isRead ? 'text-foreground' : 'text-muted-foreground'}`}>
- {event.eventType.replace(/_/g, ' ')}
- </p>
- <p className="text-xs text-muted-foreground mt-0.5 truncate">
- {event.action || 'System event'} · {timeAgo(event.createdAt)}
- </p>
- </div>
- </div>
- </motion.button>
- );
- })}
- </div>
- )}
- </ScrollArea>
- <div className="p-2 border-t border-border">
- <Button variant="ghost" size="sm" className="w-full h-7 text-xs" onClick={() => { setOpen(false); setView('audit'); }}>
- View All Audit Events
- </Button>
- </div>
- </motion.div>
- )}
- </AnimatePresence>
- </div>
- );
-}
-
-// ─── Dashboard View ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 6. DASHBOARD VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function DashboardView() {
- const { setView, navigateToAgent } = useAppStore();
- const [stats, setStats] = useState<DashboardStats | null>(null);
- const [agents, setAgents] = useState<Agent[]>([]);
- const [recentAudit, setRecentAudit] = useState<AuditEvent[]>([]);
- const [trendsData, setTrendsData] = useState<{
- hourlyTrends: { hour: string; allow: number; deny: number; requiresApproval: number }[];
- permissionDistribution: { category: string; allow: number; deny: number; requiresApproval: number }[];
- topActions: { action: string; count: number }[];
- period: string;
- } | null>(null);
- const [showSetupWizard, setShowSetupWizard] = useState(false);
- const [loading, setLoading] = useState(true);
+  const { setView } = useAppStore();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [recentEvents, setRecentEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
 
- const load = useCallback(async () => {
- try {
- const [s, a, ev] = await Promise.all([api.getStats(), api.listAgents(), api.getAuditEvents({ limit: 10 })]);
- setStats(s);
- setAgents(a);
- setRecentAudit(ev);
- } catch (err) {
- console.error(err);
- } finally {
- setLoading(false);
- }
- }, []);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [s, events] = await Promise.all([api.getStats(), api.getAuditEvents({ limit: 10 })]);
+        setStats(s);
+        setRecentEvents(Array.isArray(events) ? events : []);
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    };
+    load();
+  }, []);
 
- const loadTrends = useCallback(async () => {
- try {
- const data = await api.getTrends();
- setTrendsData(data);
- } catch (err) {
- console.error(err);
- }
- }, []);
+  const statCards = [
+    { label: 'Agents', value: stats?.totalAgents ?? 0, icon: Bot, sub: `${stats?.activeAgents ?? 0} active` },
+    { label: 'Active Tokens', value: stats?.activeTokens ?? 0, icon: Key, sub: 'issued & valid' },
+    { label: 'Permissions', value: stats?.totalPermissions ?? 0, icon: Shield, sub: 'scoped rules' },
+    { label: 'Recent Events', value: (stats?.recentAllowCount ?? 0) + (stats?.recentDenyCount ?? 0) + (stats?.recentRequiresApprovalCount ?? 0), icon: Activity, sub: `${stats?.recentAllowCount ?? 0} allow · ${stats?.recentDenyCount ?? 0} deny` },
+  ];
 
- useEffect(() => { load(); loadTrends(); }, [load, loadTrends]);
+  const quickActions = [
+    { label: 'Create Agent', icon: Plus, view: 'agents' as const },
+    { label: 'Issue Token', icon: Key, view: 'agents' as const },
+    { label: 'Check Auth', icon: Shield, view: 'audit' as const },
+  ];
 
- if (loading) {
- return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
- }
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <PageHeader title="Dashboard" subtitle="Overview of your AI agent fleet" action={
+        <Button size="sm" className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setView('agents')}>
+          <Plus className="w-4 h-4 mr-1" /> New Agent
+        </Button>
+      } />
 
- const statCards = [
- { label: 'Total Agents', subtitle: 'Registered identities', value: stats?.totalAgents || 0, icon: <Bot className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [2, 3, 1, 4, 5, 3, 6], sparkColor: 'bg-foreground', trend: '+12%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-crimson', cardBg: 'bg-gradient-to-br from-foreground/[0.07] via-transparent to-foreground/[0.03]' },
- { label: 'Active', subtitle: 'Currently active', value: stats?.activeAgents || 0, icon: <CheckCircle2 className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [1, 2, 3, 2, 4, 3, 5], sparkColor: 'bg-foreground', trend: '+8%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-foreground', cardBg: 'bg-gradient-to-br from-foreground/[0.07] via-transparent to-muted' },
- { label: 'Permissions', subtitle: 'Total scope entries', value: stats?.totalPermissions || 0, icon: <Shield className="w-5 h-5 text-foreground" />, iconBg: 'bg-foreground/10', color: 'text-foreground', sparkline: [5, 8, 12, 10, 15, 18, 20], sparkColor: 'bg-foreground', trend: '+24%', trendUp: true, gradientFrom: 'from-foreground', gradientTo: 'to-foreground', cardBg: 'bg-card' },
- { label: 'Active Tokens', subtitle: 'Issued & unexpired', value: stats?.activeTokens || 0, icon: <Key className="w-5 h-5 text-muted-foreground" />, iconBg: 'bg-foreground/10', color: 'text-muted-foreground', sparkline: [1, 2, 1, 3, 2, 4, 3], sparkColor: 'bg-foreground', trend: '-3%', trendUp: false, gradientFrom: 'from-muted-foreground', gradientTo: 'to-muted-foreground', cardBg: 'bg-gradient-to-br from-muted-foreground/[0.07] via-transparent to-muted' },
- ];
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {statCards.map((s, i) => (
+          <motion.div key={s.label} variants={stagger} initial="initial" animate="animate" custom={i}>
+            <Card className="bg-card border-border/60 hover:border-crimson/20 transition-colors">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider">{s.label}</span>
+                  <s.icon className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <div className="text-2xl font-bold">{loading ? '—' : s.value}</div>
+                <p className="text-[11px] text-muted-foreground mt-1">{s.sub}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
 
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <div className="flex items-center gap-3">
- <h1 className="text-2xl font-bold">Dashboard</h1>
- <span className="text-[11px] text-muted-foreground/60 font-mono flex items-center gap-1">
- <span className="w-1.5 h-1.5 rounded-none bg-foreground animate-pulse" /> Last updated: just now
- </span>
- </div>
- <p className="text-sm text-muted-foreground">Overview of your AI agent identities and authorization activity.</p>
- </div>
- <div className="flex items-center gap-2">
- <Badge variant="outline" className="text-xs font-mono text-muted-foreground border-border px-2 py-1 cursor-pointer hover:bg-accent transition-colors" onClick={() => { const e = new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true, bubbles: true }); document.dispatchEvent(e); }}>
- ⌘K
- </Badge>
- <NotificationCenter events={recentAudit} />
- <Button variant="outline" size="sm" onClick={() => setShowSetupWizard(true)}>
- <Zap className="w-4 h-4 mr-1" /> Quick Setup
- </Button>
- <Button variant="outline" size="sm" onClick={load}>
- <RefreshCw className="w-4 h-4 mr-1" /> Refresh
- </Button>
- <Button size="sm" className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={async () => {
- try {
- await fetch('/api/seed', { method: 'POST' });
- toast({ title: 'Demo data seeded', description: 'Refresh to see the new data.' });
- load();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- }
- }}>
- <Sparkles className="w-4 h-4 mr-1" /> Seed Demo
- </Button>
- </div>
- </div>
- {/* Animated gradient line below header */}
- <div className="h-px w-full bg-gradient-to-r from-transparent via-crimson/40 to-transparent " />
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {quickActions.map(a => (
+          <button key={a.label} onClick={() => setView(a.view)} className="flex items-center gap-2 p-3 rounded border border-border/60 bg-card hover:border-crimson/30 hover:text-crimson transition-colors text-sm text-muted-foreground">
+            <a.icon className="w-4 h-4" /> {a.label}
+          </button>
+        ))}
+      </div>
 
- {/* System Status Bar */}
- <div className="flex items-center gap-4 px-4 py-2.5 rounded-none bg-muted border border-border">
- <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- <span className="text-xs font-medium text-crimson">System Operational</span>
- </div>
- <div className="h-3 w-px bg-border" />
- <span className="text-xs text-muted-foreground">Audit Chain: <span className="text-foreground">Verified</span></span>
- <div className="h-3 w-px bg-border" />
- <span className="text-xs text-muted-foreground">Policy Engine: <span className="text-foreground">Active</span></span>
- <div className="h-3 w-px bg-border" />
- <span className="text-xs text-muted-foreground">{stats?.totalAgents || 0} Agents Registered</span>
- </div>
+      {/* Recent Events */}
+      <Card className="bg-card border-border/60">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm">Recent Audit Events</CardTitle>
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground hover:text-crimson" onClick={() => setView('audit')}>View all →</Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recentEvents.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No events yet</p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+              {recentEvents.map(evt => (
+                <div key={evt.id} className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-0">
+                  <DecisionBadge decision={evt.decision || 'unknown'} />
+                  <span className="text-xs text-muted-foreground font-mono truncate flex-1">{evt.action || evt.eventType}</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(evt.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
- {/* Stats Grid with Sparklines */}
- <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
- {statCards.map((card, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className={`bg-card border-border hover:border-border transition-all hover:shadow-card hover:shadow-foreground/10 group relative overflow-hidden ${card.cardBg}`}>
- {/* Shimmer effect on hover */}
- <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-none bg-gradient-to-r from-transparent via-crimson/5 to-transparent " />
- <CardContent className="p-4 relative">
- <div className="flex items-center justify-between mb-3">
- <div className="w-10 h-10 rounded-none flex items-center justify-center group-hover:scale-110 transition-transform bg-foreground/10 group-hover:bg-crimson/10 transition-colors duration-300">
- {card.icon}
- </div>
- <Sparkline values={card.sparkline} color={card.sparkColor} className="h-10" />
- </div>
- <div>
- <span className="text-xs text-muted-foreground">{card.label}</span>
- <motion.div
- className={`text-3xl font-bold bg-gradient-to-r ${card.gradientFrom} ${card.gradientTo} text-foreground`}
- key={`stat-${card.label}-${card.value}`}
- initial={{ scale: 0.5, opacity: 0 }}
- animate={{ scale: [0.5, 1.15, 1], opacity: 1 }}
- transition={{ delay: i * 0.1 + 0.3, duration: 0.5, type: 'spring' }}
- >
- {card.value}
- </motion.div>
- <div className="flex items-center gap-2 mt-0.5">
- <span className={`text-xs font-mono flex items-center gap-0.5 ${card.trendUp ? 'text-foreground' : 'text-foreground'}`}>
- {card.trendUp ? <span>↑</span> : <span>↓</span>} {card.trend}
- </span>
- <span className="text-[10px] text-muted-foreground/60">·</span>
- <span className="text-[10px] text-muted-foreground/60">{card.subtitle}</span>
- </div>
- </div>
- </CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
-
- {/* Security Score */}
- <SecurityScore stats={stats} />
-
- {/* Quick Actions */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">Quick Actions</CardTitle>
- </CardHeader>
- <CardContent>
- <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('agents')}>
- <Plus className="w-5 h-5 text-foreground hover:text-crimson" />
- <span className="text-xs font-medium">New Agent</span>
- <span className="text-[10px] text-muted-foreground/70">Register new AI agent</span>
- </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-crimson/5 border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('security-events')}>
- <Radio className="w-5 h-5 text-crimson" />
- <span className="text-xs font-medium">Live Feed</span>
- <span className="text-[10px] text-muted-foreground/70">Monitor events</span>
- </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('audit')}>
- <ScrollText className="w-5 h-5 text-muted-foreground" />
- <span className="text-xs font-medium">View Audit</span>
- <span className="text-[10px] text-muted-foreground/70">Authorization logs</span>
- </Button>
- <Button variant="outline" className="h-auto py-4 flex flex-col items-center gap-1 bg-muted border-border hover:bg-crimson/5 hover:border-crimson/30 hover:scale-[1.03] transition-all" onClick={() => setView('policies')}>
- <Shield className="w-5 h-5 text-foreground hover:text-crimson" />
- <span className="text-xs font-medium">Policies</span>
- <span className="text-[10px] text-muted-foreground/70">Manage permissions</span>
- </Button>
- </div>
- </CardContent>
- </Card>
-
- {/* Activity Timeline */}
- {recentAudit.length > 0 && (
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">Activity Timeline</CardTitle>
- <CardDescription>Recent authorization events</CardDescription>
- </CardHeader>
- <CardContent>
- <div className="relative pl-8">
- <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-crimson/30 via-border to-transparent" />
- {/* Today header */}
- <div className="relative mb-3 -ml-2">
- <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 bg-card px-2 py-0.5 rounded">Today</span>
- </div>
- {recentAudit.slice(0, 3).map((event, i) => {
- const eventTypeStyles: Record<string, { pillBg: string; pillText: string; borderColor: string }> = {
- PERMISSION_GRANTED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- PERMISSION_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AUTHORIZATION_CHECK: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_CREATED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_PAUSED: { pillBg: 'bg-secondary', pillText: 'text-muted-foreground', borderColor: 'border-l-muted-foreground' },
- AGENT_RESUMED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- KEY_ROTATED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- TOKEN_ISSUED: { pillBg: 'bg-secondary', pillText: 'text-muted-foreground', borderColor: 'border-l-muted-foreground' },
- TOKEN_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- };
- const timelineIcons: Record<string, React.ReactNode> = {
- PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-foreground" />,
- PERMISSION_REVOKED: <ShieldX className="w-3 h-3 text-foreground" />,
- AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-foreground" />,
- AGENT_CREATED: <Plus className="w-3 h-3 text-foreground" />,
- AGENT_REVOKED: <Ban className="w-3 h-3 text-foreground" />,
- AGENT_PAUSED: <Pause className="w-3 h-3 text-muted-foreground" />,
- AGENT_RESUMED: <Play className="w-3 h-3 text-foreground" />,
- KEY_ROTATED: <RotateCcw className="w-3 h-3 text-foreground" />,
- TOKEN_ISSUED: <Key className="w-3 h-3 text-muted-foreground" />,
- TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-foreground" />,
- };
- const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-crimson/15', pillText: 'text-crimson', borderColor: 'border-l-crimson' };
- return (
- <motion.div
- key={event.id}
- initial={{ opacity: 0, x: -10 }}
- animate={{ opacity: 1, x: 0 }}
- transition={{ delay: i * 0.1 }}
- className="relative mb-4 last:mb-0"
- >
- <div className={`absolute -left-5 top-1 w-5 h-5 rounded-none flex items-center justify-center ${
- event.decision === 'allow' ? 'bg-foreground/20' :
- event.decision === 'deny' ? 'bg-foreground/20' :
- event.decision === 'requires_approval' ? 'bg-foreground/20' :
- 'bg-secondary'
- }`}>
- {timelineIcons[event.eventType] || <Activity className="w-3 h-3 text-muted-foreground" />}
- </div>
- <div className={`ml-4 pl-3 border-l-2 ${style.borderColor} rounded-r-none py-1.5 px-3 bg-card`}>
- <div className="flex items-center gap-2 flex-wrap">
- <span className={`${style.pillBg} ${style.pillText} text-[11px] font-mono px-1.5 py-0.5 rounded`}>{event.eventType.replace(/_/g, ' ')}</span>
- {event.decision && <DecisionBadge decision={event.decision} />}
- </div>
- <p className="text-xs text-muted-foreground mt-1">
- {event.action || 'System event'} · {timeAgo(event.createdAt)}
- </p>
- </div>
- </motion.div>
- );
- })}
- {/* Earlier header */}
- {recentAudit.length > 3 && (
- <>
- <div className="relative mb-3 -ml-2 mt-2">
- <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 bg-card px-2 py-0.5 rounded">Earlier</span>
- </div>
- {recentAudit.slice(3, 5).map((event, i) => {
- const eventTypeStyles: Record<string, { pillBg: string; pillText: string; borderColor: string }> = {
- PERMISSION_GRANTED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- PERMISSION_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AUTHORIZATION_CHECK: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_CREATED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- AGENT_PAUSED: { pillBg: 'bg-secondary', pillText: 'text-muted-foreground', borderColor: 'border-l-muted-foreground' },
- AGENT_RESUMED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- KEY_ROTATED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- TOKEN_ISSUED: { pillBg: 'bg-secondary', pillText: 'text-muted-foreground', borderColor: 'border-l-muted-foreground' },
- TOKEN_REVOKED: { pillBg: 'bg-secondary', pillText: 'text-foreground', borderColor: 'border-l-foreground' },
- };
- const timelineIcons: Record<string, React.ReactNode> = {
- PERMISSION_GRANTED: <ShieldCheck className="w-3 h-3 text-foreground" />,
- PERMISSION_REVOKED: <ShieldX className="w-3 h-3 text-foreground" />,
- AUTHORIZATION_CHECK: <Shield className="w-3 h-3 text-foreground" />,
- AGENT_CREATED: <Plus className="w-3 h-3 text-foreground" />,
- AGENT_REVOKED: <Ban className="w-3 h-3 text-foreground" />,
- AGENT_PAUSED: <Pause className="w-3 h-3 text-muted-foreground" />,
- AGENT_RESUMED: <Play className="w-3 h-3 text-foreground" />,
- KEY_ROTATED: <RotateCcw className="w-3 h-3 text-foreground" />,
- TOKEN_ISSUED: <Key className="w-3 h-3 text-muted-foreground" />,
- TOKEN_REVOKED: <Trash2 className="w-3 h-3 text-foreground" />,
- };
- const style = eventTypeStyles[event.eventType] || { pillBg: 'bg-crimson/15', pillText: 'text-crimson', borderColor: 'border-l-crimson' };
- return (
- <motion.div
- key={event.id}
- initial={{ opacity: 0, x: -10 }}
- animate={{ opacity: 1, x: 0 }}
- transition={{ delay: (i + 3) * 0.1 }}
- className="relative mb-4 last:mb-0"
- >
- <div className={`absolute -left-5 top-1 w-5 h-5 rounded-none flex items-center justify-center ${
- event.decision === 'allow' ? 'bg-foreground/20' :
- event.decision === 'deny' ? 'bg-foreground/20' :
- event.decision === 'requires_approval' ? 'bg-foreground/20' :
- 'bg-secondary'
- }`}>
- {timelineIcons[event.eventType] || <Activity className="w-3 h-3 text-muted-foreground" />}
- </div>
- <div className={`ml-4 pl-3 border-l-2 ${style.borderColor} rounded-r-none py-1.5 px-3 bg-card`}>
- <div className="flex items-center gap-2 flex-wrap">
- <span className={`${style.pillBg} ${style.pillText} text-[11px] font-mono px-1.5 py-0.5 rounded`}>{event.eventType.replace(/_/g, ' ')}</span>
- {event.decision && <DecisionBadge decision={event.decision} />}
- </div>
- <p className="text-xs text-muted-foreground mt-1">
- {event.action || 'System event'} · {timeAgo(event.createdAt)}
- </p>
- </div>
- </motion.div>
- );
- })}
- </>
- )}
- </div>
- </CardContent>
- </Card>
- )}
-
- {/* Authorization Decisions */}
- <Card className="bg-card border-border overflow-hidden relative">
- <div className="h-0.5 w-full bg-gradient-to-r from-border via-muted-foreground/40 to-border" />
- <CardHeader className="pb-3">
- <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-crimson" /> Authorization Decisions
- </CardTitle>
- <CardDescription>Allow vs deny vs requires approval</CardDescription>
- </CardHeader>
- <CardContent>
- <div className="grid grid-cols-3 gap-4 mb-4">
- <div className="flex flex-col items-center p-3 rounded-none bg-muted border border-border">
- <span className="text-2xl font-bold text-foreground">{stats?.recentAllowCount || 0}</span>
- <span className="text-xs text-foreground/70 font-medium">Allowed</span>
- </div>
- <div className="flex flex-col items-center p-3 rounded-none bg-muted border border-border">
- <span className="text-2xl font-bold text-foreground">{stats?.recentDenyCount || 0}</span>
- <span className="text-xs text-foreground/70 font-medium">Denied</span>
- </div>
- <div className="flex flex-col items-center p-3 rounded-none bg-muted border border-border">
- <span className="text-2xl font-bold text-muted-foreground">{stats?.recentRequiresApprovalCount || 0}</span>
- <span className="text-xs text-muted-foreground/70 font-medium">Pending</span>
- </div>
- </div>
- <div className="h-5 bg-secondary rounded-none overflow-hidden flex">
- {stats && (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount) > 0 && (
- <>
- <motion.div
- className="bg-foreground h-full relative"
- initial={{ width: 0 }}
- animate={{ width: `${(stats.recentAllowCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
- transition={{ duration: 0.8, ease: 'easeOut' }}
- >
- <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentAllowCount}</span>
- </motion.div>
- <motion.div
- className="bg-crimson/60 h-full relative"
- initial={{ width: 0 }}
- animate={{ width: `${(stats.recentDenyCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
- transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
- >
- <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentDenyCount}</span>
- </motion.div>
- <motion.div
- className="bg-muted-foreground h-full relative"
- initial={{ width: 0 }}
- animate={{ width: `${(stats.recentRequiresApprovalCount / (stats.recentAllowCount + stats.recentDenyCount + stats.recentRequiresApprovalCount)) * 100}%` }}
- transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
- >
- <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white drop-shadow-sm">{stats.recentRequiresApprovalCount}</span>
- </motion.div>
- </>
- )}
- </div>
- </CardContent>
- </Card>
-
- {/* Agent Quick List & Recent Audit */}
- <div className="grid lg:grid-cols-2 gap-6">
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <CardTitle className="text-base">Agents</CardTitle>
- <Button size="sm" variant="outline" onClick={() => setView('agents')}>
- View All <ChevronRight className="w-4 h-4 ml-1" />
- </Button>
- </div>
- </CardHeader>
- <CardContent>
- {agents.length === 0 ? (
- <motion.div
- initial={{ opacity: 0, scale: 0.9 }}
- animate={{ opacity: 1, scale: 1 }}
- className="text-center py-8 text-muted-foreground"
- >
- <div className="relative mx-auto w-16 h-16 mb-4">
- <Bot className="w-16 h-16 text-crimson/20 absolute inset-0" />
- <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-6 h-6 rounded-none border-2 border-border border-t-crimson animate-spin" />
- </div>
- </div>
- <p className="text-sm mb-3">No agents yet. Create your first agent or seed demo data.</p>
- <div className="flex items-center justify-center gap-2">
- <Button size="sm" className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={() => setView('agents')}>
- <Plus className="w-4 h-4 mr-1" /> Create Agent
- </Button>
- <Button size="sm" variant="outline" onClick={async () => {
- await fetch('/api/seed', { method: 'POST' });
- load();
- }}>
- <Sparkles className="w-4 h-4 mr-1" /> Seed Demo
- </Button>
- </div>
- </motion.div>
- ) : (
- <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
- {agents.slice(0, 5).map((agent, i) => (
- <motion.div
- key={agent.id}
- variants={fadeInStagger}
- initial="initial"
- animate="animate"
- custom={i}
- className="flex items-center justify-between p-3 rounded-none bg-secondary hover:bg-crimson/5 cursor-pointer transition-all group border border-transparent hover:border-crimson/20 hover:scale-[1.01]"
- onClick={() => navigateToAgent(agent.id)}
- >
- <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-none bg-crimson/10 flex items-center justify-center group-hover:bg-crimson/10 group-hover:text-crimson transition-colors group-hover:shadow-md group-hover:shadow-foreground/15">
- <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
- </div>
- <div>
- <div className="text-sm font-medium group-hover:text-crimson transition-colors">{agent.name}</div>
- <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
- <span className={agent.status === 'ACTIVE' ? 'text-foreground' : agent.status === 'PAUSED' ? 'text-muted-foreground' : agent.status === 'REVOKED' ? 'text-foreground' : 'text-muted-foreground'}>
- {agent.status === 'ACTIVE' && <span className="inline-block w-1.5 h-1.5 rounded-none bg-foreground mr-0.5 animate-pulse" />}
- {agent.runtime}
- </span>
- </div>
- </div>
- </div>
- <div className="flex items-center gap-2">
- <StatusBadge status={agent.status} />
- <ChevronRight className="w-3 h-3 text-muted-foreground/0 group-hover:text-muted-foreground transition-colors" />
- </div>
- </motion.div>
- ))}
- </div>
- )}
- </CardContent>
- </Card>
-
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <CardTitle className="text-base">Recent Audit Events</CardTitle>
- <Button size="sm" variant="outline" onClick={() => setView('audit')}>
- View All <ChevronRight className="w-4 h-4 ml-1" />
- </Button>
- </div>
- </CardHeader>
- <CardContent>
- {recentAudit.length === 0 ? (
- <div className="text-center py-8 text-muted-foreground">
- <ScrollText className="w-8 h-8 mx-auto mb-2 opacity-50" />
- <p className="text-sm">No audit events yet.</p>
- </div>
- ) : (
- <div className="space-y-1.5 max-h-64 overflow-y-auto custom-scrollbar">
- {recentAudit.map((event, i) => {
- const eventStyle = event.decision === 'allow' ? 'border-l-foreground' : event.decision === 'deny' ? 'border-l-foreground' : event.decision === 'requires_approval' ? 'border-l-muted-foreground' : 'border-l-crimson/30';
- return (
- <motion.div
- key={event.id}
- variants={fadeInStagger}
- initial="initial"
- animate="animate"
- custom={i}
- className={`flex items-center justify-between p-2.5 rounded bg-secondary text-xs border-l-2 ${eventStyle} hover:bg-secondary transition-colors`}
- >
- <div className="flex items-center gap-2 min-w-0">
- <span className="font-mono text-muted-foreground truncate">{event.eventType.replace(/_/g, ' ')}</span>
- {event.action && <span className="text-foreground/60 truncate max-w-[120px]">{event.action}</span>}
- </div>
- <div className="flex items-center gap-2 flex-shrink-0">
- <span className="text-muted-foreground/60">{timeAgo(event.createdAt)}</span>
- {event.decision && <DecisionBadge decision={event.decision} />}
- </div>
- </motion.div>
- );
- })}
- </div>
- )}
- </CardContent>
- </Card>
- </div>
-
- {/* Authorization Trends (24h) */}
- <motion.div
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ delay: 0.6, duration: 0.5 }}
- >
- <Card className="bg-card border-border overflow-hidden">
- <CardHeader className="pb-3">
- <CardTitle className="text-base flex items-center gap-2">
- <Activity className="w-4 h-4 text-crimson" /> Authorization Trends (24h)
- </CardTitle>
- <CardDescription>Hourly allow, deny, and requires approval decisions</CardDescription>
- </CardHeader>
- <CardContent>
- {trendsData && trendsData.hourlyTrends.length > 0 ? (
- <div className="h-64">
- <ResponsiveContainer width="100%" height="100%">
- <AreaChart data={trendsData.hourlyTrends} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
- <defs>
- <linearGradient id="colorAllow" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#888888" stopOpacity={0.3} />
- <stop offset="95%" stopColor="#888888" stopOpacity={0} />
- </linearGradient>
- <linearGradient id="colorDeny" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#999999" stopOpacity={0.3} />
- <stop offset="95%" stopColor="#999999" stopOpacity={0} />
- </linearGradient>
- <linearGradient id="colorApproval" x1="0" y1="0" x2="0" y2="1">
- <stop offset="5%" stopColor="#666666" stopOpacity={0.3} />
- <stop offset="95%" stopColor="#666666" stopOpacity={0} />
- </linearGradient>
- </defs>
- <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
- <XAxis
- dataKey="hour"
- tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
- tickFormatter={(v: string) => v.split(' ')[1] || v}
- interval={3}
- />
- <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
- <RechartsTooltip
- contentStyle={{
- backgroundColor: 'hsl(var(--card))',
- border: '1px solid hsl(var(--border))',
- borderRadius: '8px',
- fontSize: '12px',
- }}
- />
- <Legend wrapperStyle={{ fontSize: '11px' }} />
- <Area type="monotone" dataKey="allow" stroke="#888888" fill="url(#colorAllow)" strokeWidth={2} name="Allow" />
- <Area type="monotone" dataKey="deny" stroke="#999999" fill="url(#colorDeny)" strokeWidth={2} name="Deny" />
- <Area type="monotone" dataKey="requiresApproval" stroke="#666666" fill="url(#colorApproval)" strokeWidth={2} name="Requires Approval" />
- </AreaChart>
- </ResponsiveContainer>
- </div>
- ) : (
- <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
- No trend data available. Seed demo data to see trends.
- </div>
- )}
- </CardContent>
- </Card>
- </motion.div>
-
- {/* Permission Distribution */}
- <motion.div
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ delay: 0.8, duration: 0.5 }}
- >
- <Card className="bg-card border-border overflow-hidden">
- <CardHeader className="pb-3">
- <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-crimson" /> Permission Distribution
- </CardTitle>
- <CardDescription>Permissions by category</CardDescription>
- </CardHeader>
- <CardContent>
- {trendsData && trendsData.permissionDistribution.length > 0 ? (
- <div className="flex flex-col lg:flex-row items-center gap-6">
- <div className="h-64 w-full lg:w-1/2">
- <ResponsiveContainer width="100%" height="100%">
- <PieChart>
- <Pie
- data={trendsData.permissionDistribution.map(d => ({ ...d, total: d.allow + d.deny + d.requiresApproval }))}
- dataKey="total"
- nameKey="category"
- cx="50%"
- cy="50%"
- outerRadius={90}
- innerRadius={50}
- paddingAngle={2}
- label={({ category, total }: { category: string; total: number }) => total > 0 ? `${category}` : ''}
- >
- {trendsData.permissionDistribution.map((_, index) => (
- <Cell key={`cell-${index}`} fill={['#888888', '#999999', '#777777', '#aaaaaa', '#666666', '#bbbbbb', '#555555', '#cccccc', '#444444'][index % 9]} />
- ))}
- </Pie>
- <RechartsTooltip
- contentStyle={{
- backgroundColor: 'hsl(var(--card))',
- border: '1px solid hsl(var(--border))',
- borderRadius: '8px',
- fontSize: '12px',
- }}
- />
- </PieChart>
- </ResponsiveContainer>
- </div>
- <div className="flex-1 space-y-2 w-full">
- {trendsData.permissionDistribution.map((cat, i) => (
- <div key={cat.category} className="flex items-center justify-between p-2 rounded-none bg-secondary">
- <div className="flex items-center gap-2">
- <div className="w-3 h-3 rounded-none" style={{ backgroundColor: ['#888888', '#999999', '#777777', '#aaaaaa', '#666666', '#bbbbbb', '#555555', '#cccccc', '#444444'][i % 9] }} />
- <span className="text-sm font-mono">{cat.category}</span>
- </div>
- <div className="flex items-center gap-2 text-xs">
- <span className="text-foreground">{cat.allow}</span>
- <span className="text-foreground">{cat.deny}</span>
- <span className="text-muted-foreground">{cat.requiresApproval}</span>
- </div>
- </div>
- ))}
- <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
- <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-none bg-foreground" /> Allow</span>
- <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-none bg-foreground" /> Deny</span>
- <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-none bg-foreground" /> Approval</span>
- </div>
- </div>
- </div>
- ) : (
- <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
- No permission data available. Grant permissions to see distribution.
- </div>
- )}
- </CardContent>
- </Card>
- </motion.div>
-
- {/* Quick Setup Wizard */}
- <QuickSetupWizard open={showSetupWizard} onOpenChange={setShowSetupWizard} onComplete={load} />
- </div>
- );
+      {/* System Status */}
+      <Card className="bg-card border-border/60 mt-4">
+        <CardContent className="pt-4 pb-4">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> System Operational</span>
+            <span className="flex items-center gap-1.5"><ShieldCheck className="w-3 h-3" /> Policy Engine Active</span>
+            <span className="flex items-center gap-1.5"><Hash className="w-3 h-3" /> Audit Chain Verified</span>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
-// ─── Agents List View ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 7. AGENTS LIST VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function AgentsView() {
- const { navigateToAgent } = useAppStore();
- const [agents, setAgents] = useState<Agent[]>([]);
- const [loading, setLoading] = useState(true);
- const [showCreateDialog, setShowCreateDialog] = useState(false);
- const [newAgent, setNewAgent] = useState({ name: '', runtime: '', description: '' });
- const [creating, setCreating] = useState(false);
- const [searchQuery, setSearchQuery] = useState('');
- const [statusFilter, setStatusFilter] = useState('all');
- const [runtimeFilter, setRuntimeFilter] = useState('all');
+  const { navigateToAgent } = useAppStore();
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [runtimeFilter, setRuntimeFilter] = useState('all');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newRuntime, setNewRuntime] = useState('hermes');
+  const [newDesc, setNewDesc] = useState('');
+  const [creating, setCreating] = useState(false);
 
- const loadAgents = useCallback(async () => {
- try {
- const data = await api.listAgents({
- search: searchQuery || undefined,
- status: statusFilter === 'all' ? undefined : statusFilter,
- runtime: runtimeFilter === 'all' ? undefined : runtimeFilter,
- });
- setAgents(data);
- } catch (err) {
- console.error(err);
- } finally {
- setLoading(false);
- }
- }, [searchQuery, statusFilter, runtimeFilter]);
+  const loadAgents = useCallback(async () => {
+    try {
+      const data = await api.listAgents({
+        search: search || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        runtime: runtimeFilter !== 'all' ? runtimeFilter : undefined,
+      });
+      setAgents(Array.isArray(data) ? data : []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [search, statusFilter, runtimeFilter]);
 
- useEffect(() => { loadAgents(); }, [loadAgents]);
+  useEffect(() => { loadAgents(); }, [loadAgents]);
 
- const handleCreate = async () => {
- if (!newAgent.name || !newAgent.runtime) return;
- setCreating(true);
- try {
- await api.createAgent(newAgent);
- toast({ title: 'Agent created', description: `${newAgent.name} has been created.` });
- setShowCreateDialog(false);
- setNewAgent({ name: '', runtime: '', description: '' });
- loadAgents();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setCreating(false);
- }
- };
+  const handleCreate = async () => {
+    if (!newName.trim()) return;
+    setCreating(true);
+    try {
+      await api.createAgent({ name: newName, runtime: newRuntime, description: newDesc || undefined });
+      setCreateOpen(false);
+      setNewName('');
+      setNewDesc('');
+      loadAgents();
+      toast({ title: 'Agent created', description: `${newName} has been registered.` });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to create agent', variant: 'destructive' });
+    } finally {
+      setCreating(false);
+    }
+  };
 
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-bold">Agents</h1>
- <p className="text-muted-foreground">Manage your AI agent identities.</p>
- </div>
- <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
- <DialogTrigger asChild>
- <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80">
- <Plus className="w-4 h-4 mr-2" /> Create Agent
- </Button>
- </DialogTrigger>
- <DialogContent>
- <DialogHeader>
- <DialogTitle>Create New Agent</DialogTitle>
- <DialogDescription>Generate a unique identity with cryptographic key pair.</DialogDescription>
- </DialogHeader>
- <div className="space-y-4 py-4">
- <div className="space-y-2">
- <Label>Agent Name</Label>
- <Input placeholder="e.g. hermes-auditor" value={newAgent.name} onChange={e => setNewAgent({ ...newAgent, name: e.target.value })} />
- </div>
- <div className="space-y-2">
- <Label>Runtime</Label>
- <Select value={newAgent.runtime} onValueChange={v => setNewAgent({ ...newAgent, runtime: v })}>
- <SelectTrigger><SelectValue placeholder="Select runtime" /></SelectTrigger>
- <SelectContent>
- <SelectItem value="openclaw">OpenClaw</SelectItem>
- <SelectItem value="hermes">Hermes</SelectItem>
- <SelectItem value="codex">Codex</SelectItem>
- <SelectItem value="cli">CLI Agent</SelectItem>
- <SelectItem value="automation">Automation</SelectItem>
- <SelectItem value="custom">Custom</SelectItem>
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label>Description</Label>
- <Textarea placeholder="What does this agent do?" value={newAgent.description} onChange={e => setNewAgent({ ...newAgent, description: e.target.value })} />
- </div>
- </div>
- <DialogFooter>
- <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
- <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={handleCreate} disabled={creating || !newAgent.name || !newAgent.runtime}>
- {creating ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Fingerprint className="w-4 h-4 mr-2" />}
- Create Agent
- </Button>
- </DialogFooter>
- </DialogContent>
- </Dialog>
- </div>
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <PageHeader title="Agents" subtitle="Manage your AI agent identities" action={
+        <Button size="sm" className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setCreateOpen(true)}>
+          <Plus className="w-4 h-4 mr-1" /> Create Agent
+        </Button>
+      } />
 
- {/* Search and Filter Bar */}
- <div className="flex flex-wrap gap-3 items-center">
- <div className="relative flex-1 min-w-64">
- <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
- <Input
- placeholder="Search agents by name, description, or URI..."
- value={searchQuery}
- onChange={e => setSearchQuery(e.target.value)}
- className="pl-10 bg-secondary"
- />
- </div>
- <Select value={statusFilter} onValueChange={setStatusFilter}>
- <SelectTrigger className="w-36 bg-secondary"><SelectValue placeholder="All Status" /></SelectTrigger>
- <SelectContent>
- <SelectItem value="all">All Status</SelectItem>
- <SelectItem value="ACTIVE">Active</SelectItem>
- <SelectItem value="PAUSED">Paused</SelectItem>
- <SelectItem value="REVOKED">Revoked</SelectItem>
- <SelectItem value="BLOCKED">Blocked</SelectItem>
- </SelectContent>
- </Select>
- <Select value={runtimeFilter} onValueChange={setRuntimeFilter}>
- <SelectTrigger className="w-40 bg-secondary"><SelectValue placeholder="All Runtimes" /></SelectTrigger>
- <SelectContent>
- <SelectItem value="all">All Runtimes</SelectItem>
- <SelectItem value="hermes">Hermes</SelectItem>
- <SelectItem value="codex">Codex</SelectItem>
- <SelectItem value="openclaw">OpenClaw</SelectItem>
- <SelectItem value="cli">CLI</SelectItem>
- <SelectItem value="automation">Automation</SelectItem>
- <SelectItem value="custom">Custom</SelectItem>
- </SelectContent>
- </Select>
- {(searchQuery || statusFilter !== 'all' || runtimeFilter !== 'all') && (
- <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(''); setStatusFilter('all'); setRuntimeFilter('all'); }}>
- <X className="w-4 h-4 mr-1" /> Clear
- </Button>
- )}
- </div>
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Search agents..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-card border-border/60" />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[130px] bg-card border-border/60"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="ACTIVE">Active</SelectItem>
+            <SelectItem value="PAUSED">Paused</SelectItem>
+            <SelectItem value="REVOKED">Revoked</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={runtimeFilter} onValueChange={setRuntimeFilter}>
+          <SelectTrigger className="w-[130px] bg-card border-border/60"><SelectValue placeholder="Runtime" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Runtimes</SelectItem>
+            <SelectItem value="hermes">Hermes</SelectItem>
+            <SelectItem value="codex">Codex</SelectItem>
+            <SelectItem value="openclaw">OpenClaw</SelectItem>
+            <SelectItem value="cli">CLI</SelectItem>
+            <SelectItem value="automation">Automation</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
- {loading ? (
- <div className="flex items-center justify-center h-64"><RefreshCw className="w-6 h-6 text-primary animate-spin" /></div>
- ) : agents.length === 0 ? (
- <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
- <Card className="bg-card border-border">
- <CardContent className="py-16 text-center">
- <div className="relative mx-auto w-20 h-20 mb-6">
- <Bot className="w-20 h-20 text-crimson/20 absolute inset-0" />
- <div className="absolute inset-0 flex items-center justify-center">
- <div className="w-8 h-8 rounded-none border-2 border-border border-t-crimson animate-spin" />
- </div>
- </div>
- <h3 className="text-lg font-semibold mb-2">No agents yet</h3>
- <p className="text-muted-foreground mb-4">Create your first AI agent identity to get started.</p>
- <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" onClick={() => setShowCreateDialog(true)}>
- <Plus className="w-4 h-4 mr-2" /> Create Agent
- </Button>
- </CardContent>
- </Card>
- </motion.div>
- ) : (
- <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
- {agents.map((agent, i) => (
- <motion.div
- key={agent.id}
- variants={fadeInStagger}
- initial="initial"
- animate="animate"
- custom={i}
- >
- <Card
- className={`bg-card border-border hover:border-border transition-all cursor-pointer group relative overflow-hidden hover:shadow-card hover:scale-[1.02] ${
- agent.status === 'ACTIVE' ? 'hover:shadow-foreground/15' : 'hover:shadow-foreground/10'
- }`}
- onClick={() => navigateToAgent(agent.id)}
- >
- {/* Iridescent crimson glow border effect on hover */}
- <div className="absolute inset-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{ boxShadow: agent.status === 'ACTIVE' ? '0 0 15px oklch(0.38 0.17 12 / 0.12), inset 0 0 15px oklch(0.38 0.17 12 / 0.04)' : 'none' }} />
- {/* Border overlay on hover with crimson tint */}
- <div className="absolute inset-0 rounded-none border border-crimson/0 group-hover:border-crimson/30 transition-colors duration-300 pointer-events-none" />
- {/* Active agent subtle glow */}
- {agent.status === 'ACTIVE' && (
- <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
- )}
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <div className="flex items-center gap-3">
- <div className="w-10 h-10 rounded-none bg-crimson/10 flex items-center justify-center group-hover:bg-secondary transition-colors">
- <RuntimeIcon runtime={agent.runtime} className="w-5 h-5" />
- </div>
- <div>
- <CardTitle className="text-base">{agent.name}</CardTitle>
- <CardDescription className="font-mono text-xs flex items-center gap-1">
- <RuntimeIcon runtime={agent.runtime} className="w-3 h-3" />
- {agent.runtime}
- </CardDescription>
- </div>
- </div>
- <StatusBadge status={agent.status} />
- </div>
- </CardHeader>
- <CardContent className="pb-3">
- {agent.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{agent.description}</p>}
- <div className="flex items-center gap-4 text-xs text-muted-foreground">
- <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {agent._count?.permissions || 0} perms</span>
- <span className="flex items-center gap-1"><Key className="w-3 h-3" /> {agent._count?.tokens || 0} tokens</span>
- <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {timeAgo(agent.createdAt)}</span>
- </div>
- {/* Last seen indicator */}
- <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
- <span className={`w-1.5 h-1.5 rounded-none ${agent.status === 'ACTIVE' ? 'bg-foreground animate-pulse' : 'bg-muted-foreground/30'}`} />
- <span>{agent.status === 'ACTIVE' ? 'Active now' : `Last seen ${timeAgo(agent.updatedAt || agent.createdAt)}`}</span>
- </div>
- </CardContent>
- <CardFooter className="pt-0">
- <div className="text-xs font-mono text-muted-foreground/60 truncate w-full">{agent.agentUri}</div>
- </CardFooter>
- </Card>
- </motion.div>
- ))}
- </div>
- )}
- </div>
- );
+      {/* Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">Loading agents...</div>
+      ) : agents.length === 0 ? (
+        <div className="text-center py-12">
+          <Bot className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground">No agents found</p>
+          <Button variant="outline" size="sm" className="mt-3 border-crimson/30 text-crimson hover:bg-crimson/5" onClick={() => setCreateOpen(true)}>
+            Create your first agent
+          </Button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {agents.map((agent, i) => (
+            <motion.div key={agent.id} variants={stagger} initial="initial" animate="animate" custom={i}>
+              <Card
+                className="bg-card border-border/60 hover:border-crimson/30 hover:shadow-card-hover transition-all cursor-pointer group"
+                onClick={() => navigateToAgent(agent.id)}
+              >
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <RuntimeIcon runtime={agent.runtime} />
+                      <span className="font-semibold text-sm group-hover:text-crimson transition-colors">{agent.name}</span>
+                    </div>
+                    <StatusBadge status={agent.status} />
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xs font-mono text-muted-foreground truncate flex-1">{agent.agentUri}</span>
+                    <CopyButton text={agent.agentUri} />
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><Shield className="w-3 h-3" /> {agent._count?.permissions ?? 0} perms</span>
+                    <span className="flex items-center gap-1"><Key className="w-3 h-3" /> {agent._count?.tokens ?? 0} tokens</span>
+                    <Badge variant="secondary" className="text-[10px] font-mono ml-auto">{agent.runtime}</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle>Create New Agent</DialogTitle>
+            <DialogDescription>Register a new AI agent with a unique identity.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Name</Label>
+              <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g. my-agent" className="bg-secondary/50 border-border/60" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Runtime</Label>
+              <Select value={newRuntime} onValueChange={setNewRuntime}>
+                <SelectTrigger className="bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {['hermes', 'codex', 'openclaw', 'cli', 'automation', 'custom'].map(r => <SelectItem key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Description</Label>
+              <Textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="What does this agent do?" className="bg-secondary/50 border-border/60" rows={2} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleCreate} disabled={creating || !newName.trim()}>
+              {creating ? 'Creating...' : 'Create Agent'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
-// ─── Agent Risk Profile ────────────────────────────────────────────────────
-
-function AgentRiskProfile({ agentId }: { agentId: string }) {
- const [riskData, setRiskData] = useState<{
- agentId: string;
- riskScore: number;
- riskLevel: string;
- factors: { name: string; impact: number; description: string }[];
- assessedAt?: string;
- } | null>(null);
- const [loading, setLoading] = useState(true);
- const [error, setError] = useState<string | null>(null);
-
- const loadRisk = useCallback(async () => {
- setLoading(true);
- setError(null);
- try {
- const data = await api.getAgentRisk(agentId);
- setRiskData(data);
- } catch (err: any) {
- setError(err.message || 'Failed to load risk data');
- } finally {
- setLoading(false);
- }
- }, [agentId]);
-
- useEffect(() => { loadRisk(); }, [loadRisk]);
-
- const riskColors: Record<string, { stroke: string; text: string; bg: string }> = {
- low: { stroke: '#888888', text: 'text-foreground', bg: 'bg-accent' },
- medium: { stroke: '#8B2252', text: 'text-crimson', bg: 'bg-accent' },
- high: { stroke: '#6B1742', text: 'text-crimson', bg: 'bg-muted' },
- critical: { stroke: '#4B0A2A', text: 'text-crimson', bg: 'bg-accent' },
- };
-
- if (loading) {
- return (
- <div className="flex items-center justify-center py-16">
- <RefreshCw className="w-8 h-8 text-primary animate-spin" />
- </div>
- );
- }
-
- if (error) {
- return (
- <Card className="bg-card border-border">
- <CardContent className="p-8 text-center">
- <TrendingUp className="w-12 h-12 mx-auto mb-4 text-crimson opacity-30" />
- <h3 className="text-lg font-semibold mb-2">Risk analysis coming soon</h3>
- <p className="text-sm text-muted-foreground mb-4">The risk scoring engine is being calibrated. Check back later.</p>
- <Button variant="outline" size="sm" onClick={loadRisk}>
- <RefreshCw className="w-4 h-4 mr-1" /> Retry
- </Button>
- </CardContent>
- </Card>
- );
- }
-
- if (!riskData) return null;
-
- const colors = riskColors[riskData.riskLevel] || riskColors.low;
- const radius = 60;
- const circumference = 2 * Math.PI * radius;
- const offset = circumference - (riskData.riskScore / 100) * circumference;
-
- return (
- <div className="space-y-6">
- {/* Risk Score Circle */}
- <Card className="bg-card border-border">
- <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
- <div className="relative">
- <svg width="160" height="160" className="-rotate-90">
- <circle cx="80" cy="80" r={radius} fill="none" stroke="hsl(var(--secondary))" strokeWidth="8" />
- <motion.circle
- cx="80" cy="80" r={radius} fill="none" stroke={colors.stroke} strokeWidth="8"
- strokeLinecap="round"
- strokeDasharray={circumference}
- initial={{ strokeDashoffset: circumference }}
- animate={{ strokeDashoffset: offset }}
- transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
- />
- </svg>
- <div className="absolute inset-0 flex flex-col items-center justify-center">
- <span className={`text-3xl font-bold ${colors.text}`}>{riskData.riskScore}</span>
- <span className={`text-xs font-mono uppercase ${colors.text} opacity-80`}>{riskData.riskLevel}</span>
- </div>
- </div>
- <div className="text-center sm:text-left">
- <h3 className="text-lg font-semibold">Risk Score</h3>
- <p className="text-sm text-muted-foreground mt-1">
- {riskData.riskLevel === 'low' && 'This agent has a low risk profile. Permissions and tokens are well-managed.'}
- {riskData.riskLevel === 'medium' && 'This agent has a moderate risk profile. Consider reviewing permissions and active tokens.'}
- {riskData.riskLevel === 'high' && 'This agent has a high risk profile. Review high-risk scopes and consider reducing permissions.'}
- {riskData.riskLevel === 'critical' && 'This agent has a critical risk profile. Immediate review recommended. Consider revoking or pausing.'}
- </p>
- <div className="flex items-center gap-2 mt-3">
- <Badge className={`${colors.bg} ${colors.text} border-0`}>
- {riskData.riskLevel.toUpperCase()} RISK
- </Badge>
- <Button variant="outline" size="sm" onClick={loadRisk}>
- <RefreshCw className="w-3.5 h-3.5 mr-1" /> Refresh Risk Score
- </Button>
- </div>
- </div>
- </CardContent>
- </Card>
-
- {/* Risk Factors */}
- <div className="grid gap-4 sm:grid-cols-2">
- {riskData.factors.map((factor, i) => (
- <motion.div
- key={factor.name}
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- transition={{ delay: i * 0.08, duration: 0.3 }}
- >
- <Card className="bg-card border-border">
- <CardContent className="p-4">
- <div className="flex items-center justify-between mb-2">
- <span className="text-sm font-medium">{factor.name}</span>
- <span className={`text-xs font-mono ${factor.impact > 20 ? 'text-crimson' : factor.impact > 10 ? 'text-muted-foreground' : factor.impact > 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
- +{factor.impact}
- </span>
- </div>
- <div className="w-full h-2 bg-secondary rounded-none overflow-hidden mb-2">
- <motion.div
- className={`h-full rounded-none ${
- factor.impact > 20 ? 'bg-crimson' : factor.impact > 10 ? 'bg-foreground' : factor.impact > 0 ? 'bg-foreground' : 'bg-foreground'
- }`}
- initial={{ width: 0 }}
- animate={{ width: `${Math.min((factor.impact / 30) * 100, 100)}%` }}
- transition={{ duration: 0.8, delay: i * 0.1, ease: 'easeOut' }}
- />
- </div>
- <p className="text-xs text-muted-foreground">{factor.description}</p>
- </CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
- </div>
- );
-}
-
-// ─── Agent Detail View ────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 8. AGENT DETAIL / DNI CARD VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function AgentDetailView() {
- const { selectedAgentId, setView } = useAppStore();
- const [agent, setAgent] = useState<Agent | null>(null);
- const [loading, setLoading] = useState(true);
- const [showGrantDialog, setShowGrantDialog] = useState(false);
- const [showTokenDialog, setShowTokenDialog] = useState(false);
- const [showAuthzDialog, setShowAuthzDialog] = useState(false);
- const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
- const [authzResult, setAuthzResult] = useState<AuthzResult | null>(null);
- const [grantForm, setGrantForm] = useState({ scope: '', resource: '', effect: 'ALLOW' as string, expiresAt: '' });
- const [tokenForm, setTokenForm] = useState({ scopes: [''], ttlSeconds: 3600 });
- const [authzForm, setAuthzForm] = useState({ action: '', resource: '' });
- const [submitting, setSubmitting] = useState(false);
+  const { selectedAgentId, setView } = useAppStore();
+  const [agent, setAgent] = useState<(Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }) | null>(null);
+  const [riskData, setRiskData] = useState<{ riskScore: number; riskLevel: string; factors: { name: string; impact: number; description: string }[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('permissions');
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [tokenOpen, setTokenOpen] = useState(false);
+  const [authzOpen, setAuthzOpen] = useState(false);
+  const [newScope, setNewScope] = useState('');
+  const [newEffect, setNewEffect] = useState('ALLOW');
+  const [newResource, setNewResource] = useState('');
+  const [tokenScopes, setTokenScopes] = useState('');
+  const [tokenTTL, setTokenTTL] = useState('3600');
+  const [authzAction, setAuthzAction] = useState('');
+  const [authzResult, setAuthzResult] = useState<AuthzResult | null>(null);
+  const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
- const loadAgent = useCallback(async () => {
- if (!selectedAgentId) return;
- try {
- const data = await api.getAgent(selectedAgentId);
- setAgent(data);
- } catch (err) {
- console.error(err);
- } finally {
- setLoading(false);
- }
- }, [selectedAgentId]);
+  const loadAgent = useCallback(async () => {
+    if (!selectedAgentId) return;
+    try {
+      const [data, risk] = await Promise.all([
+        api.getAgent(selectedAgentId),
+        api.getAgentRisk(selectedAgentId).catch(() => null),
+      ]);
+      setAgent(data);
+      setRiskData(risk);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [selectedAgentId]);
 
- useEffect(() => { loadAgent(); }, [loadAgent]);
+  useEffect(() => { loadAgent(); }, [loadAgent]);
 
- const handleAction = async (action: 'pause' | 'resume' | 'revoke') => {
- if (!agent) return;
- setSubmitting(true);
- try {
- if (action === 'pause') await api.pauseAgent(agent.id);
- if (action === 'resume') await api.resumeAgent(agent.id);
- if (action === 'revoke') await api.revokeAgent(agent.id);
- toast({ title: `Agent ${action}d`, description: `${agent.name} has been ${action}d.` });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setSubmitting(false);
- }
- };
+  if (loading) return <div className="p-6 text-center text-muted-foreground">Loading agent...</div>;
+  if (!agent) return <div className="p-6 text-center text-muted-foreground">Agent not found</div>;
 
- const handleRotateKey = async () => {
- if (!agent) return;
- try {
- await api.rotateKey(agent.id);
- toast({ title: 'Key rotated', description: 'A new key pair has been generated.' });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- }
- };
+  const handleAction = async (action: string) => {
+    setActionLoading(true);
+    try {
+      if (action === 'pause') await api.pauseAgent(agent.id);
+      else if (action === 'resume') await api.resumeAgent(agent.id);
+      else if (action === 'revoke') await api.revokeAgent(agent.id);
+      else if (action === 'rotateKey') await api.rotateKey(agent.id);
+      toast({ title: `Agent ${action === 'rotateKey' ? 'key rotated' : action + 'd'}` });
+      loadAgent();
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Action failed', variant: 'destructive' });
+    } finally { setActionLoading(false); }
+  };
 
- const handleGrantPermission = async () => {
- if (!agent || !grantForm.scope) return;
- setSubmitting(true);
- try {
- await api.grantPermission(agent.id, {
- scope: grantForm.scope,
- resource: grantForm.resource || undefined,
- effect: grantForm.effect,
- expiresAt: grantForm.expiresAt || undefined,
- });
- toast({ title: 'Permission granted', description: `${grantForm.scope} → ${grantForm.effect}` });
- setShowGrantDialog(false);
- setGrantForm({ scope: '', resource: '', effect: 'ALLOW', expiresAt: '' });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setSubmitting(false);
- }
- };
+  const handleGrant = async () => {
+    if (!newScope.trim()) return;
+    setActionLoading(true);
+    try {
+      await api.grantPermission(agent.id, { scope: newScope, effect: newEffect as 'ALLOW' | 'DENY', resource: newResource || undefined });
+      setGrantOpen(false);
+      setNewScope('');
+      setNewResource('');
+      loadAgent();
+      toast({ title: 'Permission granted' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    } finally { setActionLoading(false); }
+  };
 
- const handleIssueToken = async () => {
- if (!agent) return;
- setSubmitting(true);
- try {
- const result = await api.issueToken({
- agentId: agent.id,
- scopes: tokenForm.scopes.filter(s => s.trim()),
- ttlSeconds: tokenForm.ttlSeconds,
- });
- setIssuedToken(result);
- toast({ title: 'Token issued', description: 'Copy the token now — it will not be shown again.' });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setSubmitting(false);
- }
- };
+  const handleIssueToken = async () => {
+    setActionLoading(true);
+    try {
+      const token = await api.issueToken({
+        agentId: agent.id,
+        scopes: tokenScopes.split(',').map(s => s.trim()).filter(Boolean),
+        ttlSeconds: parseInt(tokenTTL),
+      });
+      setIssuedToken(token);
+      loadAgent();
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    } finally { setActionLoading(false); }
+  };
 
- const handleCheckAuthz = async () => {
- if (!agent || !authzForm.action) return;
- setSubmitting(true);
- try {
- const result = await api.checkAuthz({
- agentId: agent.id,
- action: authzForm.action,
- resource: authzForm.resource || undefined,
- });
- setAuthzResult(result);
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setSubmitting(false);
- }
- };
+  const handleCheckAuthz = async () => {
+    if (!authzAction.trim()) return;
+    setActionLoading(true);
+    try {
+      const result = await api.checkAuthz({ agentId: agent.id, action: authzAction });
+      setAuthzResult(result);
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    } finally { setActionLoading(false); }
+  };
 
- const handleDeletePermission = async (permissionId: string) => {
- if (!agent) return;
- try {
- await api.deletePermission(agent.id, permissionId);
- toast({ title: 'Permission removed' });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- }
- };
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <button onClick={() => setView('agents')} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-crimson mb-4">
+        <ArrowLeft className="w-4 h-4" /> Back to Agents
+      </button>
 
- const handleRevokeToken = async (tokenId: string) => {
- try {
- await api.revokeToken(tokenId);
- toast({ title: 'Token revoked' });
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- }
- };
+      {/* DNI Card */}
+      <Card className="bg-card border-border/60 mb-6 overflow-hidden">
+        {/* Card Header */}
+        <div className="bg-gradient-to-r from-secondary/60 via-secondary/30 to-secondary/60 px-6 py-4 border-b border-border/40">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src="/logo-agentdnai.png" alt="" className="h-6 w-auto" />
+              <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Digital Agent Identity</span>
+            </div>
+            <StatusBadge status={agent.status} />
+          </div>
+        </div>
 
- if (loading) {
- return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
- }
+        {/* Card Body */}
+        <div className="p-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left: Identity Info */}
+            <div className="lg:col-span-2 space-y-4">
+              <div>
+                <h1 className="text-2xl font-bold">{agent.name}</h1>
+                {agent.description && <p className="text-sm text-muted-foreground mt-1">{agent.description}</p>}
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary" className="font-mono text-xs"><RuntimeIcon runtime={agent.runtime} className="w-3 h-3 mr-1" /> {agent.runtime}</Badge>
+                <Badge variant="outline" className="font-mono text-xs border-border/60">{agent.environment || 'default'}</Badge>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0">URI</span>
+                  <span className="text-sm font-mono truncate flex-1">{agent.agentUri}</span>
+                  <CopyButton text={agent.agentUri} />
+                </div>
+                {agent.fingerprint && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-20 shrink-0">Fingerprint</span>
+                    <span className="text-xs font-mono truncate flex-1 text-muted-foreground">{agent.fingerprint}</span>
+                    <CopyButton text={agent.fingerprint} />
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0">Created</span>
+                  <span className="text-xs">{timeAgo(agent.createdAt)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-20 shrink-0">Last Seen</span>
+                  <span className="text-xs">{agent.lastSeenAt ? timeAgo(agent.lastSeenAt) : 'Never'}</span>
+                </div>
+              </div>
+            </div>
 
- if (!agent) {
- return (
- <div className="text-center py-16">
- <Bot className="w-12 h-12 text-crimson/30 mx-auto mb-4" />
- <h3 className="text-lg font-semibold mb-2">Agent not found</h3>
- <Button variant="outline" onClick={() => setView('agents')}>Back to Agents</Button>
- </div>
- );
- }
+            {/* Right: Risk Score */}
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative">
+                <CircularRiskScore score={riskData?.riskScore ?? 0} size={100} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-xl font-bold">{riskData?.riskScore ?? 0}</span>
+                  <span className="text-[10px] text-muted-foreground">RISK</span>
+                </div>
+              </div>
+              {riskData && <RiskBadge riskLevel={riskData.riskLevel} />}
+            </div>
+          </div>
+        </div>
 
- // Group permissions by category for the better permission table
- const permsByCategory = (agent.permissions || []).reduce<Record<string, Permission[]>>((acc, p) => {
- const cat = p.scope.split('.')[0];
- if (!acc[cat]) acc[cat] = [];
- acc[cat].push(p);
- return acc;
- }, {});
+        {/* Action Buttons */}
+        <div className="border-t border-border/40 px-6 py-3 flex flex-wrap gap-2">
+          {agent.status === 'ACTIVE' ? (
+            <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={() => handleAction('pause')} disabled={actionLoading}>
+              <Pause className="w-3 h-3 mr-1" /> Pause
+            </Button>
+          ) : agent.status === 'PAUSED' ? (
+            <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={() => handleAction('resume')} disabled={actionLoading}>
+              <Play className="w-3 h-3 mr-1" /> Resume
+            </Button>
+          ) : null}
+          <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={() => handleAction('revoke')} disabled={actionLoading || agent.status === 'REVOKED'}>
+            <Ban className="w-3 h-3 mr-1" /> Revoke
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={() => handleAction('rotateKey')} disabled={actionLoading}>
+            <RotateCw className="w-3 h-3 mr-1" /> Rotate Key
+          </Button>
+          <Button size="sm" className="text-xs bg-crimson text-crimson-foreground hover:brightness-110 ml-auto" onClick={() => setTokenOpen(true)}>
+            <Key className="w-3 h-3 mr-1" /> Issue Token
+          </Button>
+        </div>
+      </Card>
 
- return (
- <motion.div {...fadeIn} className="space-y-6">
- {/* Header */}
- <div className="flex items-start justify-between">
- <div className="flex items-center gap-4">
- <Button variant="ghost" size="icon" onClick={() => setView('agents')}>
- <ArrowLeft className="w-5 h-5" />
- </Button>
- <div className="w-12 h-12 rounded-none bg-crimson/10 flex items-center justify-center">
- <RuntimeIcon runtime={agent.runtime} className="w-6 h-6" />
- </div>
- <div>
- <div className="flex items-center gap-3">
- <h1 className="text-2xl font-bold">{agent.name}</h1>
- <StatusBadge status={agent.status} />
- </div>
- <div className="flex items-center gap-2 mt-1">
- <span className="text-sm font-mono text-muted-foreground">{agent.agentUri}</span>
- <CopyButton text={agent.agentUri} />
- </div>
- </div>
- </div>
- <div className="flex items-center gap-2">
- {agent.status === 'ACTIVE' && (
- <Button variant="outline" size="sm" onClick={() => handleAction('pause')} disabled={submitting}>
- <Pause className="w-4 h-4 mr-1" /> Pause
- </Button>
- )}
- {agent.status === 'PAUSED' && (
- <Button variant="outline" size="sm" onClick={() => handleAction('resume')} disabled={submitting}>
- <Play className="w-4 h-4 mr-1" /> Resume
- </Button>
- )}
- {(agent.status === 'ACTIVE' || agent.status === 'PAUSED') && (
- <Button variant="outline" size="sm" onClick={() => handleAction('revoke')} disabled={submitting} className="text-foreground border-foreground/30 hover:bg-foreground/80/10">
- <Ban className="w-4 h-4 mr-1" /> Revoke
- </Button>
- )}
- <Button variant="outline" size="sm" onClick={handleRotateKey} disabled={submitting}>
- <RotateCcw className="w-4 h-4 mr-1" /> Rotate Key
- </Button>
- <AlertDialog>
- <AlertDialogTrigger asChild>
- <Button variant="destructive" size="sm" disabled={submitting}>
- <Trash2 className="w-4 h-4 mr-1" /> Delete
- </Button>
- </AlertDialogTrigger>
- <AlertDialogContent>
- <AlertDialogHeader>
- <AlertDialogTitle>Delete Agent</AlertDialogTitle>
- <AlertDialogDescription>
- Are you sure you want to delete <strong>{agent.name}</strong>? This action cannot be undone. All permissions, tokens, and audit events for this agent will be permanently removed.
- </AlertDialogDescription>
- </AlertDialogHeader>
- <AlertDialogFooter>
- <AlertDialogCancel>Cancel</AlertDialogCancel>
- <AlertDialogAction
- className="bg-foreground text-crimson-foreground hover:bg-foreground/80"
- onClick={async () => {
- setSubmitting(true);
- try {
- await api.deleteAgent(agent.id);
- toast({ title: 'Agent deleted', description: `${agent.name} has been permanently deleted.` });
- setView('agents');
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setSubmitting(false);
- }
- }}
- >
- Delete Agent
- </AlertDialogAction>
- </AlertDialogFooter>
- </AlertDialogContent>
- </AlertDialog>
- </div>
- </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="bg-secondary/50">
+          <TabsTrigger value="permissions" className="text-xs">Permissions ({agent.permissions.length})</TabsTrigger>
+          <TabsTrigger value="tokens" className="text-xs">Tokens ({agent.tokens.length})</TabsTrigger>
+          <TabsTrigger value="audit" className="text-xs">Audit</TabsTrigger>
+          <TabsTrigger value="risk" className="text-xs">Risk</TabsTrigger>
+        </TabsList>
 
- {/* Agent Info Cards */}
- <div className="grid md:grid-cols-3 gap-4">
- <Card className="bg-card border-border">
- <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Fingerprint className="w-4 h-4 text-crimson" /> Identity</h3>
- <div className="space-y-2 text-sm">
- <div className="flex justify-between"><span className="text-muted-foreground">Runtime</span><span className="font-mono flex items-center gap-1"><RuntimeIcon runtime={agent.runtime} className="w-3 h-3" /> {agent.runtime}</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Created</span><span title={new Date(agent.createdAt).toLocaleString()}>{timeAgo(agent.createdAt)}</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Last Seen</span><span>{agent.lastSeenAt ? timeAgo(agent.lastSeenAt) : 'Never'}</span></div>
- </div>
- </CardContent>
- </Card>
- <Card className="bg-card border-border">
- <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Key className="w-4 h-4 text-crimson" /> Public Key</h3>
- <div className="bg-secondary rounded p-2 font-mono text-xs break-all max-h-24 overflow-y-auto text-muted-foreground">
- {agent.publicKey}
- </div>
- </CardContent>
- </Card>
- <Card className="bg-card border-border">
- <CardContent className="p-4 space-y-3">
- <h3 className="text-sm font-semibold flex items-center gap-2"><Activity className="w-4 h-4 text-crimson" /> Stats</h3>
- <div className="space-y-2 text-sm">
- <div className="flex justify-between"><span className="text-muted-foreground">Permissions</span><span>{agent.permissions?.length || 0}</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Tokens</span><span>{agent.tokens?.length || 0}</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Audit Events</span><span>{agent.auditEvents?.length || 0}</span></div>
- </div>
- </CardContent>
- </Card>
- </div>
+        {/* Permissions Tab */}
+        <TabsContent value="permissions">
+          <Card className="bg-card border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Permissions</CardTitle>
+                <Button size="sm" variant="outline" className="text-xs border-crimson/30 text-crimson hover:bg-crimson/5" onClick={() => setGrantOpen(true)}>
+                  <Plus className="w-3 h-3 mr-1" /> Grant
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.permissions.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No permissions granted</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/40">
+                      <TableHead className="text-xs">Scope</TableHead>
+                      <TableHead className="text-xs">Effect</TableHead>
+                      <TableHead className="text-xs">Resource</TableHead>
+                      <TableHead className="text-xs">Expires</TableHead>
+                      <TableHead className="w-8" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {agent.permissions.map(p => (
+                      <TableRow key={p.id} className="border-border/20">
+                        <TableCell className="font-mono text-xs">{p.scope}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-[10px] font-mono ${p.effect === 'ALLOW' ? 'border-foreground/20' : 'border-crimson/40 text-crimson'}`}>
+                            {p.effect}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{p.resource || '*'}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{p.expiresAt ? timeAgo(p.expiresAt) : 'Never'}</TableCell>
+                        <TableCell>
+                          <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-crimson" onClick={async () => {
+                            try { await api.deletePermission(agent.id, p.id); loadAgent(); toast({ title: 'Permission removed' }); }
+                            catch (err: unknown) { toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' }); }
+                          }}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
- {/* Action Buttons */}
- <div className="flex flex-wrap gap-3">
- <Dialog open={showGrantDialog} onOpenChange={setShowGrantDialog}>
- <DialogTrigger asChild>
- <Button variant="outline" size="sm"><Plus className="w-4 h-4 mr-1" /> Grant Permission</Button>
- </DialogTrigger>
- <DialogContent>
- <DialogHeader>
- <DialogTitle>Grant Permission</DialogTitle>
- <DialogDescription>Assign a scoped permission to this agent.</DialogDescription>
- </DialogHeader>
- <div className="space-y-4 py-4">
- <div className="space-y-2">
- <Label>Scope</Label>
- <Select value={grantForm.scope} onValueChange={v => setGrantForm({ ...grantForm, scope: v })}>
- <SelectTrigger><SelectValue placeholder="Select permission scope" /></SelectTrigger>
- <SelectContent className="max-h-64">
- {PERMISSION_CATEGORIES.map(cat => (
- <React.Fragment key={cat}>
- <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">{cat}</div>
- {PERMISSIONS.filter(p => p.category === cat).map(p => (
- <SelectItem key={p.scope} value={p.scope}>
- <span className="flex items-center gap-2">
- {p.scope}
- <RiskBadge riskLevel={p.riskLevel} />
- </span>
- </SelectItem>
- ))}
- </React.Fragment>
- ))}
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label>Resource (optional)</Label>
- <Input placeholder="e.g. github.com/org/repo" value={grantForm.resource} onChange={e => setGrantForm({ ...grantForm, resource: e.target.value })} />
- </div>
- <div className="space-y-2">
- <Label>Effect</Label>
- <Select value={grantForm.effect} onValueChange={v => setGrantForm({ ...grantForm, effect: v })}>
- <SelectTrigger><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="ALLOW">ALLOW</SelectItem>
- <SelectItem value="DENY">DENY</SelectItem>
- <SelectItem value="REQUIRES_APPROVAL">REQUIRES_APPROVAL</SelectItem>
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label>Expires At (optional)</Label>
- <Input type="datetime-local" value={grantForm.expiresAt} onChange={e => setGrantForm({ ...grantForm, expiresAt: e.target.value })} />
- </div>
- </div>
- <DialogFooter>
- <Button variant="outline" onClick={() => setShowGrantDialog(false)}>Cancel</Button>
- <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleGrantPermission} disabled={submitting || !grantForm.scope}>
- Grant
- </Button>
- </DialogFooter>
- </DialogContent>
- </Dialog>
+        {/* Tokens Tab */}
+        <TabsContent value="tokens">
+          <Card className="bg-card border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Tokens</CardTitle>
+                <Button size="sm" className="text-xs bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setTokenOpen(true)}>
+                  <Plus className="w-3 h-3 mr-1" /> Issue
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.tokens.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No tokens issued</p>
+              ) : (
+                <div className="space-y-2">
+                  {agent.tokens.map(t => (
+                    <div key={t.id} className="flex items-center gap-3 p-3 rounded border border-border/40 bg-secondary/20">
+                      <Key className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono truncate">{t.scopes}</span>
+                          {t.revokedAt && <Badge variant="outline" className="text-[10px] border-crimson/40 text-crimson">REVOKED</Badge>}
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground mt-0.5">
+                          <span>Expires: {timeAgo(t.expiresAt)}</span>
+                          <span>Last used: {t.lastUsedAt ? timeAgo(t.lastUsedAt) : 'Never'}</span>
+                        </div>
+                      </div>
+                      {!t.revokedAt && (
+                        <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-crimson shrink-0" onClick={async () => {
+                          try { await api.revokeToken(t.id); loadAgent(); toast({ title: 'Token revoked' }); }
+                          catch (err: unknown) { toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' }); }
+                        }}>
+                          <Ban className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
- <Dialog open={showTokenDialog} onOpenChange={v => { setShowTokenDialog(v); if (!v) setIssuedToken(null); }}>
- <DialogTrigger asChild>
- <Button variant="outline" size="sm"><Key className="w-4 h-4 mr-1" /> Issue Token</Button>
- </DialogTrigger>
- <DialogContent>
- <DialogHeader>
- <DialogTitle>Issue Temporary Token</DialogTitle>
- <DialogDescription>Generate a short-lived token for this agent. The raw token will only be shown once.</DialogDescription>
- </DialogHeader>
- {issuedToken ? (
- <div className="space-y-4 py-4">
- <Alert className="border-border bg-crimson/5">
- <Key className="w-4 h-4 text-crimson" />
- <AlertTitle>Token Issued</AlertTitle>
- <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
- </Alert>
- <div className="bg-secondary rounded p-3 font-mono text-xs break-all flex items-center gap-2">
- <span className="flex-1">{issuedToken.token}</span>
- <CopyButton text={issuedToken.token} />
- </div>
- <div className="flex items-center justify-between text-sm">
- <span className="text-muted-foreground">Expires: {new Date(issuedToken.expiresAt).toLocaleString()}</span>
- </div>
- <div className="flex flex-wrap gap-1">
- {issuedToken.scopes.map(s => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
- </div>
- </div>
- ) : (
- <div className="space-y-4 py-4">
- <div className="space-y-2">
- <Label>Scopes</Label>
- {tokenForm.scopes.map((s, i) => (
- <div key={i} className="flex gap-2">
- <Input placeholder="e.g. github.repo.read" value={s} onChange={e => {
- const newScopes = [...tokenForm.scopes];
- newScopes[i] = e.target.value;
- setTokenForm({ ...tokenForm, scopes: newScopes });
- }} />
- {i > 0 && <Button size="icon" variant="ghost" onClick={() => setTokenForm({ ...tokenForm, scopes: tokenForm.scopes.filter((_, j) => j !== i) })}><Trash2 className="w-4 h-4 text-foreground" /></Button>}
- </div>
- ))}
- <Button size="sm" variant="outline" onClick={() => setTokenForm({ ...tokenForm, scopes: [...tokenForm.scopes, ''] })}>
- <Plus className="w-4 h-4 mr-1" /> Add Scope
- </Button>
- </div>
- <div className="space-y-2">
- <Label>TTL (seconds)</Label>
- <Select value={String(tokenForm.ttlSeconds)} onValueChange={v => setTokenForm({ ...tokenForm, ttlSeconds: Number(v) })}>
- <SelectTrigger><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="300">5 minutes</SelectItem>
- <SelectItem value="900">15 minutes</SelectItem>
- <SelectItem value="1800">30 minutes</SelectItem>
- <SelectItem value="3600">1 hour</SelectItem>
- <SelectItem value="7200">2 hours</SelectItem>
- <SelectItem value="86400">24 hours</SelectItem>
- </SelectContent>
- </Select>
- </div>
- </div>
- )}
- <DialogFooter>
- {!issuedToken && (
- <>
- <Button variant="outline" onClick={() => setShowTokenDialog(false)}>Cancel</Button>
- <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleIssueToken} disabled={submitting}>
- Issue Token
- </Button>
- </>
- )}
- {issuedToken && <Button onClick={() => setShowTokenDialog(false)}>Done</Button>}
- </DialogFooter>
- </DialogContent>
- </Dialog>
+        {/* Audit Tab */}
+        <TabsContent value="audit">
+          <Card className="bg-card border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Audit Events</CardTitle>
+                <Button size="sm" variant="outline" className="text-xs border-border/60" onClick={() => setAuthzOpen(true)}>
+                  <Shield className="w-3 h-3 mr-1" /> Check Authorization
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {agent.auditEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No audit events</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                  {agent.auditEvents.slice(0, 20).map(evt => (
+                    <div key={evt.id} className="flex items-center gap-3 py-1.5 border-b border-border/20 last:border-0">
+                      <DecisionBadge decision={evt.decision || 'unknown'} />
+                      <span className="text-xs font-mono text-muted-foreground truncate flex-1">{evt.action || evt.eventType}</span>
+                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timeAgo(evt.createdAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
- <Dialog open={showAuthzDialog} onOpenChange={setShowAuthzDialog}>
- <DialogTrigger asChild>
- <Button variant="outline" size="sm"><Shield className="w-4 h-4 mr-1" /> Check Auth</Button>
- </DialogTrigger>
- <DialogContent>
- <DialogHeader>
- <DialogTitle>Authorization Check Playground</DialogTitle>
- <DialogDescription>Test if this agent is authorized to perform an action.</DialogDescription>
- </DialogHeader>
- <div className="space-y-4 py-4">
- <div className="space-y-2">
- <Label>Action</Label>
- <Input placeholder="e.g. github.repo.read" value={authzForm.action} onChange={e => setAuthzForm({ ...authzForm, action: e.target.value })} />
- </div>
- <div className="space-y-2">
- <Label>Resource (optional)</Label>
- <Input placeholder="e.g. github.com/org/repo" value={authzForm.resource} onChange={e => setAuthzForm({ ...authzForm, resource: e.target.value })} />
- </div>
- {authzResult && (
- <motion.div
- initial={{ opacity: 0, scale: 0.95 }}
- animate={{ opacity: 1, scale: 1 }}
- className={`rounded-none border p-4 ${authzResult.allowed ? 'border-foreground/30 bg-muted' : authzResult.requiresApproval ? 'border-muted-foreground/30 bg-muted' : 'border-foreground/30 bg-muted'}`}
- >
- <div className="flex items-center gap-2 mb-2">
- {authzResult.allowed ? <CheckCircle2 className="w-5 h-5 text-foreground" /> : authzResult.requiresApproval ? <AlertTriangle className="w-5 h-5 text-muted-foreground" /> : <XCircle className="w-5 h-5 text-foreground" />}
- <span className="font-semibold text-lg">{authzResult.decision.toUpperCase()}</span>
- </div>
- <p className="text-sm text-muted-foreground">{authzResult.reason}</p>
- {authzResult.expiresAt && (
- <p className="text-xs text-muted-foreground mt-2">Expires: {new Date(authzResult.expiresAt).toLocaleString()}</p>
- )}
- {authzResult.requiresApproval && agent && (
- <Button
- size="sm"
- className="mt-3 bg-secondary text-muted-foreground border border-muted-foreground/30 hover:bg-accent"
- onClick={async () => {
- try {
- await api.approveAction(agent.id, { action: authzForm.action, resource: authzForm.resource || undefined });
- toast({ title: 'Action Approved', description: `Approved ${authzForm.action} for 1 hour.` });
- setAuthzResult(null);
- loadAgent();
- } catch (err: any) {
- toast({ title: 'Approval Error', description: err.message, variant: 'destructive' });
- }
- }}
- >
- <ShieldCheck className="w-4 h-4 mr-1" /> Approve This Action (1h)
- </Button>
- )}
- </motion.div>
- )}
- </div>
- <DialogFooter>
- <Button variant="outline" onClick={() => { setShowAuthzDialog(false); setAuthzResult(null); }}>Close</Button>
- <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleCheckAuthz} disabled={submitting || !authzForm.action}>
- Check
- </Button>
- </DialogFooter>
- </DialogContent>
- </Dialog>
- </div>
+        {/* Risk Tab */}
+        <TabsContent value="risk">
+          <Card className="bg-card border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Risk Factors</CardTitle>
+                <Button size="sm" variant="outline" className="text-xs border-border/60" onClick={loadAgent}>
+                  <RefreshCw className="w-3 h-3 mr-1" /> Refresh
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!riskData ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Risk analysis unavailable</p>
+              ) : (
+                <div className="space-y-3">
+                  {riskData.factors.map(f => (
+                    <div key={f.name} className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">{f.name}</span>
+                        <span className="text-xs text-muted-foreground">+{f.impact}</span>
+                      </div>
+                      <Progress value={Math.min(f.impact, 100)} className="h-1.5 bg-secondary/50" />
+                      <p className="text-[10px] text-muted-foreground">{f.description}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
- {/* Tabs: Permissions, Tokens, Audit */}
- <Tabs defaultValue="permissions" className="space-y-4">
- <TabsList className="bg-secondary">
- <TabsTrigger value="permissions"><Shield className="w-4 h-4 mr-1" /> Permissions</TabsTrigger>
- <TabsTrigger value="tokens"><Key className="w-4 h-4 mr-1" /> Tokens</TabsTrigger>
- <TabsTrigger value="risk"><TrendingUp className="w-4 h-4 mr-1" /> Risk Profile</TabsTrigger>
- <TabsTrigger value="audit"><ScrollText className="w-4 h-4 mr-1" /> Audit</TabsTrigger>
- </TabsList>
+      {/* Grant Permission Dialog */}
+      <Dialog open={grantOpen} onOpenChange={setGrantOpen}>
+        <DialogContent className="bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle>Grant Permission</DialogTitle>
+            <DialogDescription>Add a new permission scope to this agent.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Scope</Label>
+              <Input value={newScope} onChange={e => setNewScope(e.target.value)} placeholder="e.g. github.repo.read" className="bg-secondary/50 border-border/60 font-mono text-sm" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Effect</Label>
+              <Select value={newEffect} onValueChange={setNewEffect}>
+                <SelectTrigger className="bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALLOW">ALLOW</SelectItem>
+                  <SelectItem value="DENY">DENY</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Resource (optional)</Label>
+              <Input value={newResource} onChange={e => setNewResource(e.target.value)} placeholder="e.g. github.com/org/repo" className="bg-secondary/50 border-border/60" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setGrantOpen(false)}>Cancel</Button>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleGrant} disabled={actionLoading || !newScope.trim()}>
+              {actionLoading ? 'Granting...' : 'Grant'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
- <TabsContent value="permissions">
- <Card className="bg-card border-border">
- <CardContent className="p-0">
- {agent.permissions && agent.permissions.length > 0 ? (
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>Category</TableHead>
- <TableHead>Scope</TableHead>
- <TableHead>Resource</TableHead>
- <TableHead>Effect</TableHead>
- <TableHead>Expires</TableHead>
- <TableHead className="w-12"></TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {agent.permissions.map(p => {
- const cat = p.scope.split('.')[0];
- const catIcons: Record<string, React.ReactNode> = {
- github: <Github className="w-3.5 h-3.5 text-muted-foreground" />,
- filesystem: <HardDrive className="w-3.5 h-3.5 text-foreground" />,
- server: <Server className="w-3.5 h-3.5 text-muted-foreground" />,
- database: <Database className="w-3.5 h-3.5 text-foreground" />,
- browser: <Globe className="w-3.5 h-3.5 text-foreground" />,
- secrets: <Lock className="w-3.5 h-3.5 text-foreground" />,
- email: <Mail className="w-3.5 h-3.5 text-muted-foreground" />,
- payments: <CreditCard className="w-3.5 h-3.5 text-muted-foreground" />,
- production: <ShieldAlert className="w-3.5 h-3.5 text-foreground" />,
- };
- return (
- <TableRow key={p.id}>
- <TableCell>
- <div className="flex items-center gap-1.5">
- {catIcons[cat] || <Shield className="w-3.5 h-3.5" />}
- <span className="text-xs">{cat}</span>
- </div>
- </TableCell>
- <TableCell className="font-mono text-xs">{p.scope}</TableCell>
- <TableCell className="font-mono text-xs text-muted-foreground">{p.resource || '*'}</TableCell>
- <TableCell><EffectBadge effect={p.effect} /></TableCell>
- <TableCell className="text-xs text-muted-foreground">{p.expiresAt ? timeAgo(p.expiresAt) : 'Never'}</TableCell>
- <TableCell>
- <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleDeletePermission(p.id)}>
- <Trash2 className="w-3.5 h-3.5 text-foreground" />
- </Button>
- </TableCell>
- </TableRow>
- );
- })}
- </TableBody>
- </Table>
- ) : (
- <div className="py-8 text-center text-muted-foreground">
- <Shield className="w-8 h-8 mx-auto mb-2 opacity-50" />
- <p className="text-sm">No permissions assigned yet.</p>
- </div>
- )}
- </CardContent>
- </Card>
- </TabsContent>
+      {/* Issue Token Dialog */}
+      <Dialog open={tokenOpen} onOpenChange={setTokenOpen}>
+        <DialogContent className="bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle>Issue Token</DialogTitle>
+            <DialogDescription>Generate a temporary authentication token for this agent.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Scopes (comma-separated)</Label>
+              <Input value={tokenScopes} onChange={e => setTokenScopes(e.target.value)} placeholder="github.repo.read, github.issue.read" className="bg-secondary/50 border-border/60 font-mono text-sm" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">TTL</Label>
+              <Select value={tokenTTL} onValueChange={setTokenTTL}>
+                <SelectTrigger className="bg-secondary/50 border-border/60"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3600">1 hour</SelectItem>
+                  <SelectItem value="21600">6 hours</SelectItem>
+                  <SelectItem value="86400">24 hours</SelectItem>
+                  <SelectItem value="604800">7 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {issuedToken && (
+              <div className="bg-crimson/5 border border-crimson/20 rounded p-3">
+                <p className="text-xs text-muted-foreground mb-1">Token (copy now — won&apos;t be shown again)</p>
+                <p className="text-xs font-mono break-all text-crimson">{issuedToken.token}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setTokenOpen(false); setIssuedToken(null); }}>Cancel</Button>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleIssueToken} disabled={actionLoading}>
+              {actionLoading ? 'Issuing...' : 'Issue Token'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
- <TabsContent value="tokens">
- <Card className="bg-card border-border">
- <CardContent className="p-0">
- {agent.tokens && agent.tokens.length > 0 ? (
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>ID</TableHead>
- <TableHead>Scopes</TableHead>
- <TableHead>Expires</TableHead>
- <TableHead>Status</TableHead>
- <TableHead className="w-20"></TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {agent.tokens.map(t => {
- const expired = new Date(t.expiresAt) < new Date();
- const revoked = !!t.revokedAt;
- return (
- <TableRow key={t.id}>
- <TableCell className="font-mono text-xs">
- <div className="flex items-center gap-1">
- {t.id.slice(0, 12)}...
- <CopyButton text={t.id} />
- </div>
- </TableCell>
- <TableCell>
- <div className="flex flex-wrap gap-1">
- {JSON.parse(t.scopes).map((s: string) => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
- </div>
- </TableCell>
- <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
- <TableCell>
- {revoked ? <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Revoked</Badge> :
- expired ? <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 text-xs">Expired</Badge> :
- <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Active</Badge>}
- </TableCell>
- <TableCell>
- {!revoked && !expired && (
- <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleRevokeToken(t.id)}>
- <Ban className="w-3.5 h-3.5 text-foreground" />
- </Button>
- )}
- </TableCell>
- </TableRow>
- );
- })}
- </TableBody>
- </Table>
- ) : (
- <div className="py-8 text-center text-muted-foreground">
- <Key className="w-8 h-8 mx-auto mb-2 opacity-50" />
- <p className="text-sm">No tokens issued yet.</p>
- </div>
- )}
- </CardContent>
- </Card>
- </TabsContent>
-
- <TabsContent value="audit">
- <Card className="bg-card border-border">
- <CardContent className="p-0">
- {agent.auditEvents && agent.auditEvents.length > 0 ? (
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>Time</TableHead>
- <TableHead>Event</TableHead>
- <TableHead>Action</TableHead>
- <TableHead>Decision</TableHead>
- <TableHead>Hash</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {agent.auditEvents.slice(0, 20).map(e => (
- <TableRow key={e.id} className={e.decision === 'allow' ? 'bg-secondary' : e.decision === 'deny' ? 'bg-secondary' : e.decision === 'requires_approval' ? 'bg-secondary' : ''}>
- <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
- <TableCell className="font-mono text-xs">{e.eventType}</TableCell>
- <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
- <TableCell>{e.decision ? <DecisionBadge decision={e.decision} /> : '-'}</TableCell>
- <TableCell className="font-mono text-xs text-muted-foreground">{e.eventHash.slice(0, 16)}...</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
- ) : (
- <div className="py-8 text-center text-muted-foreground">
- <ScrollText className="w-8 h-8 mx-auto mb-2 opacity-50" />
- <p className="text-sm">No audit events for this agent.</p>
- </div>
- )}
- </CardContent>
- </Card>
- </TabsContent>
-
- <TabsContent value="risk">
- <AgentRiskProfile agentId={agent.id} />
- </TabsContent>
- </Tabs>
- </motion.div>
- );
+      {/* Authz Check Dialog */}
+      <Dialog open={authzOpen} onOpenChange={setAuthzOpen}>
+        <DialogContent className="bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle>Check Authorization</DialogTitle>
+            <DialogDescription>Test whether this agent is allowed to perform an action.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm">Action</Label>
+              <Input value={authzAction} onChange={e => setAuthzAction(e.target.value)} placeholder="e.g. github.repo.read" className="bg-secondary/50 border-border/60 font-mono text-sm" />
+            </div>
+            {authzResult && (
+              <div className={`p-3 rounded border ${authzResult.allowed ? 'border-foreground/20 bg-secondary/30' : 'border-crimson/30 bg-crimson/5'}`}>
+                <div className="flex items-center gap-2 mb-1">
+                  {authzResult.allowed ? <CheckCircle2 className="w-4 h-4" /> : <ShieldX className="w-4 h-4 text-crimson" />}
+                  <span className="text-sm font-semibold">{authzResult.decision.toUpperCase()}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{authzResult.reason}</p>
+                {authzResult.requiresApproval && (
+                  <Button size="sm" className="mt-2 text-xs bg-crimson text-crimson-foreground hover:brightness-110" onClick={async () => {
+                    try { await api.approveAction(agent.id, { action: authzAction }); loadAgent(); toast({ title: 'Approved for 1 hour' }); setAuthzOpen(false); }
+                    catch (err: unknown) { toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' }); }
+                  }}>
+                    Approve This Action (1h)
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setAuthzOpen(false); setAuthzResult(null); }}>Cancel</Button>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleCheckAuthz} disabled={actionLoading || !authzAction.trim()}>
+              Check
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
-// ─── Audit View ───────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 9. APPROVALS VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ApprovalsView() {
+  const [pending, setPending] = useState<ApprovalRequest[]>([]);
+  const [resolved, setResolved] = useState<ApprovalRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadApprovals = useCallback(async () => {
+    try {
+      const [p, r] = await Promise.all([
+        api.listApprovals({ status: 'pending' }).catch(() => []),
+        api.listApprovals({ status: 'approved' }).catch(() => []),
+      ]);
+      setPending(Array.isArray(p) ? p : []);
+      setResolved(Array.isArray(r) ? r : []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { loadApprovals(); }, [loadApprovals]);
+
+  const handleDecision = async (id: string, approve: boolean) => {
+    try {
+      if (approve) await api.approveRequest(id);
+      else await api.rejectRequest(id);
+      loadApprovals();
+      toast({ title: `Request ${approve ? 'approved' : 'rejected'}` });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-5xl mx-auto">
+      <PageHeader title="Approvals" subtitle="Review pending authorization requests" />
+
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+      ) : (
+        <>
+          {/* Pending */}
+          <Card className="bg-card border-border/60 mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="w-4 h-4 text-crimson" /> Pending Requests
+                {pending.length > 0 && <Badge className="bg-crimson text-crimson-foreground text-[10px]">{pending.length}</Badge>}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pending.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No pending requests</p>
+              ) : (
+                <div className="space-y-3">
+                  {pending.map(req => (
+                    <div key={req.id} className="flex items-center gap-4 p-3 rounded border border-border/40 bg-secondary/20">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-medium">{req.agent?.name || 'Agent'}</span>
+                          <Badge variant="outline" className="text-[10px] font-mono">{req.action}</Badge>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {req.resource && <span>Resource: {req.resource} · </span>}
+                          Requested {timeAgo(req.createdAt)}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button size="sm" className="text-xs bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => handleDecision(req.id, true)}>
+                          <CheckCircle2 className="w-3 h-3 mr-1" /> Approve
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs border-crimson/30 text-crimson hover:bg-crimson/5" onClick={() => handleDecision(req.id, false)}>
+                          <XCircle className="w-3 h-3 mr-1" /> Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Resolved History */}
+          <Card className="bg-card border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm">Resolved History</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {resolved.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No resolved requests</p>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
+                  {resolved.map(req => (
+                    <div key={req.id} className="flex items-center gap-3 py-2 border-b border-border/20 last:border-0">
+                      <Badge variant="outline" className="text-[10px] font-mono">{req.action}</Badge>
+                      <span className="text-xs text-muted-foreground flex-1">{req.agent?.name || 'Agent'}</span>
+                      <span className="text-[10px] text-muted-foreground">{timeAgo(req.createdAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 10. AUDIT LOG VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function AuditView() {
- const [events, setEvents] = useState<AuditEvent[]>([]);
- const [loading, setLoading] = useState(true);
- const [filterDecision, setFilterDecision] = useState<string>('all');
- const [filterEventType, setFilterEventType] = useState<string>('all');
- const [exporting, setExporting] = useState(false);
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterDecision, setFilterDecision] = useState('all');
+  const [filterEventType, setFilterEventType] = useState('all');
+  const [verifyResult, setVerifyResult] = useState<string | null>(null);
 
- const loadEvents = useCallback(async () => {
- try {
- const data = await api.getAuditEvents({
- decision: filterDecision === 'all' ? undefined : filterDecision || undefined,
- eventType: filterEventType === 'all' ? undefined : filterEventType || undefined,
- limit: 100,
- });
- setEvents(data);
- } catch (err) {
- console.error(err);
- } finally {
- setLoading(false);
- }
- }, [filterDecision, filterEventType]);
+  const loadEvents = useCallback(async () => {
+    try {
+      const data = await api.getAuditEvents({
+        decision: filterDecision !== 'all' ? filterDecision : undefined,
+        eventType: filterEventType !== 'all' ? filterEventType : undefined,
+        limit: 100,
+      });
+      setEvents(Array.isArray(data) ? data : []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, [filterDecision, filterEventType]);
 
- useEffect(() => { loadEvents(); }, [loadEvents]);
+  useEffect(() => { loadEvents(); }, [loadEvents]);
 
- const handleExport = async () => {
- setExporting(true);
- try {
- const res = await fetch('/api/audit/export');
- const blob = await res.blob();
- const url = window.URL.createObjectURL(blob);
- const a = document.createElement('a');
- a.href = url;
- a.download = 'agentdnai-audit-export.csv';
- a.click();
- window.URL.revokeObjectURL(url);
- toast({ title: 'CSV exported', description: 'Audit log has been downloaded.' });
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setExporting(false);
- }
- };
+  const handleVerify = async () => {
+    try {
+      const result = await api.verifyAuditChain();
+      setVerifyResult(result.valid ? `✓ Chain intact (${result.eventsChecked} events)` : `✗ Chain broken at event ${result.firstInvalidEvent}`);
+    } catch {
+      setVerifyResult('Verification failed');
+    }
+  };
 
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-bold">Audit Log</h1>
- <p className="text-muted-foreground">Hash-chained, append-only record of every authorization decision.</p>
- </div>
- <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
- <Download className="w-4 h-4 mr-1" /> {exporting ? 'Exporting...' : 'Export CSV'}
- </Button>
- </div>
+  const handleExport = async () => {
+    try {
+      const blob = await api.exportData();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'agentdnai-export.json'; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      toast({ title: 'Export failed', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    }
+  };
 
- {/* Filters */}
- <div className="flex flex-wrap gap-3">
- <Select value={filterDecision} onValueChange={setFilterDecision}>
- <SelectTrigger className="w-44"><SelectValue placeholder="All Decisions" /></SelectTrigger>
- <SelectContent>
- <SelectItem value="all">All Decisions</SelectItem>
- <SelectItem value="allow">Allow</SelectItem>
- <SelectItem value="deny">Deny</SelectItem>
- <SelectItem value="requires_approval">Requires Approval</SelectItem>
- </SelectContent>
- </Select>
- <Select value={filterEventType} onValueChange={setFilterEventType}>
- <SelectTrigger className="w-52"><SelectValue placeholder="All Event Types" /></SelectTrigger>
- <SelectContent>
- <SelectItem value="all">All Event Types</SelectItem>
- <SelectItem value="AGENT_CREATED">Agent Created</SelectItem>
- <SelectItem value="AGENT_REVOKED">Agent Revoked</SelectItem>
- <SelectItem value="PERMISSION_GRANTED">Permission Granted</SelectItem>
- <SelectItem value="TOKEN_ISSUED">Token Issued</SelectItem>
- <SelectItem value="AUTHZ_CHECK">Authz Check</SelectItem>
- <SelectItem value="AUTHZ_ALLOW">Authz Allow</SelectItem>
- <SelectItem value="AUTHZ_DENY">Authz Deny</SelectItem>
- </SelectContent>
- </Select>
- <Button variant="outline" size="sm" onClick={loadEvents}>
- <RefreshCw className="w-4 h-4 mr-1" /> Refresh
- </Button>
- </div>
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <PageHeader title="Audit Log" subtitle="Tamper-evident record of all authorization decisions" action={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="text-xs border-border/60" onClick={handleVerify}>
+            <Hash className="w-3 h-3 mr-1" /> Verify Chain
+          </Button>
+          <Button variant="outline" size="sm" className="text-xs border-border/60" onClick={handleExport}>
+            <Download className="w-3 h-3 mr-1" /> Export
+          </Button>
+        </div>
+      } />
 
- {loading ? (
- <div className="flex items-center justify-center h-64"><RefreshCw className="w-6 h-6 text-primary animate-spin" /></div>
- ) : (
- <Card className="bg-card border-border">
- <CardContent className="p-0">
- <ScrollArea className="h-[600px]">
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>Timestamp</TableHead>
- <TableHead>Event</TableHead>
- <TableHead>Agent</TableHead>
- <TableHead>Action</TableHead>
- <TableHead>Resource</TableHead>
- <TableHead>Decision</TableHead>
- <TableHead>Event Hash</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {events.map((e, idx) => (
- <TableRow
- key={e.id}
- className={`${
- e.decision === 'allow' ? 'border-l-2 border-l-foreground/60 bg-secondary' :
- e.decision === 'deny' ? 'border-l-2 border-l-crimson/60 bg-secondary' :
- e.decision === 'requires_approval' ? 'border-l-2 border-l-muted-foreground/60 bg-secondary' :
- 'border-l-2 border-l-transparent'
- } ${idx % 2 === 1 ? 'bg-secondary/[0.03]' : ''}`}
- >
- <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
- <TableCell><Badge variant="secondary" className="font-mono text-xs">{e.eventType}</Badge></TableCell>
- <TableCell className="font-mono text-xs">{e.agentId ? e.agentId.slice(0, 12) + '...' : '-'}</TableCell>
- <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
- <TableCell className="font-mono text-xs text-muted-foreground max-w-32 truncate">{e.resource || '-'}</TableCell>
- <TableCell>{e.decision ? <DecisionBadge decision={e.decision} /> : '-'}</TableCell>
- <TableCell className="font-mono text-xs text-muted-foreground">{e.eventHash.slice(0, 16)}...</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
- </ScrollArea>
- </CardContent>
- </Card>
- )}
+      {verifyResult && (
+        <div className={`mb-4 text-sm px-3 py-2 rounded border ${verifyResult.startsWith('✓') ? 'border-foreground/20 bg-secondary/30' : 'border-crimson/30 bg-crimson/5'}`}>
+          {verifyResult}
+        </div>
+      )}
 
- {/* Chain Integrity Verification */}
- <Card className="bg-crimson/5 border-border">
- <CardContent className="p-4">
- <div className="flex items-center justify-between">
- <div className="flex items-center gap-3">
- <Hash className="w-5 h-5 text-crimson" />
- <div>
- <p className="text-sm font-semibold">Hash Chain Integrity</p>
- <p className="text-xs text-muted-foreground">Every audit event is linked via SHA-256 hash chain. Tampering breaks the chain and is immediately detectable.</p>
- </div>
- </div>
- <Button variant="outline" size="sm" className="hover:bg-crimson/5 hover:text-crimson" onClick={async () => {
- try {
- const result = await api.verifyAuditChain();
- if (result.valid) {
- toast({ title: 'Chain Verified', description: `${result.eventsChecked} events verified. Hash chain is intact.` });
- } else {
- toast({ title: 'Chain Broken!', description: `Integrity failed at event ${result.firstInvalidEvent}`, variant: 'destructive' });
- }
- } catch (err: any) {
- toast({ title: 'Verification Error', description: err.message, variant: 'destructive' });
- }
- }}>
- <ShieldCheck className="w-4 h-4 mr-1" /> Verify Chain
- </Button>
- </div>
- </CardContent>
- </Card>
- </div>
- );
+      {/* Filters */}
+      <div className="flex gap-3 mb-6">
+        <Select value={filterDecision} onValueChange={setFilterDecision}>
+          <SelectTrigger className="w-[150px] bg-card border-border/60 text-xs"><SelectValue placeholder="Decision" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Decisions</SelectItem>
+            <SelectItem value="allow">Allow</SelectItem>
+            <SelectItem value="deny">Deny</SelectItem>
+            <SelectItem value="requires_approval">Requires Approval</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterEventType} onValueChange={setFilterEventType}>
+          <SelectTrigger className="w-[160px] bg-card border-border/60 text-xs"><SelectValue placeholder="Event Type" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="AUTHORIZATION_CHECK">Authz Check</SelectItem>
+            <SelectItem value="PERMISSION_GRANTED">Perm Granted</SelectItem>
+            <SelectItem value="PERMISSION_REVOKED">Perm Revoked</SelectItem>
+            <SelectItem value="AGENT_CREATED">Agent Created</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">Loading...</div>
+      ) : events.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">No audit events found</div>
+      ) : (
+        <Card className="bg-card border-border/60">
+          <CardContent className="p-0">
+            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/40">
+                    <TableHead className="text-xs">Decision</TableHead>
+                    <TableHead className="text-xs">Event</TableHead>
+                    <TableHead className="text-xs">Action</TableHead>
+                    <TableHead className="text-xs">Hash</TableHead>
+                    <TableHead className="text-xs">Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {events.map((evt, i) => (
+                    <TableRow key={evt.id} className={`border-border/20 ${i % 2 === 1 ? 'bg-secondary/[0.03]' : ''}`} style={{ borderLeftWidth: '2px', borderLeftColor: evt.decision === 'allow' ? 'oklch(0.6 0.02 280)' : evt.decision === 'deny' ? 'oklch(0.38 0.17 12)' : 'oklch(0.55 0.05 60)' }}>
+                      <TableCell><DecisionBadge decision={evt.decision || 'unknown'} /></TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{evt.eventType}</TableCell>
+                      <TableCell className="text-xs font-mono">{evt.action || '—'}</TableCell>
+                      <TableCell className="text-[10px] font-mono text-muted-foreground truncate max-w-[120px]">{evt.eventHash?.slice(0, 16)}...</TableCell>
+                      <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{timeAgo(evt.createdAt)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }
 
-// ─── Tokens View ──────────────────────────────────────────────────────────────
-
-function TokensView() {
- const [agents, setAgents] = useState<Agent[]>([]);
- const [loading, setLoading] = useState(true);
- const [showIssueDialog, setShowIssueDialog] = useState(false);
- const [issueForm, setIssueForm] = useState({ agentId: '', scopes: [''], ttlSeconds: 3600 });
- const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
- const [issuing, setIssuing] = useState(false);
-
- const loadData = useCallback(async () => {
- try {
- const data = await api.listAgents();
- setAgents(data);
- } catch (err) {
- console.error(err);
- } finally {
- setLoading(false);
- }
- }, []);
-
- useEffect(() => { loadData(); }, [loadData]);
-
- const allTokens = agents.flatMap(a =>
- (a.tokens || []).map(t => ({ ...t, agentName: a.name, agentRuntime: a.runtime }))
- );
-
- const handleIssue = async () => {
- if (!issueForm.agentId) return;
- setIssuing(true);
- try {
- const result = await api.issueToken({
- agentId: issueForm.agentId,
- scopes: issueForm.scopes.filter(s => s.trim()),
- ttlSeconds: issueForm.ttlSeconds,
- });
- setIssuedToken(result);
- toast({ title: 'Token issued', description: 'Copy the token now — it will not be shown again.' });
- loadData();
- } catch (err: any) {
- toast({ title: 'Error', description: err.message, variant: 'destructive' });
- } finally {
- setIssuing(false);
- }
- };
-
- if (loading) {
- return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
- }
-
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-bold">Tokens</h1>
- <p className="text-muted-foreground">Manage temporary authentication tokens for agents.</p>
- </div>
- <Dialog open={showIssueDialog} onOpenChange={v => { setShowIssueDialog(v); if (!v) setIssuedToken(null); }}>
- <DialogTrigger asChild>
- <Button className="bg-crimson text-crimson-foreground hover:bg-crimson/80" size="sm">
- <Plus className="w-4 h-4 mr-1" /> Issue Token
- </Button>
- </DialogTrigger>
- <DialogContent>
- <DialogHeader>
- <DialogTitle>Issue Token</DialogTitle>
- <DialogDescription>Generate a temporary token for an agent.</DialogDescription>
- </DialogHeader>
- {issuedToken ? (
- <div className="space-y-4 py-4">
- <Alert className="border-border bg-crimson/5">
- <Key className="w-4 h-4 text-crimson" />
- <AlertTitle>Token Issued</AlertTitle>
- <AlertDescription>Copy this token now. It will not be shown again.</AlertDescription>
- </Alert>
- <div className="bg-secondary rounded p-3 font-mono text-xs break-all flex items-center gap-2">
- <span className="flex-1">{issuedToken.token}</span>
- <CopyButton text={issuedToken.token} />
- </div>
- <div className="text-sm text-muted-foreground">Expires: {new Date(issuedToken.expiresAt).toLocaleString()}</div>
- <div className="flex flex-wrap gap-1">
- {issuedToken.scopes.map(s => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
- </div>
- </div>
- ) : (
- <div className="space-y-4 py-4">
- <div className="space-y-2">
- <Label>Agent</Label>
- <Select value={issueForm.agentId} onValueChange={v => setIssueForm({ ...issueForm, agentId: v })}>
- <SelectTrigger><SelectValue placeholder="Select agent" /></SelectTrigger>
- <SelectContent>
- {agents.filter(a => a.status === 'ACTIVE').map(a => (
- <SelectItem key={a.id} value={a.id}>{a.name} ({a.runtime})</SelectItem>
- ))}
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label>Scopes</Label>
- {issueForm.scopes.map((s, i) => (
- <div key={i} className="flex gap-2">
- <Input placeholder="e.g. github.repo.read" value={s} onChange={e => {
- const newScopes = [...issueForm.scopes];
- newScopes[i] = e.target.value;
- setIssueForm({ ...issueForm, scopes: newScopes });
- }} />
- {i > 0 && <Button size="icon" variant="ghost" onClick={() => setIssueForm({ ...issueForm, scopes: issueForm.scopes.filter((_, j) => j !== i) })}><Trash2 className="w-4 h-4 text-foreground" /></Button>}
- </div>
- ))}
- <Button size="sm" variant="outline" onClick={() => setIssueForm({ ...issueForm, scopes: [...issueForm.scopes, ''] })}>
- <Plus className="w-4 h-4 mr-1" /> Add Scope
- </Button>
- </div>
- <div className="space-y-2">
- <Label>TTL</Label>
- <Select value={String(issueForm.ttlSeconds)} onValueChange={v => setIssueForm({ ...issueForm, ttlSeconds: Number(v) })}>
- <SelectTrigger><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="300">5 minutes</SelectItem>
- <SelectItem value="900">15 minutes</SelectItem>
- <SelectItem value="3600">1 hour</SelectItem>
- <SelectItem value="86400">24 hours</SelectItem>
- </SelectContent>
- </Select>
- </div>
- </div>
- )}
- <DialogFooter>
- {!issuedToken ? (
- <>
- <Button variant="outline" onClick={() => setShowIssueDialog(false)}>Cancel</Button>
- <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={handleIssue} disabled={issuing || !issueForm.agentId}>Issue</Button>
- </>
- ) : <Button onClick={() => setShowIssueDialog(false)}>Done</Button>}
- </DialogFooter>
- </DialogContent>
- </Dialog>
- </div>
-
- {allTokens.length === 0 ? (
- <Card className="bg-card border-border">
- <CardContent className="py-16 text-center">
- <Key className="w-12 h-12 text-crimson/30 mx-auto mb-4" />
- <h3 className="text-lg font-semibold mb-2">No tokens yet</h3>
- <p className="text-muted-foreground">Issue a token to an active agent to get started.</p>
- </CardContent>
- </Card>
- ) : (
- <Card className="bg-card border-border">
- <CardContent className="p-0">
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>Agent</TableHead>
- <TableHead>Scopes</TableHead>
- <TableHead>Expires</TableHead>
- <TableHead>Status</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {allTokens.map(t => {
- const expired = new Date(t.expiresAt) < new Date();
- const revoked = !!t.revokedAt;
- return (
- <TableRow key={t.id}>
- <TableCell>
- <div className="flex items-center gap-2">
- <RuntimeIcon runtime={t.agentRuntime} className="w-4 h-4" />
- <span className="text-sm font-medium">{t.agentName}</span>
- </div>
- </TableCell>
- <TableCell>
- <div className="flex flex-wrap gap-1">
- {JSON.parse(t.scopes).map((s: string) => <Badge key={s} variant="secondary" className="text-xs font-mono">{s}</Badge>)}
- </div>
- </TableCell>
- <TableCell className="text-xs text-muted-foreground">{timeAgo(t.expiresAt)}</TableCell>
- <TableCell>
- {revoked ? <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Revoked</Badge> :
- expired ? <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 text-xs">Expired</Badge> :
- <Badge variant="outline" className="text-foreground border-foreground/30 text-xs">Active</Badge>}
- </TableCell>
- </TableRow>
- );
- })}
- </TableBody>
- </Table>
- </CardContent>
- </Card>
- )}
- </div>
- );
-}
-
-// ─── Policies View ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 11. POLICIES VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function PoliciesView() {
- return (
- <div className="space-y-6">
- <div>
- <h1 className="text-2xl font-bold">Policies</h1>
- <p className="text-muted-foreground">Permission templates and the security policy catalog.</p>
- </div>
+  const { navigateToAgent } = useAppStore();
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [applyOpen, setApplyOpen] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState('');
+  const [applying, setApplying] = useState(false);
 
- {/* Permission Templates */}
- <div>
- <h2 className="text-lg font-semibold mb-4">Permission Templates</h2>
- <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
- {PERMISSION_TEMPLATES.map((tpl, i) => (
- <motion.div key={tpl.id} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border h-full">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">{tpl.name}</CardTitle>
- <CardDescription className="text-xs">{tpl.description}</CardDescription>
- </CardHeader>
- <CardContent>
- <div className="space-y-2">
- <div>
- <p className="text-xs text-muted-foreground mb-1">Allows:</p>
- <div className="flex flex-wrap gap-1">
- {tpl.permissions.map(p => <Badge key={p} variant="secondary" className="text-xs font-mono bg-accent text-foreground">{p}</Badge>)}
- </div>
- </div>
- {tpl.denied.length > 0 && (
- <div>
- <p className="text-xs text-muted-foreground mb-1">Denies:</p>
- <div className="flex flex-wrap gap-1">
- {tpl.denied.map(p => <Badge key={p} variant="secondary" className="text-xs font-mono bg-accent text-foreground">{p}</Badge>)}
- </div>
- </div>
- )}
- </div>
- </CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
- </div>
+  useEffect(() => {
+    api.listAgents().then(data => setAgents(Array.isArray(data) ? data : [])).catch(() => {});
+  }, []);
 
- <Separator />
+  const handleApply = async (templateId: string) => {
+    if (!selectedAgent) return;
+    setApplying(true);
+    try {
+      const tpl = PERMISSION_TEMPLATES.find(t => t.id === templateId);
+      if (tpl) {
+        for (const scope of tpl.permissions) {
+          await api.grantPermission(selectedAgent, { scope, effect: 'ALLOW' });
+        }
+        for (const scope of tpl.denied) {
+          await api.grantPermission(selectedAgent, { scope, effect: 'DENY' });
+        }
+      }
+      setApplyOpen(null);
+      toast({ title: 'Template applied', description: `Permissions from template applied to agent.` });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    } finally { setApplying(false); }
+  };
 
- {/* Permission Catalog */}
- <div>
- <h2 className="text-lg font-semibold mb-4">Full Permission Catalog</h2>
- <div className="space-y-4">
- {PERMISSION_CATEGORIES.map(cat => {
- const perms = PERMISSIONS.filter(p => p.category === cat);
- return (
- <Card key={cat} className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">{cat}</CardTitle>
- </CardHeader>
- <CardContent>
- <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
- {perms.map(p => (
- <div key={p.scope} className="flex items-center justify-between p-2 rounded bg-secondary">
- <span className="text-xs font-mono">{p.scope}</span>
- <div className="flex items-center gap-2">
- <RiskBadge riskLevel={p.riskLevel} />
- {p.requiresApproval && <AlertTriangle className="w-3 h-3 text-muted-foreground" />}
- </div>
- </div>
- ))}
- </div>
- </CardContent>
- </Card>
- );
- })}
- </div>
- </div>
- </div>
- );
+  return (
+    <div className="p-6 max-w-6xl mx-auto">
+      <PageHeader title="Policies" subtitle="Permission templates for quick agent setup" />
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {PERMISSION_TEMPLATES.map((tpl, i) => (
+          <motion.div key={tpl.id} variants={stagger} initial="initial" animate="animate" custom={i}>
+            <Card className="bg-card border-border/60 hover:border-crimson/20 transition-colors h-full flex flex-col">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">{tpl.name}</CardTitle>
+                <CardDescription className="text-xs">{tpl.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <div className="mb-3">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Allowed</p>
+                  <div className="flex flex-wrap gap-1">
+                    {tpl.permissions.slice(0, 5).map(p => (
+                      <Badge key={p} variant="secondary" className="text-[10px] font-mono">{p}</Badge>
+                    ))}
+                    {tpl.permissions.length > 5 && <Badge variant="secondary" className="text-[10px]">+{tpl.permissions.length - 5}</Badge>}
+                  </div>
+                </div>
+                {tpl.denied.length > 0 && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Denied</p>
+                    <div className="flex flex-wrap gap-1">
+                      {tpl.denied.slice(0, 3).map(p => (
+                        <Badge key={p} variant="outline" className="text-[10px] font-mono border-crimson/30 text-crimson/70">{p}</Badge>
+                      ))}
+                      {tpl.denied.length > 3 && <Badge variant="outline" className="text-[10px] border-crimson/30 text-crimson/70">+{tpl.denied.length - 3}</Badge>}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="pt-0">
+                <Button variant="outline" size="sm" className="w-full text-xs border-crimson/30 text-crimson hover:bg-crimson/5" onClick={() => { setApplyOpen(tpl.id); setSelectedAgent(''); }}>
+                  Apply to Agent
+                </Button>
+              </CardFooter>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Apply Dialog */}
+      <Dialog open={!!applyOpen} onOpenChange={() => setApplyOpen(null)}>
+        <DialogContent className="bg-card border-border/60">
+          <DialogHeader>
+            <DialogTitle>Apply Template to Agent</DialogTitle>
+            <DialogDescription>Select an agent to apply this permission template.</DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <SelectTrigger className="bg-secondary/50 border-border/60"><SelectValue placeholder="Select agent..." /></SelectTrigger>
+              <SelectContent>
+                {agents.filter(a => a.status === 'ACTIVE').map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setApplyOpen(null)}>Cancel</Button>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => applyOpen && handleApply(applyOpen)} disabled={applying || !selectedAgent}>
+              {applying ? 'Applying...' : 'Apply Template'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
-// ─── Settings View ────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 12. SETTINGS VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function SettingsView() {
- const [isDark, setIsDark] = useState(() => {
- if (typeof window !== 'undefined') {
- return localStorage.getItem('agentdnai-theme') !== 'light';
- }
- return true;
- });
+  const { user } = useAppStore();
+  const [isDark, setIsDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
 
- const toggleTheme = () => {
- const newIsDark = !isDark;
- setIsDark(newIsDark);
- localStorage.setItem('agentdnai-theme', newIsDark ? 'dark' : 'light');
- if (newIsDark) {
- document.documentElement.classList.add('dark');
- } else {
- document.documentElement.classList.remove('dark');
- }
- };
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    document.documentElement.classList.toggle('dark', next);
+    localStorage.setItem('agentdnai-theme', next ? 'dark' : 'light');
+  };
 
- // Apply theme on mount
- useEffect(() => {
- if (isDark) {
- document.documentElement.classList.add('dark');
- } else {
- document.documentElement.classList.remove('dark');
- }
- }, [isDark]);
+  const handleExport = async () => {
+    try {
+      const blob = await api.exportData();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'agentdnai-export.json'; a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Data exported' });
+    } catch (err: unknown) {
+      toast({ title: 'Export failed', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    }
+  };
 
- return (
- <div className="space-y-6">
- <div>
- <h1 className="text-2xl font-bold">Settings</h1>
- <p className="text-muted-foreground">Platform configuration and security settings.</p>
- </div>
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const result = await api.importData(data);
+      toast({ title: 'Data imported', description: `${result.imported.agents} agents, ${result.imported.permissions} permissions imported.` });
+    } catch (err: unknown) {
+      toast({ title: 'Import failed', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    }
+  };
 
- <div className="grid md:grid-cols-2 gap-6">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Sun className="w-4 h-4 text-crimson" /> Appearance</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between items-center">
- <div className="flex items-center gap-2">
- {isDark ? <Moon className="w-4 h-4 text-crimson" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
- <span className="text-muted-foreground">Theme</span>
- </div>
- <div className="flex items-center gap-2">
- <span className={`text-xs ${!isDark ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Light</span>
- <button
- onClick={toggleTheme}
- className={`relative inline-flex h-6 w-11 items-center rounded-none transition-colors ${isDark ? 'bg-crimson' : 'bg-secondary'}`}
- aria-label="Toggle theme"
- >
- <span className={`inline-block h-4 w-4 transform rounded-none bg-white transition-transform ${isDark ? 'translate-x-6' : 'translate-x-1'}`} />
- </button>
- <span className={`text-xs ${isDark ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>Dark</span>
- </div>
- </div>
- <div className="flex justify-between">
- <span className="text-muted-foreground">Current Mode</span>
- <Badge variant="outline" className={`text-xs ${isDark ? 'text-crimson border-border' : 'text-muted-foreground border-muted-foreground/30'}`}>
- {isDark ? 'Dark' : 'Light'}
- </Badge>
- </div>
- <div className="flex justify-between">
- <span className="text-muted-foreground">Accent Color</span>
- <Badge variant="outline" className="text-xs text-crimson border-border">Crimson</Badge>
- </div>
- </CardContent>
- </Card>
+  return (
+    <div className="p-6 max-w-4xl mx-auto">
+      <PageHeader title="Settings" subtitle="Manage your account and preferences" />
 
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Shield className="w-4 h-4 text-crimson" /> Security Policy</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between"><span className="text-muted-foreground">Default Policy</span><Badge variant="outline" className="font-mono text-xs">DENY</Badge></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Production Approval</span><Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">Required</Badge></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Max Token TTL</span><span className="font-mono">24h</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Key Rotation</span><Badge variant="outline" className="text-xs text-foreground border-foreground/30">Enabled</Badge></div>
- </CardContent>
- </Card>
+      <div className="space-y-6">
+        {/* Profile */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Profile</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                <User className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                <p className="text-xs text-muted-foreground">{user?.email || ''}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Lock className="w-4 h-4 text-crimson" /> Cryptography</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between"><span className="text-muted-foreground">Hash Algorithm</span><span className="font-mono">SHA-256</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Token Storage</span><span className="font-mono">Hash-only</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Audit Chain</span><Badge variant="outline" className="text-xs text-foreground border-foreground/30">Active</Badge></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Key Pair</span><span className="font-mono">Ed25519*</span></div>
- </CardContent>
- </Card>
+        {/* Appearance */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Appearance</CardTitle></CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {isDark ? <Moon className="w-4 h-4 text-muted-foreground" /> : <Sun className="w-4 h-4 text-muted-foreground" />}
+                <span className="text-sm">{isDark ? 'Dark' : 'Light'} Mode</span>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className={`relative w-11 h-6 rounded-full transition-colors ${isDark ? 'bg-crimson' : 'bg-secondary'}`}
+              >
+                <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-foreground transition-transform ${isDark ? 'translate-x-5' : ''}`} />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
 
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><ScrollText className="w-4 h-4 text-crimson" /> Audit</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between"><span className="text-muted-foreground">Log Mode</span><Badge variant="outline" className="text-xs text-foreground border-foreground/30">Append-Only</Badge></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Chain Integrity</span><Badge variant="outline" className="text-xs text-foreground border-foreground/30">Verified</Badge></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Retention</span><span className="font-mono">Unlimited</span></div>
- <div className="flex justify-between"><span className="text-muted-foreground">Export</span><span className="font-mono">CSV</span></div>
- </CardContent>
- </Card>
+        {/* Security */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Security</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm">Change Password</p>
+                <p className="text-xs text-muted-foreground">Update your account password</p>
+              </div>
+              <Button variant="outline" size="sm" className="text-xs border-border/60" disabled>Coming Soon</Button>
+            </div>
+            <Separator className="bg-border/40" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm">Active Sessions</p>
+                <p className="text-xs text-muted-foreground">Manage your active sessions</p>
+              </div>
+              <Badge variant="outline" className="text-xs">1 current</Badge>
+            </div>
+          </CardContent>
+        </Card>
 
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Cpu className="w-4 h-4 text-crimson" /> Integrations</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">REST API</span>
- <Badge variant="outline" className="text-xs text-foreground border-foreground/30">Active</Badge>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">CLI</span>
- <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">Planned</Badge>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">SDK</span>
- <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">Planned</Badge>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">Webhooks</span>
- <Badge variant="outline" className="text-xs text-muted-foreground">Coming Soon</Badge>
- </div>
- </CardContent>
- </Card>
+        {/* Data Management */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">Data Management</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm">Export Data</p>
+                <p className="text-xs text-muted-foreground">Download all data as JSON</p>
+              </div>
+              <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={handleExport}>
+                <Download className="w-3 h-3 mr-1" /> Export
+              </Button>
+            </div>
+            <Separator className="bg-border/40" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm">Import Data</p>
+                <p className="text-xs text-muted-foreground">Import agents from JSON file</p>
+              </div>
+              <label className="cursor-pointer">
+                <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" asChild>
+                  <span><Upload className="w-3 h-3 mr-1" /> Import</span>
+                </Button>
+                <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+              </label>
+            </div>
+          </CardContent>
+        </Card>
 
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Activity className="w-4 h-4 text-crimson" /> System Health</CardTitle>
- </CardHeader>
- <CardContent className="space-y-3 text-sm">
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">API Server</span>
- <div className="flex items-center gap-1.5">
- <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- <Badge variant="outline" className="text-xs text-foreground border-foreground/30">Online</Badge>
- </div>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">Database</span>
- <div className="flex items-center gap-1.5">
- <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- <Badge variant="outline" className="text-xs text-foreground border-foreground/30">Connected</Badge>
- </div>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">Policy Engine</span>
- <div className="flex items-center gap-1.5">
- <div className="w-2 h-2 rounded-none bg-foreground animate-pulse" />
- <Badge variant="outline" className="text-xs text-foreground border-foreground/30">Active</Badge>
- </div>
- </div>
- <div className="flex justify-between items-center">
- <span className="text-muted-foreground">Audit Chain</span>
- <div className="flex items-center gap-1.5">
- <div className="w-2 h-2 rounded-none bg-foreground" />
- <Badge variant="outline" className="text-xs text-foreground border-foreground/30">Intact</Badge>
- </div>
- </div>
- <div className="mt-3 p-2 rounded-none bg-secondary">
- <div className="flex items-center justify-between text-xs">
- <span className="text-muted-foreground">Uptime</span>
- <span className="font-mono text-foreground">99.97%</span>
- </div>
- <Progress value={99.97} className="h-1 mt-1" />
- </div>
- </CardContent>
- </Card>
-
- {/* Data Management */}
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle className="text-base flex items-center gap-2"><Database className="w-4 h-4 text-crimson" /> Data Management</CardTitle>
- </CardHeader>
- <CardContent className="space-y-4">
- <div className="space-y-3">
- <div className="flex items-center justify-between">
- <div>
- <p className="text-sm font-medium">Export All Data</p>
- <p className="text-xs text-muted-foreground">Download all agents, permissions, tokens, and audit events as JSON</p>
- </div>
- <Button
- variant="outline"
- size="sm"
- onClick={async () => {
- try {
- const data = await api.exportData();
- const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
- const url = window.URL.createObjectURL(blob);
- const a = document.createElement('a');
- a.href = url;
- a.download = `agentdnai-export-${new Date().toISOString().split('T')[0]}.json`;
- a.click();
- window.URL.revokeObjectURL(url);
- toast({ title: 'Export complete', description: 'Data has been downloaded as JSON.' });
- } catch (err: any) {
- toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
- }
- }}
- >
- <FileDown className="w-4 h-4 mr-1" /> Export JSON
- </Button>
- </div>
- <Separator />
- <div>
- <p className="text-sm font-medium mb-2">Import Data</p>
- <p className="text-xs text-muted-foreground mb-3">Upload a previously exported JSON file to import agents</p>
- <div className="flex items-center gap-3">
- <Input
- type="file"
- accept=".json"
- className="text-xs"
- onChange={(e) => {
- const file = e.target.files?.[0];
- if (file) {
- const reader = new FileReader();
- reader.onload = async (ev) => {
- try {
- const data = JSON.parse(ev.target?.result as string);
- const result = await api.importData(data);
- toast({
- title: 'Import complete',
- description: `${result.agentsImported} agent(s) imported, ${result.agentsSkipped} skipped.`,
- });
- if (result.errors.length > 0) {
- toast({
- title: 'Import warnings',
- description: result.errors.slice(0, 3).join('; '),
- variant: 'destructive',
- });
- }
- } catch (err: any) {
- toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
- }
- };
- reader.readAsText(file);
- }
- }}
- />
- </div>
- </div>
- </div>
- </CardContent>
- </Card>
- </div>
- </div>
- );
+        {/* System Health */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3"><CardTitle className="text-sm">System Health</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> API Server</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Database</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Policy Engine</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Audit Chain</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
-// ─── Docs View ────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// 13. DOCS VIEW
+// ═══════════════════════════════════════════════════════════════════════════════
 
 function DocsView() {
- const { setView } = useAppStore();
- const [activeSection, setActiveSection] = useState('quick-start');
+  const { setView } = useAppStore();
+  const [section, setSection] = useState('quickstart');
 
- const sections = [
- { id: 'quick-start', label: 'Quick Start', icon: <Zap className="w-4 h-4" /> },
- { id: 'api-reference', label: 'API Reference', icon: <Code2 className="w-4 h-4" /> },
- { id: 'cli-reference', label: 'CLI Reference', icon: <Terminal className="w-4 h-4" /> },
- { id: 'permissions', label: 'Permission Catalog', icon: <Shield className="w-4 h-4" /> },
- { id: 'security-model', label: 'Security Model', icon: <Lock className="w-4 h-4" /> },
- ];
+  const sections = [
+    { id: 'quickstart', label: 'Quick Start', icon: Zap },
+    { id: 'api', label: 'API Reference', icon: Code2 },
+    { id: 'cli', label: 'CLI Reference', icon: Terminal },
+    { id: 'permissions', label: 'Permission Catalog', icon: Shield },
+    { id: 'security', label: 'Security Model', icon: Lock },
+  ];
 
- const apiEndpoints = [
- { method: 'POST', path: '/api/agents', desc: 'Create a new agent identity' },
- { method: 'GET', path: '/api/agents', desc: 'List all agents' },
- { method: 'GET', path: '/api/agents/:id', desc: 'Get agent details' },
- { method: 'POST', path: '/api/agents/:id/pause', desc: 'Pause an agent' },
- { method: 'POST', path: '/api/agents/:id/resume', desc: 'Resume a paused agent' },
- { method: 'POST', path: '/api/agents/:id/revoke', desc: 'Revoke an agent' },
- { method: 'POST', path: '/api/agents/:id/rotate-key', desc: 'Rotate agent key pair' },
- { method: 'POST', path: '/api/agents/:id/permissions', desc: 'Grant a permission' },
- { method: 'GET', path: '/api/agents/:id/permissions', desc: 'List agent permissions' },
- { method: 'DELETE', path: '/api/agents/:id/permissions', desc: 'Remove a permission' },
- { method: 'POST', path: '/api/tokens/issue', desc: 'Issue a temporary token' },
- { method: 'POST', path: '/api/tokens/:id/revoke', desc: 'Revoke a token' },
- { method: 'POST', path: '/api/authz/check', desc: 'Check authorization' },
- { method: 'GET', path: '/api/audit', desc: 'Get audit events' },
- { method: 'GET', path: '/api/audit/export', desc: 'Export audit as CSV' },
- { method: 'GET', path: '/api/stats', desc: 'Get dashboard statistics' },
- { method: 'POST', path: '/api/seed', desc: 'Seed demo data' },
- ];
+  const apiEndpoints = [
+    { method: 'POST', path: '/api/agents', desc: 'Create a new agent' },
+    { method: 'GET', path: '/api/agents', desc: 'List agents (with search/filter)' },
+    { method: 'GET', path: '/api/agents/[id]', desc: 'Get agent details' },
+    { method: 'POST', path: '/api/agents/[id]/revoke', desc: 'Revoke an agent' },
+    { method: 'POST', path: '/api/agents/[id]/pause', desc: 'Pause an agent' },
+    { method: 'POST', path: '/api/agents/[id]/resume', desc: 'Resume a paused agent' },
+    { method: 'POST', path: '/api/agents/[id]/rotate-key', desc: 'Rotate agent key pair' },
+    { method: 'POST', path: '/api/agents/[id]/permissions', desc: 'Grant a permission' },
+    { method: 'DELETE', path: '/api/agents/[id]/permissions', desc: 'Revoke a permission' },
+    { method: 'POST', path: '/api/tokens/issue', desc: 'Issue a token' },
+    { method: 'POST', path: '/api/tokens/[id]/revoke', desc: 'Revoke a token' },
+    { method: 'POST', path: '/api/authz/check', desc: 'Check authorization' },
+    { method: 'POST', path: '/api/authz/batch-check', desc: 'Batch authorization check' },
+    { method: 'GET', path: '/api/audit', desc: 'Get audit events' },
+    { method: 'GET', path: '/api/audit/verify', desc: 'Verify audit chain integrity' },
+    { method: 'GET', path: '/api/stats', desc: 'Get dashboard statistics' },
+    { method: 'GET', path: '/api/agents/[id]/risk', desc: 'Get agent risk score' },
+    { method: 'POST', path: '/api/auth/register', desc: 'Register a user' },
+    { method: 'POST', path: '/api/auth/login', desc: 'Login' },
+    { method: 'GET', path: '/api/auth/me', desc: 'Get current user' },
+  ];
 
- const cliCommands = [
- { cmd: 'agentdnai create <name> --runtime <runtime>', desc: 'Create a new agent identity' },
- { cmd: 'agentdnai list', desc: 'List all agents' },
- { cmd: 'agentdnai info <agent-id>', desc: 'Show agent details' },
- { cmd: 'agentdnai pause <agent-id>', desc: 'Pause an agent' },
- { cmd: 'agentdnai resume <agent-id>', desc: 'Resume a paused agent' },
- { cmd: 'agentdnai revoke <agent-id>', desc: 'Revoke an agent permanently' },
- { cmd: 'agentdnai rotate-key <agent-id>', desc: 'Rotate the agent key pair' },
- { cmd: 'agentdnai grant <agent-id> <scope> [--resource <res>] [--effect ALLOW|DENY]', desc: 'Grant a permission' },
- { cmd: 'agentdnai revoke-perm <agent-id> <permission-id>', desc: 'Remove a permission' },
- { cmd: 'agentdnai token issue <agent-id> --scopes <scopes> --ttl <seconds>', desc: 'Issue a temporary token' },
- { cmd: 'agentdnai token revoke <token-id>', desc: 'Revoke a token' },
- { cmd: 'agentdnai check <agent-id> <action> [--resource <res>]', desc: 'Check authorization' },
- { cmd: 'agentdnai audit [--agent <id>] [--decision <d>] [--export]', desc: 'View or export audit log' },
- { cmd: 'agentdnai seed', desc: 'Seed demo data' },
- ];
+  const cliCommands = [
+    { cmd: 'agentdnai agent create <name> --runtime <rt>', desc: 'Register a new agent' },
+    { cmd: 'agentdnai agent list', desc: 'List all agents' },
+    { cmd: 'agentdnai agent revoke <id>', desc: 'Revoke an agent' },
+    { cmd: 'agentdnai perm grant <agent> <scope>', desc: 'Grant a permission' },
+    { cmd: 'agentdnai perm revoke <agent> <scope>', desc: 'Revoke a permission' },
+    { cmd: 'agentdnai token issue <agent> --scopes <s>', desc: 'Issue a token' },
+    { cmd: 'agentdnai check <agent> <action>', desc: 'Check authorization' },
+    { cmd: 'agentdnai audit list', desc: 'List audit events' },
+    { cmd: 'agentdnai audit verify', desc: 'Verify audit chain' },
+  ];
 
- const methodColors: Record<string, string> = {
- GET: 'bg-secondary text-foreground border-foreground/30',
- POST: 'bg-secondary text-muted-foreground border-muted-foreground/30',
- DELETE: 'bg-secondary text-foreground border-foreground/30',
- };
+  return (
+    <div className="min-h-screen bg-background">
+      {!useAppStore().sessionToken && (
+        <nav className="border-b border-border/60 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <button onClick={() => setView('home')} className="flex items-center gap-2">
+              <img src="/logo-agentdnai.png" alt="" className="h-7 w-auto" />
+            </button>
+            <Button size="sm" className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setView('register')}>
+              Get Started
+            </Button>
+          </div>
+        </nav>
+      )}
 
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-bold">Documentation</h1>
- <p className="text-muted-foreground">Everything you need to use AgentDNAI.</p>
- </div>
- <Button variant="outline" size="sm" onClick={() => setView('dashboard')}>
- <LayoutDashboard className="w-4 h-4 mr-1" /> Back to Dashboard
- </Button>
- </div>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-[220px_1fr] gap-8">
+          {/* Sidebar */}
+          <nav className="space-y-1">
+            {sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setSection(s.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors ${section === s.id ? 'text-crimson bg-crimson/10' : 'text-muted-foreground hover:text-crimson hover:bg-crimson/5'}`}
+              >
+                <s.icon className="w-4 h-4" /> {s.label}
+              </button>
+            ))}
+          </nav>
 
- <div className="grid lg:grid-cols-4 gap-6">
- {/* Sidebar */}
- <div className="lg:col-span-1">
- <Card className="bg-card border-border sticky top-24">
- <CardContent className="p-3">
- <nav className="space-y-1">
- {sections.map(s => (
- <button
- key={s.id}
- onClick={() => setActiveSection(s.id)}
- className={`w-full flex items-center gap-2 px-3 py-2 rounded-none text-sm transition-colors ${
- activeSection === s.id ? 'bg-crimson/10 text-crimson' : 'text-muted-foreground hover:text-crimson hover:bg-accent'
- }`}
- >
- {s.icon}
- {s.label}
- </button>
- ))}
- </nav>
- </CardContent>
- </Card>
- </div>
+          {/* Content */}
+          <div className="min-w-0">
+            <AnimatePresence mode="wait">
+              <motion.div key={section} {...pageTransition}>
+                {section === 'quickstart' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-2">Quick Start</h1>
+                      <p className="text-muted-foreground">Get up and running with AgentDNAI in minutes.</p>
+                    </div>
+                    <div className="space-y-4">
+                      {[
+                        { step: '1', title: 'Register an account', desc: 'Create your account and personal organization.' },
+                        { step: '2', title: 'Create your first agent', desc: 'Give your AI agent a unique identity with cryptographic key pair.' },
+                        { step: '3', title: 'Grant permissions', desc: 'Apply a template or add individual permission scopes.' },
+                        { step: '4', title: 'Issue a token', desc: 'Generate a temporary token for the agent to authenticate.' },
+                        { step: '5', title: 'Check authorization', desc: 'Every action is validated against the permission policy.' },
+                      ].map(item => (
+                        <div key={item.step} className="flex gap-4 items-start">
+                          <div className="w-8 h-8 rounded-full bg-crimson/10 flex items-center justify-center text-crimson text-sm font-bold shrink-0">{item.step}</div>
+                          <div>
+                            <h3 className="font-semibold">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground">{item.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
- {/* Content */}
- <div className="lg:col-span-3 space-y-6">
- {activeSection === 'quick-start' && (
- <motion.div {...fadeIn} className="space-y-6">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle>Quick Start</CardTitle>
- <CardDescription>Get started with AgentDNAI in under 5 minutes.</CardDescription>
- </CardHeader>
- <CardContent className="space-y-4">
- <div className="space-y-3">
- <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">1</div>
- <div>
- <p className="font-semibold text-sm">Seed Demo Data</p>
- <p className="text-sm text-muted-foreground mb-2">Populate the platform with 5 demo agents, tokens, and audit events.</p>
- <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">POST /api/seed</code>
- </div>
- </div>
- <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">2</div>
- <div>
- <p className="font-semibold text-sm">Create an Agent</p>
- <p className="text-sm text-muted-foreground mb-2">Generate a unique identity with a cryptographic key pair.</p>
- <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">POST /api/agents {"{ name, runtime, description }"}</code>
- </div>
- </div>
- <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">3</div>
- <div>
- <p className="font-semibold text-sm">Grant Permissions</p>
- <p className="text-sm text-muted-foreground mb-2">Assign scoped permissions with allow, deny, or requires_approval effects.</p>
- <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">POST /api/agents/:id/permissions {"{ scope, effect }"}</code>
- </div>
- </div>
- <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">4</div>
- <div>
- <p className="font-semibold text-sm">Issue a Token</p>
- <p className="text-sm text-muted-foreground mb-2">Get a short-lived, hash-stored authentication token.</p>
- <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">POST /api/tokens/issue {"{ agentId, scopes, ttlSeconds }"}</code>
- </div>
- </div>
- <div className="flex gap-3 items-start">
- <div className="w-7 h-7 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 text-xs font-bold text-crimson">5</div>
- <div>
- <p className="font-semibold text-sm">Check Authorization</p>
- <p className="text-sm text-muted-foreground mb-2">Verify that an agent is authorized to perform a specific action.</p>
- <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">POST /api/authz/check {"{ agentId, action, resource }"}</code>
- </div>
- </div>
- </div>
- </CardContent>
- </Card>
- </motion.div>
- )}
+                {section === 'api' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-2">API Reference</h1>
+                      <p className="text-muted-foreground">All REST API endpoints available in AgentDNAI.</p>
+                    </div>
+                    <div className="space-y-2">
+                      {apiEndpoints.map(ep => (
+                        <div key={ep.path + ep.method} className="flex items-center gap-3 p-2.5 rounded border border-border/40 bg-card">
+                          <Badge variant="outline" className={`text-[10px] font-mono w-14 justify-center ${ep.method === 'GET' ? 'border-foreground/20' : ep.method === 'POST' ? 'border-crimson/40 text-crimson' : ep.method === 'DELETE' ? 'border-crimson/40 text-crimson' : ''}`}>
+                            {ep.method}
+                          </Badge>
+                          <span className="text-xs font-mono flex-1">{ep.path}</span>
+                          <span className="text-xs text-muted-foreground">{ep.desc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
- {activeSection === 'api-reference' && (
- <motion.div {...fadeIn} className="space-y-4">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle>API Reference</CardTitle>
- <CardDescription>All available REST API endpoints.</CardDescription>
- </CardHeader>
- <CardContent>
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead className="w-20">Method</TableHead>
- <TableHead>Endpoint</TableHead>
- <TableHead>Description</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {apiEndpoints.map((ep, i) => (
- <TableRow key={i}>
- <TableCell>
- <Badge variant="outline" className={`font-mono text-xs ${methodColors[ep.method] || ''}`}>{ep.method}</Badge>
- </TableCell>
- <TableCell className="font-mono text-xs">{ep.path}</TableCell>
- <TableCell className="text-sm text-muted-foreground">{ep.desc}</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
- </CardContent>
- </Card>
- </motion.div>
- )}
+                {section === 'cli' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-2">CLI Reference</h1>
+                      <p className="text-muted-foreground">Command-line interface for managing agents.</p>
+                    </div>
+                    <div className="space-y-2">
+                      {cliCommands.map(cmd => (
+                        <div key={cmd.cmd} className="p-3 rounded border border-border/40 bg-card">
+                          <code className="text-xs font-mono text-foreground">{cmd.cmd}</code>
+                          <p className="text-xs text-muted-foreground mt-1">{cmd.desc}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
- {activeSection === 'cli-reference' && (
- <motion.div {...fadeIn} className="space-y-4">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle>CLI Reference</CardTitle>
- <CardDescription>Command-line interface commands.</CardDescription>
- </CardHeader>
- <CardContent className="space-y-3">
- {cliCommands.map((cmd, i) => (
- <div key={i} className="p-3 rounded-none bg-secondary space-y-1">
- <code className="text-xs font-mono text-crimson">{cmd.cmd}</code>
- <p className="text-xs text-muted-foreground">{cmd.desc}</p>
- </div>
- ))}
- </CardContent>
- </Card>
- </motion.div>
- )}
+                {section === 'permissions' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-2">Permission Catalog</h1>
+                      <p className="text-muted-foreground">All available permission scopes organized by category.</p>
+                    </div>
+                    {PERMISSION_CATEGORIES.map(cat => {
+                      const perms = PERMISSIONS.filter(p => p.category === cat);
+                      return (
+                        <div key={cat}>
+                          <h3 className="text-lg font-semibold mb-2 capitalize">{cat}</h3>
+                          <div className="space-y-1">
+                            {perms.map(p => (
+                              <div key={p.scope} className="flex items-center gap-3 p-2 rounded border border-border/30 bg-card">
+                                <code className="text-xs font-mono flex-1">{p.scope}</code>
+                                <Badge variant="outline" className={`text-[9px] font-mono ${p.riskLevel === 'critical' ? 'border-crimson/40 text-crimson' : p.riskLevel === 'high' ? 'border-crimson/30 text-crimson/70' : 'border-border/60'}`}>
+                                  {p.riskLevel}
+                                </Badge>
+                                {p.requiresApproval && <Badge variant="outline" className="text-[9px] font-mono border-border/60">approval</Badge>}
+                                <span className="text-[10px] text-muted-foreground hidden sm:inline w-40">{p.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
- {activeSection === 'permissions' && (
- <motion.div {...fadeIn} className="space-y-4">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle>Permission Catalog Summary</CardTitle>
- <CardDescription>9 categories, 47 permissions across 5 risk levels.</CardDescription>
- </CardHeader>
- <CardContent className="space-y-4">
- {PERMISSION_CATEGORIES.map(cat => {
- const perms = PERMISSIONS.filter(p => p.category === cat);
- const low = perms.filter(p => p.riskLevel === 'low').length;
- const med = perms.filter(p => p.riskLevel === 'medium').length;
- const high = perms.filter(p => p.riskLevel === 'high').length;
- const crit = perms.filter(p => p.riskLevel === 'critical').length;
- return (
- <div key={cat} className="p-3 rounded-none bg-secondary">
- <div className="flex items-center justify-between mb-2">
- <span className="font-semibold text-sm uppercase tracking-wider">{cat}</span>
- <span className="text-xs text-muted-foreground">{perms.length} permissions</span>
- </div>
- <div className="flex gap-2 flex-wrap">
- {low > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground">{low} low</span>}
- {med > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-muted-foreground">{med} medium</span>}
- {high > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{high} high</span>}
- {crit > 0 && <span className="text-xs font-mono px-1.5 py-0.5 rounded bg-accent text-foreground">{crit} critical</span>}
- </div>
- </div>
- );
- })}
- </CardContent>
- </Card>
- </motion.div>
- )}
-
- {activeSection === 'security-model' && (
- <motion.div {...fadeIn} className="space-y-4">
- <Card className="bg-card border-border">
- <CardHeader>
- <CardTitle>Security Model</CardTitle>
- <CardDescription>The core security principles that govern AgentDNAI.</CardDescription>
- </CardHeader>
- <CardContent className="space-y-4">
- {[
- { title: 'Deny by Default', desc: 'All actions are denied unless there is an explicit ALLOW permission. No implicit grants, no exceptions.' },
- { title: 'Explicit Deny Overrides Allow', desc: 'If both an ALLOW and DENY rule exist for the same scope, DENY always wins. This prevents accidental privilege escalation.' },
- { title: 'Production Requires Approval', desc: 'Any action in the production category automatically requires human approval, regardless of ALLOW permissions. This is a hard-coded policy.' },
- { title: 'Temporary Tokens Only', desc: 'Tokens have a maximum TTL of 24 hours. No permanent tokens exist. Expired tokens are automatically invalid.' },
- { title: 'Hash-Only Token Storage', desc: 'Raw tokens are never stored in the database. Only SHA-256 hashes are persisted, making token theft from the DB impossible.' },
- { title: 'Hash-Chained Audit Log', desc: 'Every audit event contains the hash of the previous event. Tampering with any event breaks the chain and is immediately detectable.' },
- { title: 'Immediate Revocation', desc: 'Agents can be paused, revoked, or blocked instantly. Revoked agents are denied all actions regardless of their permissions.' },
- { title: 'Key Rotation', desc: 'Agent key pairs can be rotated at any time, generating a new pair and invalidating the old one.' },
- ].map((item, i) => (
- <div key={i} className="flex gap-3 items-start p-3 rounded-none bg-secondary border-l-2 border-l-crimson/20">
- <div className="w-6 h-6 rounded-none bg-crimson/10 flex items-center justify-center shrink-0 mt-0.5">
- <ShieldCheck className="w-3.5 h-3.5 text-crimson" />
- </div>
- <div>
- <h4 className="font-semibold text-sm">{item.title}</h4>
- <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
- </div>
- </div>
- ))}
- </CardContent>
- </Card>
- </motion.div>
- )}
- </div>
- </div>
- </div>
- );
+                {section === 'security' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h1 className="text-3xl font-bold mb-2">Security Model</h1>
+                      <p className="text-muted-foreground">How AgentDNAI ensures secure agent operations.</p>
+                    </div>
+                    {[
+                      { title: 'Deny by Default', desc: 'Every action is denied unless an explicit ALLOW permission exists. No implicit grants, no exceptions.' },
+                      { title: 'Explicit Deny Overrides', desc: 'If both ALLOW and DENY match, DENY wins. This prevents accidental permission escalation.' },
+                      { title: 'Production Requires Approval', desc: 'Actions in the production category always require human approval, regardless of ALLOW permissions.' },
+                      { title: 'Temporary Tokens', desc: 'All tokens have a mandatory TTL. Tokens are stored as hashes — the raw value is shown only once.' },
+                      { title: 'Hash-Chained Audit Trail', desc: 'Every authorization decision is recorded in an append-only log with cryptographic hash chain integrity.' },
+                      { title: 'Key Rotation', desc: 'Agent key pairs can be rotated at any time. The old key is immediately invalidated.' },
+                      { title: 'Immediate Revocation', desc: 'Agents can be paused, revoked, or blocked instantly. All associated tokens are invalidated.' },
+                    ].map(item => (
+                      <div key={item.title} className="flex gap-4 items-start">
+                        <div className="w-8 h-8 rounded bg-crimson/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <ShieldCheck className="w-4 h-4 text-crimson" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{item.title}</h3>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-// ─── Main App ─────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// ─── Playground View ──────────────────────────────────────────────────────────
+function AgentDNAIApp() {
+  const { currentView, sessionToken, setSession, setView, user } = useAppStore();
+  const [authLoading, setAuthLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
-function PlaygroundView() {
- const [agents, setAgents] = useState<Agent[]>([]);
- const [selectedAgentId, setSelectedAgentId] = useState<string>('');
- const [actionsText, setActionsText] = useState('');
- const [resource, setResource] = useState('');
- const [results, setResults] = useState<Array<{ action: string; allowed: boolean; decision: string; reason: string; requiresApproval: boolean }>>([]);
- const [loading, setLoading] = useState(false);
- const [agentsLoading, setAgentsLoading] = useState(true);
+  // Check session on load
+  useEffect(() => {
+    const validateSession = async () => {
+      if (sessionToken) {
+        try {
+          const res = await api.me();
+          setSession(sessionToken, { id: res.user.id, email: res.user.email, name: res.user.name });
+          if (currentView === 'home' || currentView === 'login' || currentView === 'register') {
+            setView('dashboard');
+          }
+        } catch {
+          setSession(null, null);
+        }
+      }
+      setAuthLoading(false);
+    };
+    validateSession();
+  }, []);
 
- useEffect(() => {
- api.listAgents().then(a => { setAgents(a); setAgentsLoading(false); }).catch(() => setAgentsLoading(false));
- }, []);
+  // Mobile detection
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
- const handleBatchCheck = async () => {
- if (!selectedAgentId) {
- toast({ title: 'Select an agent', description: 'Please select an agent first.', variant: 'destructive' });
- return;
- }
- const actions = actionsText.split('\n').map(a => a.trim()).filter(Boolean);
- if (actions.length === 0) {
- toast({ title: 'Enter actions', description: 'Please enter at least one action to check.', variant: 'destructive' });
- return;
- }
- setLoading(true);
- setResults([]);
- try {
- const res = await api.batchCheckAuthz({ agentId: selectedAgentId, actions, resource: resource || undefined });
- setResults(res.results as any);
- } catch (err: any) {
- toast({ title: 'Batch check failed', description: err.message, variant: 'destructive' });
- } finally {
- setLoading(false);
- }
- };
+  // Apply theme from localStorage
+  useEffect(() => {
+    const theme = localStorage.getItem('agentdnai-theme');
+    if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
 
- const allowedCount = results.filter(r => r.decision === 'allow').length;
- const deniedCount = results.filter(r => r.decision === 'deny').length;
- const approvalCount = results.filter(r => r.decision === 'requires_approval').length;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
- const decisionStyles: Record<string, { card: string; icon: React.ReactNode; border: string }> = {
- allow: {
- card: 'bg-muted',
- border: 'border-foreground/30',
- icon: <CheckCircle2 className="w-5 h-5 text-foreground" />,
- },
- deny: {
- card: 'bg-muted',
- border: 'border-foreground/30',
- icon: <XCircle className="w-5 h-5 text-foreground" />,
- },
- requires_approval: {
- card: 'bg-muted',
- border: 'border-muted-foreground/30',
- icon: <AlertTriangle className="w-5 h-5 text-muted-foreground" />,
- },
- };
+  const isAuthenticated = !!sessionToken;
+  const authViews = ['dashboard', 'agents', 'agent-detail', 'approvals', 'audit', 'policies', 'settings'];
+  const needsAuth = authViews.includes(currentView);
 
- return (
- <div className="space-y-6">
- <div>
- <h1 className="text-2xl font-bold flex items-center gap-2">
- <Command className="w-6 h-6 text-crimson" /> Authorization Playground
- </h1>
- <p className="text-muted-foreground">Test multiple authorization checks at once against any agent.</p>
- </div>
+  // Redirect to login if auth required but not authenticated
+  if (needsAuth && !isAuthenticated) {
+    return <LoginView />;
+  }
 
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">Configuration</CardTitle>
- <CardDescription>Select an agent and enter actions to check (one per line)</CardDescription>
- </CardHeader>
- <CardContent className="space-y-4">
- <div className="grid sm:grid-cols-2 gap-4">
- <div className="space-y-2">
- <Label className="text-xs text-muted-foreground">Agent</Label>
- <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
- <SelectTrigger className="bg-background/50">
- <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select an agent'} />
- </SelectTrigger>
- <SelectContent>
- {agents.map(a => (
- <SelectItem key={a.id} value={a.id}>
- {a.name} <span className="text-muted-foreground font-mono text-xs">({a.agentUri})</span>
- </SelectItem>
- ))}
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label className="text-xs text-muted-foreground">Resource (optional)</Label>
- <Input
- placeholder="e.g. github.com/org/repo"
- value={resource}
- onChange={e => setResource(e.target.value)}
- className="bg-background/50 font-mono text-sm"
- />
- </div>
- </div>
- <div className="space-y-2">
- <Label className="text-xs text-muted-foreground">Actions to check (one per line, max 50)</Label>
- <Textarea
- placeholder={"github.repo.read\ngithub.repo.write\nserver.deploy.production\nsecrets.read\ndatabase.migrate"}
- value={actionsText}
- onChange={e => setActionsText(e.target.value)}
- className="bg-background/50 font-mono text-sm min-h-[120px]"
- />
- </div>
- <Button
- className="bg-foreground text-white hover:bg-crimson transition-colors w-full sm:w-auto"
- onClick={handleBatchCheck}
- disabled={loading || !selectedAgentId}
- >
- {loading ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Checking...</> : <><Command className="w-4 h-4 mr-2" /> Run Batch Check</>}
- </Button>
- </CardContent>
- </Card>
+  // Public views (no sidebar)
+  const publicViews = ['home', 'login', 'register', 'onboarding'];
+  if (publicViews.includes(currentView)) {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div key={currentView} {...fadeIn}>
+          {currentView === 'home' && <LandingPage />}
+          {currentView === 'login' && <LoginView />}
+          {currentView === 'register' && <RegisterView />}
+          {currentView === 'onboarding' && <OnboardingView />}
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
- {/* Results */}
- {results.length > 0 && (
- <>
- {/* Summary Stats */}
- <div className="grid grid-cols-3 gap-3">
- <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={0}>
- <Card className="bg-muted border-foreground/30">
- <CardContent className="p-4 text-center">
- <div className="text-2xl font-bold text-foreground">{allowedCount}</div>
- <div className="text-xs text-muted-foreground">Allowed</div>
- </CardContent>
- </Card>
- </motion.div>
- <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={1}>
- <Card className="bg-muted border-foreground/30">
- <CardContent className="p-4 text-center">
- <div className="text-2xl font-bold text-foreground">{deniedCount}</div>
- <div className="text-xs text-muted-foreground">Denied</div>
- </CardContent>
- </Card>
- </motion.div>
- <motion.div variants={fadeInStagger} initial="initial" animate="animate" custom={2}>
- <Card className="bg-muted border-muted-foreground/30">
- <CardContent className="p-4 text-center">
- <div className="text-2xl font-bold text-muted-foreground">{approvalCount}</div>
- <div className="text-xs text-muted-foreground">Requires Approval</div>
- </CardContent>
- </Card>
- </motion.div>
- </div>
+  // Docs can be public or authenticated
+  if (currentView === 'docs') {
+    return <DocsView />;
+  }
 
- {/* Result Cards */}
- <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
- {results.map((r, i) => {
- const style = decisionStyles[r.decision] || decisionStyles.deny;
- return (
- <motion.div
- key={i}
- initial={{ opacity: 0, y: 20, scale: 0.95 }}
- animate={{ opacity: 1, y: 0, scale: 1 }}
- transition={{ delay: i * 0.06, duration: 0.3, ease: 'easeOut' }}
- >
- <Card className={`${style.card} ${style.border} hover:shadow-card transition-shadow`}>
- <CardContent className="p-4 space-y-2">
- <div className="flex items-center justify-between">
- <span className="font-mono text-sm text-foreground truncate max-w-[60%]">{r.action}</span>
- {style.icon}
- </div>
- <DecisionBadge decision={r.decision} />
- <p className="text-xs text-muted-foreground line-clamp-2">{r.reason}</p>
- </CardContent>
- </Card>
- </motion.div>
- );
- })}
- </div>
- </>
- )}
- </div>
- );
+  // Authenticated layout with sidebar
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+      <DashboardSidebar />
+      <main className="flex-1 overflow-y-auto custom-scrollbar pb-16 md:pb-0">
+        <AnimatePresence mode="wait">
+          <motion.div key={currentView} {...pageTransition}>
+            {currentView === 'dashboard' && <DashboardView />}
+            {currentView === 'agents' && <AgentsView />}
+            {currentView === 'agent-detail' && <AgentDetailView />}
+            {currentView === 'approvals' && <ApprovalsView />}
+            {currentView === 'audit' && <AuditView />}
+            {currentView === 'policies' && <PoliciesView />}
+            {currentView === 'settings' && <SettingsView />}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+      {isMobile && <MobileBottomNav />}
+    </div>
+  );
 }
 
-// ─── Agent Compare View ───────────────────────────────────────────────────────
-
-function AgentCompareView() {
- const [agents, setAgents] = useState<Agent[]>([]);
- const [agentAId, setAgentAId] = useState<string>('');
- const [agentBId, setAgentBId] = useState<string>('');
- const [agentA, setAgentA] = useState<(Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }) | null>(null);
- const [agentB, setAgentB] = useState<(Agent & { permissions: Permission[]; tokens: Token[]; auditEvents: AuditEvent[] }) | null>(null);
- const [loading, setLoading] = useState(false);
- const [agentsLoading, setAgentsLoading] = useState(true);
-
- useEffect(() => {
- api.listAgents().then(a => { setAgents(a); setAgentsLoading(false); }).catch(() => setAgentsLoading(false));
- }, []);
-
- const loadAgents = useCallback(async () => {
- if (!agentAId || !agentBId) return;
- setLoading(true);
- try {
- const [a, b] = await Promise.all([api.getAgent(agentAId), api.getAgent(agentBId)]);
- setAgentA(a);
- setAgentB(b);
- } catch (err: any) {
- toast({ title: 'Error loading agents', description: err.message, variant: 'destructive' });
- } finally {
- setLoading(false);
- }
- }, [agentAId, agentBId]);
-
- useEffect(() => {
- if (agentAId && agentBId) loadAgents();
- }, [agentAId, agentBId, loadAgents]);
-
- const permsA = new Set(agentA?.permissions?.map(p => p.scope) || []);
- const permsB = new Set(agentB?.permissions?.map(p => p.scope) || []);
- const allScopes = Array.from(new Set([...permsA, ...permsB])).sort();
-
- return (
- <div className="space-y-6">
- <div>
- <h1 className="text-2xl font-bold flex items-center gap-2">
- <Layers className="w-6 h-6 text-crimson" /> Agent Compare
- </h1>
- <p className="text-muted-foreground">Compare two agents side-by-side with visual permission diff.</p>
- </div>
-
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">Select Agents</CardTitle>
- <CardDescription>Choose two agents to compare</CardDescription>
- </CardHeader>
- <CardContent>
- <div className="grid sm:grid-cols-2 gap-4">
- <div className="space-y-2">
- <Label className="text-xs text-muted-foreground">Agent A</Label>
- <Select value={agentAId} onValueChange={setAgentAId}>
- <SelectTrigger className="bg-background/50">
- <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select agent A'} />
- </SelectTrigger>
- <SelectContent>
- {agents.filter(a => a.id !== agentBId).map(a => (
- <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
- ))}
- </SelectContent>
- </Select>
- </div>
- <div className="space-y-2">
- <Label className="text-xs text-muted-foreground">Agent B</Label>
- <Select value={agentBId} onValueChange={setAgentBId}>
- <SelectTrigger className="bg-background/50">
- <SelectValue placeholder={agentsLoading ? 'Loading...' : 'Select agent B'} />
- </SelectTrigger>
- <SelectContent>
- {agents.filter(a => a.id !== agentAId).map(a => (
- <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
- ))}
- </SelectContent>
- </Select>
- </div>
- </div>
- </CardContent>
- </Card>
-
- {loading && (
- <div className="flex items-center justify-center h-40">
- <RefreshCw className="w-8 h-8 text-primary animate-spin" />
- </div>
- )}
-
- {agentA && agentB && !loading && (
- <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
- {/* Side-by-side info cards */}
- <div className="grid sm:grid-cols-2 gap-4 mb-4">
- {[
- { agent: agentA, label: 'A' },
- { agent: agentB, label: 'B' },
- ].map(({ agent, label }) => (
- <Card key={label} className="bg-card border-border">
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <CardTitle className="text-base flex items-center gap-2">
- <RuntimeIcon runtime={agent.runtime} className="w-5 h-5" />
- {agent.name}
- </CardTitle>
- <Badge variant="outline" className="font-mono text-xs text-muted-foreground">
- {label}
- </Badge>
- </div>
- </CardHeader>
- <CardContent className="space-y-3">
- <div className="grid grid-cols-2 gap-2 text-sm">
- <div className="text-muted-foreground">Status</div>
- <div><StatusBadge status={agent.status} /></div>
- <div className="text-muted-foreground">Runtime</div>
- <div className="font-mono text-xs">{agent.runtime}</div>
- <div className="text-muted-foreground">Permissions</div>
- <div className="font-mono">{agent.permissions?.length || 0}</div>
- <div className="text-muted-foreground">Tokens</div>
- <div className="font-mono">{agent.tokens?.filter(t => !t.revokedAt).length || 0}</div>
- <div className="text-muted-foreground">Audit Events</div>
- <div className="font-mono">{agent.auditEvents?.length || 0}</div>
- <div className="text-muted-foreground">Created</div>
- <div className="text-xs">{timeAgo(agent.createdAt)}</div>
- </div>
- </CardContent>
- </Card>
- ))}
- </div>
-
- {/* Permission Diff */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base flex items-center gap-2">
- <Shield className="w-4 h-4 text-crimson" /> Permission Diff
- </CardTitle>
- <CardDescription>
- <span className="inline-flex items-center gap-2 flex-wrap">
- <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-none bg-foreground" /> Matching</span>
- <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-none bg-foreground" /> Agent A only</span>
- <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-none bg-foreground" /> Agent B only</span>
- </span>
- </CardDescription>
- </CardHeader>
- <CardContent>
- {allScopes.length === 0 ? (
- <p className="text-sm text-muted-foreground text-center py-6">No permissions found for either agent.</p>
- ) : (
- <div className="flex flex-wrap gap-2 max-h-96 overflow-y-auto">
- {allScopes.map((scope, i) => {
- const inA = permsA.has(scope);
- const inB = permsB.has(scope);
- let colorClass = 'bg-accent text-foreground border-foreground/30';
- if (inA && !inB) colorClass = 'bg-accent text-foreground border-foreground/30';
- else if (!inA && inB) colorClass = 'bg-accent text-muted-foreground border-muted-foreground/30';
- return (
- <motion.div
- key={scope}
- initial={{ opacity: 0, scale: 0.9 }}
- animate={{ opacity: 1, scale: 1 }}
- transition={{ delay: i * 0.02, duration: 0.2 }}
- >
- <Badge variant="outline" className={`font-mono text-xs ${colorClass}`}>
- {scope}
- {inA && !inB && ' (A)'}
- {!inA && inB && ' (B)'}
- </Badge>
- </motion.div>
- );
- })}
- </div>
- )}
- </CardContent>
- </Card>
- </motion.div>
- )}
-
- {!agentA && !agentB && !loading && (
- <Card className="bg-card border-border">
- <CardContent className="p-12 text-center">
- <Layers className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
- <p className="text-muted-foreground">Select two agents above to start comparing.</p>
- </CardContent>
- </Card>
- )}
- </div>
- );
-}
-
-// ─── Activity Heatmap View ─────────────────────────────────────────────────────
-
-function ActivityHeatmapView() {
- const [activityData, setActivityData] = useState<{
- days: { date: string; total: number; allow: number; deny: number; requiresApproval: number; other: number }[];
- agentActivity: Record<string, Record<string, number>>;
- period: string;
- } | null>(null);
- const [loading, setLoading] = useState(true);
- const [hoveredDay, setHoveredDay] = useState<{ date: string; total: number } | null>(null);
-
- useEffect(() => {
- api.getActivity().then(setActivityData).catch(console.error).finally(() => setLoading(false));
- }, []);
-
- if (loading) {
- return <div className="flex items-center justify-center h-96"><RefreshCw className="w-8 h-8 text-primary animate-spin" /></div>;
- }
-
- const days = activityData?.days || [];
- const maxTotal = Math.max(...days.map(d => d.total), 1);
-
- const getColor = (total: number) => {
- if (total === 0) return 'bg-border/10 border border-border/20';
- const ratio = total / maxTotal;
- if (ratio <= 0.25) return 'bg-secondary border border-border';
- if (ratio <= 0.5) return 'bg-crimson/40 border border-crimson/50';
- if (ratio <= 0.75) return 'bg-crimson/60 border border-crimson/70';
- return 'bg-crimson border border-crimson';
- };
-
- // Arrange days into weeks (columns) for the heatmap
- const weeks: typeof days[] = [];
- for (let i = 0; i < days.length; i += 7) {
- weeks.push(days.slice(i, i + 7));
- }
-
- const totalEvents = days.reduce((sum, d) => sum + d.total, 0);
- const totalAllow = days.reduce((sum, d) => sum + d.allow, 0);
- const totalDeny = days.reduce((sum, d) => sum + d.deny, 0);
- const totalApproval = days.reduce((sum, d) => sum + d.requiresApproval, 0);
-
- return (
- <div className="space-y-6">
- <div>
- <h1 className="text-2xl font-bold">Activity Heatmap</h1>
- <p className="text-muted-foreground">30-day overview of authorization and audit events.</p>
- </div>
-
- {/* Summary Stats */}
- <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
- {[
- { label: 'Total Events', value: totalEvents, icon: <Activity className="w-4 h-4 text-crimson" />, color: 'text-foreground' },
- { label: 'Allowed', value: totalAllow, icon: <CheckCircle2 className="w-4 h-4 text-foreground" />, color: 'text-foreground' },
- { label: 'Denied', value: totalDeny, icon: <XCircle className="w-4 h-4 text-foreground" />, color: 'text-foreground' },
- { label: 'Requires Approval', value: totalApproval, icon: <AlertTriangle className="w-4 h-4 text-muted-foreground" />, color: 'text-muted-foreground' },
- ].map((stat, i) => (
- <motion.div key={i} variants={fadeInStagger} initial="initial" animate="animate" custom={i}>
- <Card className="bg-card border-border">
- <CardContent className="p-4">
- <div className="flex items-center justify-between mb-1">
- <span className="text-xs text-muted-foreground">{stat.label}</span>
- {stat.icon}
- </div>
- <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
- </CardContent>
- </Card>
- </motion.div>
- ))}
- </div>
-
- {/* Heatmap Grid */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <CardTitle className="text-base">Event Activity (30 Days)</CardTitle>
- <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
- <span>Less</span>
- <div className="w-3 h-3 rounded-none bg-border/10 border border-border/20" />
- <div className="w-3 h-3 rounded-none bg-secondary border border-border" />
- <div className="w-3 h-3 rounded-none bg-crimson/40 border border-crimson/50" />
- <div className="w-3 h-3 rounded-none bg-crimson/60 border border-crimson/70" />
- <div className="w-3 h-3 rounded-none bg-crimson border border-crimson" />
- <span>More</span>
- </div>
- </div>
- </CardHeader>
- <CardContent>
- <div className="relative">
- {/* Day labels */}
- <div className="flex gap-0.5 mb-1 ml-0">
- <span className="text-[10px] text-muted-foreground w-10" />
- {['Mon', '', 'Wed', '', 'Fri', '', 'Sun'].map((label, i) => (
- <span key={i} className="text-[10px] text-muted-foreground h-3 w-3 flex items-center justify-center">{label}</span>
- ))}
- </div>
-
- {/* Grid */}
- <div className="flex gap-1 overflow-x-auto pb-2">
- {weeks.map((week, wi) => (
- <div key={wi} className="flex flex-col gap-0.5">
- {week.map((day, di) => (
- <TooltipProvider key={di}>
- <Tooltip>
- <TooltipTrigger asChild>
- <motion.div
- className={`w-3 h-3 rounded-none cursor-pointer transition-all hover:ring-1 hover:ring-crimson/50 ${getColor(day.total)}`}
- initial={{ opacity: 0, scale: 0.5 }}
- animate={{ opacity: 1, scale: 1 }}
- transition={{ delay: wi * 0.03 + di * 0.02, duration: 0.2 }}
- onMouseEnter={() => setHoveredDay(day)}
- onMouseLeave={() => setHoveredDay(null)}
- />
- </TooltipTrigger>
- <TooltipContent side="top" className="bg-popover border-border">
- <div className="text-xs">
- <div className="font-semibold">{day.date}</div>
- <div className="text-muted-foreground">{day.total} event{day.total !== 1 ? 's' : ''}</div>
- {day.total > 0 && (
- <div className="flex gap-2 mt-1">
- <span className="text-foreground">{day.allow} allow</span>
- <span className="text-foreground">{day.deny} deny</span>
- <span className="text-muted-foreground">{day.requiresApproval} approval</span>
- </div>
- )}
- </div>
- </TooltipContent>
- </Tooltip>
- </TooltipProvider>
- ))}
- </div>
- ))}
- </div>
-
- {/* Hover detail */}
- {hoveredDay && (
- <motion.div
- initial={{ opacity: 0, y: 5 }}
- animate={{ opacity: 1, y: 0 }}
- className="mt-3 p-3 rounded-none bg-secondary border border-border text-sm"
- >
- <div className="flex items-center justify-between">
- <div className="flex items-center gap-2">
- <Calendar className="w-4 h-4 text-crimson" />
- <span className="font-mono font-semibold">{hoveredDay.date}</span>
- </div>
- <span className="text-muted-foreground">{hoveredDay.total} event{hoveredDay.total !== 1 ? 's' : ''}</span>
- </div>
- </motion.div>
- )}
- </div>
- </CardContent>
- </Card>
-
- {/* Daily Trend Bar Chart */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base">Daily Event Breakdown</CardTitle>
- <CardDescription>Allow, deny, and requires approval counts per day</CardDescription>
- </CardHeader>
- <CardContent>
- <div className="h-64">
- <ResponsiveContainer width="100%" height="100%">
- <BarChart data={days} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
- <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
- <XAxis
- dataKey="date"
- tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
- tickFormatter={(v: string) => v.slice(5)}
- interval={4}
- />
- <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
- <RechartsTooltip
- contentStyle={{
- backgroundColor: 'hsl(var(--card))',
- border: '1px solid hsl(var(--border))',
- borderRadius: '8px',
- fontSize: '12px',
- }}
- />
- <Bar dataKey="allow" stackId="a" fill="#8B2252" radius={[0, 0, 0, 0]} name="Allow" />
- <Bar dataKey="deny" stackId="a" fill="#666666" radius={[0, 0, 0, 0]} name="Deny" />
- <Bar dataKey="requiresApproval" stackId="a" fill="#999999" radius={[0, 0, 0, 0]} name="Requires Approval" />
- </BarChart>
- </ResponsiveContainer>
- </div>
- </CardContent>
- </Card>
- </div>
- );
-}
-
-// ─── Quick Setup Wizard ────────────────────────────────────────────────────────
-
-function QuickSetupWizard({ open, onOpenChange, onComplete }: { open: boolean; onOpenChange: (open: boolean) => void; onComplete: () => void }) {
- const [step, setStep] = useState(0);
- const [agentName, setAgentName] = useState('');
- const [agentRuntime, setAgentRuntime] = useState('hermes');
- const [agentDescription, setAgentDescription] = useState('');
- const [permissionTemplate, setPermissionTemplate] = useState('observer');
- const [tokenTTL, setTokenTTL] = useState('3600');
- const [createdAgentId, setCreatedAgentId] = useState<string | null>(null);
- const [createdToken, setCreatedToken] = useState<string | null>(null);
- const [stepStatus, setStepStatus] = useState<('pending' | 'running' | 'done' | 'error')[]>(['pending', 'pending', 'pending']);
- const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
- const reset = () => {
- setStep(0);
- setAgentName('');
- setAgentRuntime('hermes');
- setAgentDescription('');
- setPermissionTemplate('observer');
- setTokenTTL('3600');
- setCreatedAgentId(null);
- setCreatedToken(null);
- setStepStatus(['pending', 'pending', 'pending']);
- setErrorMsg(null);
- };
-
- const runStep = async (stepIndex: number) => {
- const newStatus = [...stepStatus];
- newStatus[stepIndex] = 'running';
- setStepStatus(newStatus);
- setErrorMsg(null);
-
- try {
- if (stepIndex === 0) {
- // Create Agent
- const agent = await api.createAgent({ name: agentName, runtime: agentRuntime, description: agentDescription || undefined });
- setCreatedAgentId(agent.id);
- } else if (stepIndex === 1) {
- // Grant Permissions from template
- const template = PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate);
- if (template && createdAgentId) {
- for (const scope of template.scopes.slice(0, 3)) {
- await api.grantPermission(createdAgentId, { scope, effect: 'ALLOW' });
- }
- }
- } else if (stepIndex === 2) {
- // Issue Token
- if (createdAgentId) {
- const template = PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate);
- const result = await api.issueToken({
- agentId: createdAgentId,
- scopes: template?.scopes.slice(0, 3) || ['github.repo.read'],
- ttlSeconds: parseInt(tokenTTL),
- });
- setCreatedToken(result.token);
- }
- }
-
- const newStatus2 = [...stepStatus];
- newStatus2[stepIndex] = 'done';
- setStepStatus(newStatus2);
-
- if (stepIndex < 2) {
- setStep(stepIndex + 1);
- }
- } catch (err: any) {
- const newStatus3 = [...stepStatus];
- newStatus3[stepIndex] = 'error';
- setStepStatus(newStatus3);
- setErrorMsg(err.message || 'An error occurred');
- }
- };
-
- const stepLabels = ['Create Agent', 'Grant Permissions', 'Issue Token'];
- const stepIcons = [<Bot key="bot" className="w-4 h-4" />, <Shield key="shield" className="w-4 h-4" />, <Key key="key" className="w-4 h-4" />];
-
- return (
- <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
- <DialogContent className="sm:max-w-lg bg-card border-border">
- <DialogHeader>
- <DialogTitle className="flex items-center gap-2">
- <Zap className="w-5 h-5 text-crimson" /> Quick Setup Wizard
- </DialogTitle>
- <DialogDescription>Create an agent, grant permissions, and issue a token in 3 steps.</DialogDescription>
- </DialogHeader>
-
- {/* Stepper */}
- <div className="flex items-center justify-center gap-0 py-4">
- {stepLabels.map((label, i) => (
- <React.Fragment key={i}>
- <div className="flex flex-col items-center gap-1">
- <div className={`w-8 h-8 rounded-none flex items-center justify-center text-sm font-semibold border-2 transition-all ${
- stepStatus[i] === 'done' ? 'bg-foreground border-foreground text-crimson-foreground' :
- stepStatus[i] === 'running' ? 'bg-crimson border-crimson text-crimson-foreground animate-pulse' :
- stepStatus[i] === 'error' ? 'bg-foreground border-foreground text-crimson-foreground' :
- i === step ? 'bg-secondary border-crimson text-crimson' :
- 'bg-secondary border-border text-muted-foreground'
- }`}>
- {stepStatus[i] === 'done' ? <CheckCircle2 className="w-4 h-4" /> :
- stepStatus[i] === 'error' ? <XCircle className="w-4 h-4" /> :
- stepIcons[i]}
- </div>
- <span className={`text-[10px] ${i === step ? 'text-crimson font-semibold' : 'text-muted-foreground'}`}>{label}</span>
- </div>
- {i < 2 && (
- <div className={`w-12 h-0.5 mx-1 mb-4 transition-colors ${
- stepStatus[i] === 'done' ? 'bg-foreground' : 'bg-border'
- }`} />
- )}
- </React.Fragment>
- ))}
- </div>
-
- {/* Step Content */}
- <div className="space-y-4 min-h-[180px]">
- {step === 0 && (
- <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
- <div>
- <Label className="text-xs">Agent Name</Label>
- <Input placeholder="my-agent" value={agentName} onChange={e => setAgentName(e.target.value)} className="mt-1" />
- </div>
- <div>
- <Label className="text-xs">Runtime</Label>
- <Select value={agentRuntime} onValueChange={setAgentRuntime}>
- <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="hermes">Hermes</SelectItem>
- <SelectItem value="codex">Codex</SelectItem>
- <SelectItem value="openclaw">OpenClaw</SelectItem>
- <SelectItem value="cli">CLI</SelectItem>
- <SelectItem value="automation">Automation</SelectItem>
- <SelectItem value="custom">Custom</SelectItem>
- </SelectContent>
- </Select>
- </div>
- <div>
- <Label className="text-xs">Description (optional)</Label>
- <Input placeholder="What does this agent do?" value={agentDescription} onChange={e => setAgentDescription(e.target.value)} className="mt-1" />
- </div>
- </motion.div>
- )}
-
- {step === 1 && (
- <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
- <div>
- <Label className="text-xs">Permission Template</Label>
- <Select value={permissionTemplate} onValueChange={setPermissionTemplate}>
- <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
- <SelectContent>
- {PERMISSION_TEMPLATES.map(t => (
- <SelectItem key={t.id} value={t.id}>
- {t.name} — {t.scopes.length} scopes
- </SelectItem>
- ))}
- </SelectContent>
- </Select>
- </div>
- {PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate) && (
- <div className="p-3 rounded-none bg-secondary border border-border">
- <div className="text-xs font-semibold mb-1.5">{PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.name}</div>
- <div className="text-xs text-muted-foreground mb-2">{PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.description}</div>
- <div className="flex flex-wrap gap-1">
- {PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.slice(0, 5).map((s, i) => (
- <Badge key={i} variant="secondary" className="text-[10px] font-mono bg-crimson/10 text-crimson">{s}</Badge>
- ))}
- {(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) > 5 && (
- <Badge variant="secondary" className="text-[10px]">+{(PERMISSION_TEMPLATES.find(t => t.id === permissionTemplate)?.scopes.length || 0) - 5} more</Badge>
- )}
- </div>
- </div>
- )}
- </motion.div>
- )}
-
- {step === 2 && (
- <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-3">
- <div>
- <Label className="text-xs">Token TTL (Time to Live)</Label>
- <Select value={tokenTTL} onValueChange={setTokenTTL}>
- <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
- <SelectContent>
- <SelectItem value="3600">1 Hour</SelectItem>
- <SelectItem value="21600">6 Hours</SelectItem>
- <SelectItem value="86400">24 Hours</SelectItem>
- </SelectContent>
- </Select>
- </div>
- {createdToken && (
- <Alert className="border-foreground/30 bg-muted">
- <CheckCircle2 className="w-4 h-4 text-foreground" />
- <AlertTitle className="text-foreground text-xs">Token Issued!</AlertTitle>
- <AlertDescription className="text-xs font-mono break-all mt-1">{createdToken}</AlertDescription>
- </Alert>
- )}
- </motion.div>
- )}
- </div>
-
- {/* Error */}
- {errorMsg && (
- <Alert variant="destructive" className="mt-2">
- <AlertTriangle className="w-4 h-4" />
- <AlertDescription className="text-xs">{errorMsg}</AlertDescription>
- </Alert>
- )}
-
- {/* Footer Buttons */}
- <DialogFooter className="flex gap-2">
- {stepStatus[step] === 'done' && step === 2 ? (
- <Button className="bg-foreground text-white hover:bg-crimson transition-colors" onClick={() => { reset(); onOpenChange(false); onComplete(); }}>
- <CheckCircle2 className="w-4 h-4 mr-1" /> Done
- </Button>
- ) : (
- <Button
- className="bg-foreground text-white hover:bg-crimson transition-colors"
- disabled={stepStatus[step] === 'running' || (step === 0 && !agentName.trim())}
- onClick={() => runStep(step)}
- >
- {stepStatus[step] === 'running' ? (
- <><RefreshCw className="w-4 h-4 mr-1 animate-spin" /> Running...</>
- ) : (
- <>{step === 2 ? 'Issue Token' : 'Next'} <ArrowRight className="w-4 h-4 ml-1" /></>
- )}
- </Button>
- )}
- </DialogFooter>
- </DialogContent>
- </Dialog>
- );
-}
-
-// ─── Security Events Feed View ──────────────────────────────────────────────
-
-interface SSEEvent {
- id: string;
- eventType: string;
- actorType: string;
- actorId: string | null;
- agentId: string | null;
- resource: string | null;
- action: string | null;
- decision: string | null;
- metadata: string | null;
- previousHash: string | null;
- eventHash: string;
- createdAt: string;
-}
-
-function SecurityEventsView() {
- const { navigateToAgent } = useAppStore();
- const [liveEvents, setLiveEvents] = useState<SSEEvent[]>([]);
- const [recentEvents, setRecentEvents] = useState<AuditEvent[]>([]);
- const [paused, setPaused] = useState(false);
- const [missedCount, setMissedCount] = useState(0);
- const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
- const [agents, setAgents] = useState<Agent[]>([]);
- const feedRef = useRef<HTMLDivElement>(null);
- const pausedRef = useRef(paused);
- const missedBufferRef = useRef<SSEEvent[]>([]);
-
- useEffect(() => { pausedRef.current = paused; }, [paused]);
-
- // Load agents for name lookup
- useEffect(() => {
- api.listAgents().then(setAgents).catch(console.error);
- }, []);
-
- // Load recent events via REST
- useEffect(() => {
- api.getAuditEvents({ limit: 50 }).then(setRecentEvents).catch(console.error);
- }, []);
-
- // SSE connection
- useEffect(() => {
- let es: EventSource | null = null;
-
- const connect = () => {
- setConnectionStatus('reconnecting');
- es = new EventSource('/api/events/stream');
-
- es.onopen = () => {
- setConnectionStatus('connected');
- };
-
- es.onerror = () => {
- setConnectionStatus('disconnected');
- es?.close();
- // Reconnect after 3 seconds
- setTimeout(connect, 3000);
- };
-
- es.addEventListener('initial', (e) => {
- try {
- const events: SSEEvent[] = JSON.parse(e.data);
- setLiveEvents(events.slice(0, 50));
- } catch { /* ignore parse errors */ }
- });
-
- es.addEventListener('security-event', (e) => {
- try {
- const event: SSEEvent = JSON.parse(e.data);
- if (pausedRef.current) {
- missedBufferRef.current.push(event);
- setMissedCount(prev => prev + 1);
- } else {
- setLiveEvents(prev => [event, ...prev].slice(0, 100));
- }
- } catch { /* ignore parse errors */ }
- });
- };
-
- connect();
-
- return () => {
- es?.close();
- };
- }, []);
-
- // Auto-scroll to top on new event
- useEffect(() => {
- if (!paused && feedRef.current) {
- feedRef.current.scrollTop = 0;
- }
- }, [liveEvents, paused]);
-
- const handleResume = () => {
- if (missedBufferRef.current.length > 0) {
- setLiveEvents(prev => [...missedBufferRef.current.reverse(), ...prev].slice(0, 100));
- missedBufferRef.current = [];
- }
- setMissedCount(0);
- setPaused(false);
- };
-
- const agentNameMap = useMemo(() => {
- const map: Record<string, string> = {};
- for (const a of agents) { map[a.id] = a.name; }
- return map;
- }, [agents]);
-
- const eventTypeIcons: Record<string, React.ReactNode> = {
- PERMISSION_GRANTED: <ShieldCheck className="w-3.5 h-3.5 text-crimson" />,
- PERMISSION_REVOKED: <ShieldX className="w-3.5 h-3.5 text-foreground" />,
- AUTHORIZATION_CHECK: <Shield className="w-3.5 h-3.5 text-crimson" />,
- AGENT_CREATED: <Plus className="w-3.5 h-3.5 text-foreground" />,
- AGENT_REVOKED: <Ban className="w-3.5 h-3.5 text-foreground" />,
- AGENT_PAUSED: <Pause className="w-3.5 h-3.5 text-muted-foreground" />,
- AGENT_RESUMED: <Play className="w-3.5 h-3.5 text-foreground" />,
- KEY_ROTATED: <RotateCcw className="w-3.5 h-3.5 text-crimson" />,
- TOKEN_ISSUED: <Key className="w-3.5 h-3.5 text-muted-foreground" />,
- TOKEN_REVOKED: <Trash2 className="w-3.5 h-3.5 text-foreground" />,
- };
-
- return (
- <div className="space-y-6">
- <div className="flex items-center justify-between">
- <div>
- <h1 className="text-2xl font-bold">Security Events Feed</h1>
- <p className="text-muted-foreground">Real-time security event monitoring</p>
- </div>
- <div className="flex items-center gap-3">
- {/* Connection status */}
- <div className="flex items-center gap-2 px-3 py-1.5 rounded-none border border-border bg-card">
- <div className={`w-2 h-2 rounded-none ${
- connectionStatus === 'connected' ? 'bg-crimson animate-pulse' :
- connectionStatus === 'reconnecting' ? 'bg-crimson animate-pulse' :
- 'bg-crimson'
- }`} />
- <span className={`text-xs font-mono ${
- connectionStatus === 'connected' ? 'text-crimson' :
- connectionStatus === 'reconnecting' ? 'text-muted-foreground' :
- 'text-crimson'
- }`}>
- {connectionStatus === 'connected' ? 'LIVE' : connectionStatus === 'reconnecting' ? 'RECONNECTING' : 'DISCONNECTED'}
- </span>
- </div>
- {paused && (
- <motion.div
- initial={{ scale: 0.8, opacity: 0 }}
- animate={{ scale: 1, opacity: 1 }}
- className="flex items-center gap-2 px-3 py-1.5 rounded-none border border-muted-foreground/30 bg-accent"
- >
- <span className="text-xs font-mono text-muted-foreground">PAUSED</span>
- {missedCount > 0 && (
- <Badge variant="outline" className="text-xs bg-secondary text-muted-foreground border-muted-foreground/30">
- {missedCount} missed
- </Badge>
- )}
- </motion.div>
- )}
- <Button
- variant={paused ? 'default' : 'outline'}
- size="sm"
- onClick={paused ? handleResume : () => setPaused(true)}
- >
- {paused ? <><Play className="w-4 h-4 mr-1" /> Resume</> : <><Pause className="w-4 h-4 mr-1" /> Pause</>}
- </Button>
- </div>
- </div>
-
- {/* Live Feed */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <div className="flex items-center justify-between">
- <CardTitle className="text-base flex items-center gap-2">
- <Radio className="w-4 h-4 text-crimson" /> Live Feed
- </CardTitle>
- <Badge variant="outline" className="text-xs font-mono">{liveEvents.length} events</Badge>
- </div>
- </CardHeader>
- <CardContent>
- <div ref={feedRef} className="max-h-[500px] overflow-y-auto custom-scrollbar space-y-2">
- {liveEvents.length === 0 ? (
- <div className="py-8 text-center text-muted-foreground">
- <Radio className="w-8 h-8 mx-auto mb-2 opacity-50" />
- <p className="text-sm">Waiting for events...</p>
- <p className="text-xs text-muted-foreground/60 mt-1">New security events will appear here in real-time</p>
- </div>
- ) : (
- <AnimatePresence initial={false}>
- {liveEvents.map((event, i) => (
- <motion.div
- key={`${event.id}-${i}`}
- initial={{ opacity: 0, y: -20, scale: 0.98 }}
- animate={{ opacity: 1, y: 0, scale: 1 }}
- exit={{ opacity: 0, y: 20 }}
- transition={{ duration: 0.3, ease: 'easeOut' }}
- className="flex items-start gap-3 p-3 rounded-none border border-border bg-card hover:border-border transition-colors"
- >
- <div className="shrink-0 mt-0.5">
- {eventTypeIcons[event.eventType] || <Activity className="w-3.5 h-3.5 text-muted-foreground" />}
- </div>
- <div className="flex-1 min-w-0">
- <div className="flex items-center gap-2 flex-wrap">
- <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
- {new Date(event.createdAt).toLocaleTimeString()}
- </span>
- <Badge variant="outline" className="text-[10px] font-mono bg-crimson/5 border-border">
- {event.eventType.replace(/_/g, ' ')}
- </Badge>
- {event.decision && <DecisionBadge decision={event.decision} />}
- {event.agentId && (
- <button
- className="text-xs font-mono text-crimson hover:underline"
- onClick={() => navigateToAgent(event.agentId!)}
- >
- {agentNameMap[event.agentId] || event.agentId.slice(0, 8)}
- </button>
- )}
- </div>
- <p className="text-xs text-muted-foreground mt-1 truncate">
- {event.action || 'System event'}{event.resource ? ` · ${event.resource}` : ''}
- </p>
- </div>
- </motion.div>
- ))}
- </AnimatePresence>
- )}
- </div>
- </CardContent>
- </Card>
-
- {/* Recent Events via REST */}
- <Card className="bg-card border-border">
- <CardHeader className="pb-3">
- <CardTitle className="text-base flex items-center gap-2">
- <ScrollText className="w-4 h-4 text-crimson" /> Recent Events (Last 50)
- </CardTitle>
- </CardHeader>
- <CardContent>
- <div className="max-h-96 overflow-y-auto custom-scrollbar">
- <Table>
- <TableHeader>
- <TableRow>
- <TableHead>Time</TableHead>
- <TableHead>Event</TableHead>
- <TableHead>Agent</TableHead>
- <TableHead>Action</TableHead>
- <TableHead>Decision</TableHead>
- </TableRow>
- </TableHeader>
- <TableBody>
- {recentEvents.map(e => (
- <TableRow key={e.id} className={e.decision === 'allow' ? 'bg-secondary' : e.decision === 'deny' ? 'bg-secondary' : e.decision === 'requires_approval' ? 'bg-secondary' : ''}>
- <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(e.createdAt)}</TableCell>
- <TableCell className="font-mono text-xs">{e.eventType.replace(/_/g, ' ')}</TableCell>
- <TableCell className="font-mono text-xs">
- {e.agentId ? (
- <button className="text-crimson hover:underline" onClick={() => navigateToAgent(e.agentId!)}>
- {agentNameMap[e.agentId] || e.agentId.slice(0, 8)}
- </button>
- ) : '-'}
- </TableCell>
- <TableCell className="font-mono text-xs">{e.action || '-'}</TableCell>
- <TableCell>{e.decision ? <DecisionBadge decision={e.decision} /> : '-'}</TableCell>
- </TableRow>
- ))}
- </TableBody>
- </Table>
- </div>
- </CardContent>
- </Card>
- </div>
- );
-}
-
-// ─── Command Palette ──────────────────────────────────────────────────────────
-
-function CommandPalette() {
- const [open, setOpen] = useState(false);
- const { setView, navigateToAgent } = useAppStore();
- const [agents, setAgents] = useState<Agent[]>([]);
-
- useEffect(() => {
- const down = (e: KeyboardEvent) => {
- if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
- e.preventDefault();
- setOpen((prev) => !prev);
- }
- };
- document.addEventListener('keydown', down);
- return () => document.removeEventListener('keydown', down);
- }, []);
-
- // Load agents when palette opens for agent navigation
- useEffect(() => {
- if (open) {
- api.listAgents().then(setAgents).catch(() => {});
- }
- }, [open]);
-
- const navItems = [
- { id: 'dashboard' as const, label: 'Dashboard', icon: LayoutDashboard, shortcut: '1' },
- { id: 'agents' as const, label: 'Agents', icon: Bot, shortcut: '2' },
- { id: 'playground' as const, label: 'Playground', icon: Command, shortcut: '3' },
- { id: 'agent-compare' as const, label: 'Compare', icon: Layers, shortcut: '4' },
- { id: 'activity-heatmap' as const, label: 'Activity', icon: Activity, shortcut: '5' },
- { id: 'security-events' as const, label: 'Live Feed', icon: Radio, shortcut: '6' },
- { id: 'audit' as const, label: 'Audit Log', icon: ScrollText, shortcut: '7' },
- { id: 'tokens' as const, label: 'Tokens', icon: Key, shortcut: '8' },
- { id: 'policies' as const, label: 'Policies', icon: Shield, shortcut: '9' },
- { id: 'settings' as const, label: 'Settings', icon: Settings, shortcut: '0' },
- { id: 'docs' as const, label: 'Docs', icon: BookOpen, shortcut: 'D' },
- ];
-
- const actions = [
- { label: 'New Agent', icon: Plus, action: () => { setOpen(false); setView('agents'); }, shortcut: 'N' },
- { label: 'Seed Demo Data', icon: Sparkles, action: async () => { setOpen(false); try { await fetch('/api/seed', { method: 'POST' }); toast({ title: 'Demo data seeded' }); } catch (err: any) { toast({ title: 'Error', description: err.message, variant: 'destructive' }); } }, shortcut: 'S' },
- { label: 'Quick Setup', icon: Zap, action: () => { setOpen(false); setView('dashboard'); }, shortcut: 'Q' },
- { label: 'Refresh Data', icon: RefreshCw, action: () => { setOpen(false); window.location.reload(); }, shortcut: 'R' },
- { label: 'Export Data', icon: Download, action: () => { setOpen(false); api.exportData().then(blob => { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'agentdnai-export.json'; a.click(); URL.revokeObjectURL(url); toast({ title: 'Data exported' }); }).catch((err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' })); }, shortcut: 'E' },
- ];
-
- return (
- <CommandDialog open={open} onOpenChange={setOpen} title="Command Palette" description="Search for a command or navigate...">
- <CommandInput placeholder="Type a command or search..." />
- <CommandList>
- <CommandEmpty>No results found.</CommandEmpty>
- <CommandGroup heading="Navigation">
- {navItems.map((item) => (
- <CommandItem
- key={item.id}
- value={item.label}
- onSelect={() => { setOpen(false); setView(item.id); }}
- >
- <item.icon className="w-4 h-4" />
- <span>{item.label}</span>
- <CommandShortcut>⌘{item.shortcut}</CommandShortcut>
- </CommandItem>
- ))}
- </CommandGroup>
- <CommandSeparator />
- <CommandGroup heading="Actions">
- {actions.map((action) => (
- <CommandItem
- key={action.label}
- value={action.label}
- onSelect={action.action}
- >
- <action.icon className="w-4 h-4" />
- <span>{action.label}</span>
- <CommandShortcut>⌘{action.shortcut}</CommandShortcut>
- </CommandItem>
- ))}
- </CommandGroup>
- {agents.length > 0 && (
- <>
- <CommandSeparator />
- <CommandGroup heading="Agents">
- {agents.map((agent) => (
- <CommandItem
- key={agent.id}
- value={agent.name}
- onSelect={() => { setOpen(false); navigateToAgent(agent.id); }}
- >
- <RuntimeIcon runtime={agent.runtime} className="w-4 h-4" />
- <span>{agent.name}</span>
- <StatusBadge status={agent.status} />
- </CommandItem>
- ))}
- </CommandGroup>
- </>
- )}
- </CommandList>
- </CommandDialog>
- );
-}
-
-export default function AgentDNAIApp() {
- const { currentView, setView } = useAppStore();
- const [isMobile, setIsMobile] = useState(false);
-
- useEffect(() => {
- const check = () => setIsMobile(window.innerWidth < 768);
- check();
- window.addEventListener('resize', check);
- return () => window.removeEventListener('resize', check);
- }, []);
-
- // Mobile bottom nav items (5 most important)
- const mobileNavItems = [
- { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Home' },
- { id: 'agents' as const, icon: Bot, label: 'Agents' },
- { id: 'security-events' as const, icon: Radio, label: 'Live' },
- { id: 'audit' as const, icon: ScrollText, label: 'Audit' },
- { id: 'settings' as const, icon: Settings, label: 'Settings' },
- ];
-
- return (
- <AnimatePresence mode="wait">
- {currentView === 'home' ? (
- <motion.div key="home" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4, ease: 'easeInOut' }}>
- <LandingPage />
- </motion.div>
- ) : (
- <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="h-screen flex flex-col md:flex-row">
- <CommandPalette />
- <DashboardSidebar />
- <main className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar pb-20 md:pb-6">
- <AnimatePresence mode="wait">
- <motion.div
- key={currentView}
- initial={{ opacity: 0, y: 20, scale: 0.98 }}
- animate={{ opacity: 1, y: 0, scale: 1 }}
- exit={{ opacity: 0, y: -10, scale: 0.99 }}
- transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
- >
- {currentView === 'dashboard' && <DashboardView />}
- {currentView === 'agents' && <AgentsView />}
- {currentView === 'agent-detail' && <AgentDetailView />}
- {currentView === 'audit' && <AuditView />}
- {currentView === 'tokens' && <TokensView />}
- {currentView === 'policies' && <PoliciesView />}
- {currentView === 'settings' && <SettingsView />}
- {currentView === 'docs' && <DocsView />}
- {currentView === 'playground' && <PlaygroundView />}
- {currentView === 'agent-compare' && <AgentCompareView />}
- {currentView === 'activity-heatmap' && <ActivityHeatmapView />}
- {currentView === 'security-events' && <SecurityEventsView />}
- </motion.div>
- </AnimatePresence>
- </main>
- {/* Mobile Bottom Navigation */}
- {isMobile && (
- <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 -xl flex items-center justify-around h-16 px-2 safe-area-bottom">
- {mobileNavItems.map((item) => (
- <button
- key={item.id}
- onClick={() => setView(item.id)}
- className={`flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-colors ${
- currentView === item.id ? 'text-crimson' : 'text-muted-foreground'
- }`}
- >
- <item.icon className="w-5 h-5" />
- <span className="text-[10px] font-medium">{item.label}</span>
- </button>
- ))}
- </nav>
- )}
- </motion.div>
- )}
- </AnimatePresence>
- );
-}
+export default AgentDNAIApp;

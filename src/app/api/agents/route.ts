@@ -30,18 +30,19 @@ export async function POST(request: NextRequest) {
         data: {
           email,
           name: email === 'default@agentdnai.io' ? 'Default User' : email.split('@')[0],
+          passwordHash: 'agent-created-no-login',
         },
       });
     }
 
-    // Generate key pair
+    // Generate RSA-PSS key pair
     const keyPair = generateKeyPair();
 
     // Generate agent URI
     const owner = email === 'default@agentdnai.io' ? 'user' : email.split('@')[0];
     const agentUri = generateAgentUri(owner, runtime, name);
 
-    // Create agent identity
+    // Create agent identity with fingerprint
     const agent = await db.agentIdentity.create({
       data: {
         agentUri,
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
         description: description || null,
         runtime,
         publicKey: keyPair.publicKey,
+        fingerprint: keyPair.fingerprint,
         status: 'ACTIVE',
         ownerUserId: user.id,
       },
