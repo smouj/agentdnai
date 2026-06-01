@@ -63,9 +63,9 @@ prompt
 # mini-services dependencies
 /mini-services/*/node_modules/
 
-# database files
+# database files (dev only — production uses PostgreSQL)
 *.db
 *.db-journal
 
-# worklog
+# development worklog
 /worklog.md
