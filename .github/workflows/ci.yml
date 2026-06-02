@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, product-ready-v0.2]
+    branches: [main]
   pull_request:
     branches: [main]
 
