@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { AgentDNAILogo, AgentDNAILogoMark } from '@/components/agentdnai-logo';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -216,7 +217,7 @@ function LandingPage() {
       <nav className="border-b border-border/60 bg-background/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-8 w-auto" />
+            <AgentDNAILogo variant="text" height={28} />
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-crimson" onClick={() => setView('docs')}>
@@ -343,7 +344,7 @@ AgentDNAI Authorization Check
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: <Fingerprint className="w-5 h-5" />, title: 'Ed25519 Cryptographic Identity', desc: 'Every agent gets a unique Ed25519 key pair. Verify identity with challenge-response.' },
+              { icon: <Fingerprint className="w-5 h-5" />, title: 'RSA-PSS Cryptographic Identity', desc: 'Every agent gets a unique RSA-PSS key pair. Verify identity with challenge-response.' },
               { icon: <Hash className="w-5 h-5" />, title: 'Hash-Chained Audit Trail', desc: 'SHA-256 linked event chain. Detect any tampering with chain verification.' },
               { icon: <Shield className="w-5 h-5" />, title: 'Policy Engine', desc: 'Deny-by-default with explicit deny > allow. Production actions require human approval.' },
               { icon: <Key className="w-5 h-5" />, title: 'Temporary Tokens', desc: 'HMAC-SHA256 hashed tokens with configurable TTL. Revoke anytime.' },
@@ -539,7 +540,7 @@ function LoginView() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div {...pageTransition} className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-10 mx-auto mb-4" />
+          <AgentDNAILogo variant="full" height={40} className="mx-auto mb-4" />
           <h1 className="text-2xl font-bold">Sign In</h1>
           <p className="text-sm text-muted-foreground mt-1">Welcome back to AgentDNAI</p>
         </div>
@@ -605,7 +606,7 @@ function RegisterView() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div {...pageTransition} className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-10 mx-auto mb-4" />
+          <AgentDNAILogo variant="full" height={40} className="mx-auto mb-4" />
           <h1 className="text-2xl font-bold">Create Account</h1>
           <p className="text-sm text-muted-foreground mt-1">Set up your AgentDNAI organization</p>
         </div>
@@ -718,7 +719,7 @@ function OnboardingView() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <motion.div {...pageTransition} className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <img src="/logo-agentdnai.png" alt="AgentDNAI" className="h-8 mx-auto mb-3" />
+          <AgentDNAILogo variant="symbol" height={32} className="mx-auto mb-3" />
         </div>
 
         {/* Progress */}
@@ -903,7 +904,7 @@ function DashboardSidebar() {
     <aside className={`border-r border-border/60 bg-sidebar shrink-0 flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-56' : 'w-14'}`}>
       <div className="p-3 flex items-center justify-between border-b border-border/60">
         <div className="flex items-center gap-2 overflow-hidden">
-          <img src="/logo-agentdnai.png" alt="" className="h-7 w-auto shrink-0" />
+          <AgentDNAILogoMark size={28} />
           {sidebarOpen && <span className="text-sm font-bold whitespace-nowrap">Agent<span className="text-crimson">DNAI</span></span>}
         </div>
         <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -1594,7 +1595,7 @@ function AgentDetailView() {
         <div className="bg-gradient-to-r from-secondary/60 via-secondary/30 to-secondary/60 px-6 py-4 border-b border-border/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo-agentdnai.png" alt="" className="h-6 w-auto" />
+              <AgentDNAILogoMark size={24} />
               <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">Digital Agent Identity</span>
             </div>
             <StatusBadge status={agent.status} />
@@ -3045,7 +3046,7 @@ function DocsView() {
         <nav className="border-b border-border/60 bg-background/80 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
             <button onClick={() => setView('home')} className="flex items-center gap-2">
-              <img src="/logo-agentdnai.png" alt="" className="h-7 w-auto" />
+              <AgentDNAILogo variant="text" height={28} />
             </button>
             <Button size="sm" className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={() => setView('register')}>
               Get Started
@@ -3093,7 +3094,7 @@ function DocsView() {
                         },
                         {
                           step: '2', title: 'Create your first agent',
-                          desc: 'Give your AI agent a unique identity with an Ed25519 cryptographic key pair.',
+                          desc: 'Give your AI agent a unique identity with an RSA-PSS cryptographic key pair.',
                           code: `curl -X POST https://api.agentdnai.io/agents \\
   -H "Authorization: Bearer <token>" \\
   -d '{"name": "hermes-auditor", "runtime": "hermes"}'
@@ -3242,7 +3243,7 @@ curl -X POST https://api.agentdnai.io/agents/{id}/permissions \\
 │  │   Identity     │  │   Token     │  │    Audit       │            │
 │  │   Service      │  │   Service   │  │    Service     │            │
 │  │               │  │             │  │               │            │
-│  │ • Ed25519     │  │ • HMAC-SHA  │  │ • SHA-256     │            │
+│  │ • RSA-PSS     │  │ • HMAC-SHA  │  │ • SHA-256     │            │
 │  │   Key Pairs   │  │   256 Hash  │  │   Hash Chain   │            │
 │  │ • Challenge-  │  │ • TTL       │  │ • Append-Only  │            │
 │  │   Response    │  │   Config    │  │ • Tamper-      │            │
@@ -3262,7 +3263,7 @@ curl -X POST https://api.agentdnai.io/agents/{id}/permissions \\
                     {/* Component Descriptions */}
                     <div className="grid md:grid-cols-2 gap-4">
                       {[
-                        { icon: <Fingerprint className="w-5 h-5" />, title: 'Identity Service', desc: 'Manages Ed25519 key pairs, challenge-response authentication, and key rotation for every agent.' },
+                        { icon: <Fingerprint className="w-5 h-5" />, title: 'Identity Service', desc: 'Manages RSA-PSS key pairs, challenge-response authentication, and key rotation for every agent.' },
                         { icon: <Shield className="w-5 h-5" />, title: 'Policy Engine', desc: 'Deny-by-default authorization with explicit deny > allow. Production actions require human approval.' },
                         { icon: <Key className="w-5 h-5" />, title: 'Token Service', desc: 'Issues HMAC-SHA256 hashed tokens with configurable TTL. Tokens can be revoked at any time.' },
                         { icon: <Hash className="w-5 h-5" />, title: 'Audit Service', desc: 'SHA-256 hash-chained append-only log. Every authorization decision is recorded and verifiable.' },
@@ -3454,7 +3455,7 @@ agentdnai export > backup.json`}</pre>
                       <h3 className="text-sm font-semibold mb-3 flex items-center gap-2"><Lock className="w-4 h-4 text-crimson" /> Cryptographic Details</h3>
                       <div className="grid sm:grid-cols-2 gap-3 text-xs">
                         {[
-                          { label: 'Key Algorithm', value: 'Ed25519 (Curve25519)' },
+                          { label: 'Key Algorithm', value: 'RSA-PSS' },
                           { label: 'Token Hash', value: 'HMAC-SHA256' },
                           { label: 'Audit Chain', value: 'SHA-256 sequential hash' },
                           { label: 'Key Size', value: '256-bit' },

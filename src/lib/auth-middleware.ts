@@ -5,7 +5,7 @@
  * Returns the session if valid, or throws an ApiError if not.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 

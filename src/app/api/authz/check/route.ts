@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthzSchema } from '@/lib/schemas';
-import { checkAuthorization, recordDecision, type Decision } from '@/lib/policy';
+import { checkAuthorization, recordDecision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 
 /**

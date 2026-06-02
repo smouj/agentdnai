@@ -10,7 +10,7 @@ import { db } from '@/lib/db';
 import { requireAuth } from '@/lib/ownership';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 import { createOrgSchema } from '@/lib/schemas';
-import { validationError, conflict, successResponse, ApiError } from '@/lib/api-error';
+import { validationError, successResponse, ApiError } from '@/lib/api-error';
 
 /**
  * GET /api/orgs - List organizations the current user belongs to

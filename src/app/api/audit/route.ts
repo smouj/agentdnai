@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       db.auditEvent.count({ where }),
     ]);
 
-    return NextResponse.json(events);
+    return NextResponse.json({ events, total, limit, offset });
   } catch (error) {
     if (error instanceof ApiError) {
       return error.toResponse();

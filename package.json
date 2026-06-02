@@ -1,6 +1,6 @@
 {
   "name": "agentdnai",
-  "version": "0.2.0-alpha",
+  "version": "0.2.1",
   "private": true,
   "description": "Verifiable digital identity, granular permissions, and audit trails for AI agents",
   "license": "MIT",

@@ -5,6 +5,36 @@ All notable changes to AgentDNAI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-03
+
+### Security
+- **Breaking**: Added authentication requirement to 20+ API endpoints that were previously unprotected
+- Fixed hardcoded pepper defaults that fell back to known values in production
+- Removed duplicate `generateSessionToken` function
+
+### Bug Fixes
+- Added missing `passwordHash` field to user creation in permissions and approve routes (would crash at runtime)
+- Fixed decision case mismatch in SDK and examples (API returns lowercase `'allow'`/`'deny'`/`'requires_approval'`)
+- Fixed wrong audit event types for org updates/deletions (was using `ORG_CREATED`)
+- Fixed SDK `AuthorizationDecision` type to match actual API response shape
+- Fixed audit endpoint to return total count alongside events
+
+### Code Quality
+- Enabled `reactStrictMode` and removed `ignoreBuildErrors` from next.config.ts
+- Improved ESLint config to enable important rules (was previously disabling all)
+- Removed `noImplicitAny: false` from tsconfig.json (contradicted `strict: true`)
+- Fixed Prisma logging to only log queries in development mode
+- Removed backup file and screenshot PNGs from repository
+- Updated .env.example to remove misleading NextAuth and ed25519 references
+- Fixed impure function call in sidebar skeleton render
+
+### Removed
+- Deleted stale branches: product-ready-v0.2, 8 dependabot branches
+- Removed page.tsx.backup from repository
+- Removed upload/ directory PNG files from git tracking
+
+---
+
 ## [0.2.0-alpha.1] - 2026-06-04
 
 ### Added

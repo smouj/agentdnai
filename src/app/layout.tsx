@@ -19,7 +19,23 @@ export const metadata: Metadata = {
   keywords: ["AgentDNAI", "AI agents", "identity", "permissions", "audit", "authorization", "security"],
   authors: [{ name: "AgentDNAI" }],
   icons: {
-    icon: "/logo-agentdnai.png",
+    icon: [
+      { url: "/logo.svg", type: "image/svg+xml" },
+      { url: "/logo-symbol-dark.png", type: "image/png", sizes: "1254x1254" },
+    ],
+    apple: "/logo-symbol-dark.png",
+  },
+  openGraph: {
+    title: "AgentDNAI — Secure Identity for AI Agents",
+    description: "Verifiable digital identity, scoped permissions, and audit trails for AI agents.",
+    images: ["/hero-dna.png"],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AgentDNAI — Secure Identity for AI Agents",
+    description: "Verifiable digital identity, scoped permissions, and audit trails for AI agents.",
+    images: ["/hero-dna.png"],
   },
 };
 

@@ -2,7 +2,7 @@ import { requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
+import { createAuditEvent } from '@/lib/audit';
 
 /**
  * GET /api/agents/[id] - Get agent details

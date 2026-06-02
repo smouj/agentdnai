@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkAuthorization, recordDecision, type Decision } from '@/lib/policy';
+import { checkAuthorization, recordDecision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 
 /**

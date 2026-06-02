@@ -5,7 +5,7 @@
 **Digital Identity & Access Control for AI Agents**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-crimson.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/v0.2.0--alpha-crimson)](https://github.com/smouj/agentdnai)
+[![Version](https://img.shields.io/badge/v0.2.1-crimson)](https://github.com/smouj/agentdnai)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-black?logo=typescript)](https://www.typescriptlang.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-black?logo=prisma)](https://www.prisma.io/)
@@ -379,7 +379,7 @@ agentdnai/
 
 | Version | Status | Focus |
 |---|---|---|
-| **v0.2.0-alpha** | ✅ Current | Security hardening, auth, orgs, real crypto, CLI, SDK, Docker |
+| **v0.2.1** | ✅ Current | Security hardening, auth, orgs, real crypto, CLI, SDK, Docker |
 | **v0.3.0-alpha** | 🔜 Next | Onboarding UX, agent DNI card, integrations, tests |
 | **v0.4.0-beta** | 📋 Planned | Invitations, advanced audit, metrics, backups |
 | **v1.0.0** | 🎯 Goal | Production-ready, security audited, stable API, full docs |
