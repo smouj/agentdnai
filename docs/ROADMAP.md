@@ -6,30 +6,38 @@ This document outlines the planned development path for AgentDNAI from the curre
 
 ### What's Working
 
-- Agent identity management with RSA-PSS key pairs
+- Agent identity management with Ed25519 key pairs
 - Deny-by-default authorization engine
 - 47 permissions across 9 categories with 10 templates
-- Temporary token management with HMAC-SHA256 hashing
+- Temporary token management with HMAC-SHA256 hashing and pepper
 - Append-only audit logging with SHA-256 hash chain
+- User authentication (custom JWT + bcryptjs — registration, login, logout, sessions)
+- Organization and team management with role-based access
+- BOLA (Broken Object Level Authorization) protection via ownership middleware
+- Basic rate limiting (in-memory, per-endpoint presets)
 - 37+ REST API endpoints
-- Full dashboard UI with 14+ views
+- Full dashboard UI with 17+ views
 - Real-time event streaming (WebSocket + SSE)
-- Agent risk scoring
+- Agent risk scoring with 7 risk factors
 - Human approval workflow
-- Batch authorization checking
+- Batch authorization checking (up to 50 actions)
 - Data export/import (JSON, CSV)
 - Docker deployment (local + production)
 - Search and filter across agents
+- Health checks for agent key rotation, token health, permission count, and audit trail
+- API key management (model exists, UI present)
+- Monochrome iridescent theme with crimson accents
 
 ### Known Limitations
 
-- No user authentication (NextAuth.js not fully integrated)
 - Private keys not encrypted at rest
-- No rate limiting
+- Rate limiting partially implemented (in-memory only, not enforced on all endpoints)
 - SQLite only (PostgreSQL supported via Docker)
 - No real integrations with external AI platforms
 - Light theme needs polish
 - No mobile-native experience
+- API Keys view uses mock data (needs real backend)
+- Organizations view uses mock data (needs real org management backend)
 
 ---
 
@@ -40,12 +48,12 @@ This document outlines the planned development path for AgentDNAI from the curre
 Focus on making the platform production-ready with proper authentication and key security.
 
 #### User Authentication
-- [ ] NextAuth.js v4 integration with email/password
-- [ ] Session management with database-backed sessions
+- [x] Email/password authentication (custom auth with JWT + bcryptjs)
+- [x] Session management (database-backed sessions)
 - [ ] Multi-factor authentication (TOTP)
 - [ ] Password reset and email verification
 - [ ] OAuth providers (Google, GitHub)
-- [ ] API key authentication for programmatic access
+- [x] API key authentication (model exists, UI present)
 
 #### Key Security
 - [ ] AES-256 encryption for private keys at rest
@@ -54,8 +62,8 @@ Focus on making the platform production-ready with proper authentication and key
 - [ ] Key rotation with zero-downtime
 
 #### Rate Limiting
-- [ ] Token bucket rate limiting middleware
-- [ ] Per-endpoint rate limits
+- [x] Token bucket rate limiting middleware (basic implementation in lib/rate-limit.ts)
+- [x] Per-endpoint rate limits (presets for general, auth, token, registration, login)
 - [ ] Per-agent rate limits
 - [ ] Configurable via environment variables
 - [ ] Redis-backed rate limiting for distributed deployments

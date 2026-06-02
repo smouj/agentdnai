@@ -40,11 +40,13 @@ AgentDNAI implements a zero-trust security model designed for AI agent authoriza
 
 | Operation | Algorithm | Key Size |
 |---|---|---|
-| **Key Pairs** | RSA-PSS | 2048-bit |
-| **Token Hashing** | HMAC-SHA256 | 256-bit pepper |
+| **Key Pairs** | Ed25519 | Curve25519 |
+| **Token Hashing** | HMAC-SHA256 with pepper | 256-bit pepper |
 | **Audit Chain** | SHA-256 | — |
-| **Signature** | RSA-PSS + SHA-256 | 2048-bit |
+| **Signature** | Ed25519 + SHA-256 | Curve25519 |
 | **Token Generation** | CSPRNG (32 bytes) | 256-bit |
+| **Session Token** | CSPRNG (32 bytes) | Format: `sess_<hex>` |
+| **Agent Token** | CSPRNG (32 bytes) | Format: `adni_<hex>` |
 
 ### Token Security
 
@@ -83,10 +85,20 @@ The policy engine follows a strict evaluation order:
 | Limitation | Status | Planned Fix |
 |---|---|---|
 | Private keys not encrypted at rest | :warning: Open | AES-256 encryption planned |
-| No user authentication | :warning: Open | NextAuth.js integration planned |
-| Rate limiting not enforced | :warning: Open | Rate limiter middleware planned |
+| No user authentication | :white_check_mark: Implemented | Custom JWT + bcryptjs authentication with database-backed sessions |
+| Rate limiting not enforced | :white_check_mark: Partial | Basic rate limiting implemented (lib/rate-limit.ts) |
 | CORS open in development | :warning: Open | Configurable CORS planned |
 | SQLite only (dev) | :white_check_mark: By design | PostgreSQL supported via Docker |
+
+### BOLA (Broken Object Level Authorization) Protection
+
+AgentDNAI implements BOLA protection via `src/lib/ownership.ts`:
+
+1. **Direct ownership check**: Users can only access agents they own (`ownerUserId` match)
+2. **Organization membership check**: Users can access agents belonging to their organizations
+3. **Role-based access control**: Five-tier role hierarchy (OWNER > ADMIN > SECURITY_MANAGER > DEVELOPER > VIEWER)
+4. **API-level enforcement**: `requireAuth()`, `requireAgentAccess()`, `requireOrgAccess()`, `canManageAgent()` middleware functions
+5. **Minimum role requirements**: Organization endpoints enforce minimum role levels for non-read operations
 
 ## Security Best Practices for Deployment
 

@@ -1,12 +1,12 @@
 {
   "name": "agentdnai",
-  "version": "1.0.0",
+  "version": "0.2.0-alpha",
   "private": true,
   "description": "Verifiable digital identity, granular permissions, and audit trails for AI agents",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/agentdnai/agentdnai"
+    "url": "https://github.com/smouj/agentdnai"
   },
   "keywords": ["ai", "identity", "authorization", "permissions", "audit", "security", "agents"],
   "scripts": {

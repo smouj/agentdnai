@@ -57,13 +57,17 @@ Thank you for your interest in contributing to AgentDNAI! This document provides
 
 | File | Purpose |
 |---|---|
-| `src/app/page.tsx` | Main SPA with 14+ views |
+| `src/app/page.tsx` | Main SPA with 17+ views |
 | `src/app/api/` | 37+ API route handlers |
 | `src/lib/policy.ts` | Authorization engine (deny-by-default) |
-| `src/lib/crypto.ts` | RSA-PSS, SHA-256, HMAC-SHA256, key generation |
+| `src/lib/crypto.ts` | Ed25519, HMAC-SHA256, SHA-256, key generation |
 | `src/lib/audit.ts` | Hash-chained audit logger with 18 event types |
 | `src/lib/tokens.ts` | Token lifecycle service (issue, revoke, validate) |
 | `src/lib/permissions.ts` | 47 permissions across 9 categories, 10 templates |
+| `src/lib/auth.ts` | User authentication (registration, login, sessions, password hashing) |
+| `src/lib/organizations.ts` | Organization and team management with roles |
+| `src/lib/ownership.ts` | BOLA protection — ownership checks and role-based access |
+| `src/lib/rate-limit.ts` | In-memory rate limiting with per-endpoint presets |
 | `src/lib/api-client.ts` | TypeScript API client wrapper |
 | `src/lib/store.ts` | Zustand client-side navigation store |
 | `prisma/schema.prisma` | Database schema (10+ models) |
@@ -115,7 +119,7 @@ git commit -m "refactor: extract authorization logic into policy engine"
 - **ESLint** for code quality — run `bun run lint` before committing
 - **Prettier** for formatting (if configured)
 - Use existing shadcn/ui components instead of building from scratch
-- Follow the existing dark cybersecurity theme with cyan accents
+- Follow the existing monochrome iridescent theme with crimson accents
 - Use Framer Motion for animations
 - Use Recharts for data visualizations
 

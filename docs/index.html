@@ -56,6 +56,7 @@
     }
     .nav-brand span { color: var(--crimson); }
     .nav-brand svg { width: 28px; height: 28px; color: var(--crimson); }
+    .nav-brand img { display: block; }
     .nav-links { display: flex; gap: 8px; }
     .nav-links a {
       color: var(--text-muted); text-decoration: none;
@@ -172,6 +173,9 @@
 
     /* ─── Stats ──────────────────────────── */
     .stats { padding: 48px 0; border-top: 1px solid var(--border); background: var(--bg-muted); }
+
+    /* ─── What's New ─────────────────────── */
+    .whats-new { padding: 80px 0; border-top: 1px solid var(--border); }
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; text-align: center; }
     .stat-value { font-size: 36px; font-weight: 700; }
     .stat-label { font-size: 14px; color: var(--text-muted); }
@@ -247,7 +251,7 @@
 <nav>
   <div class="container">
     <a href="#" class="nav-brand">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>
+      <img src="https://raw.githubusercontent.com/smouj/agentdnai/main/public/logo-symbol-dark.png" alt="" style="height:28px;width:auto;">
       Agent<span>DNAI</span>
     </a>
     <div class="nav-links">
@@ -337,13 +341,87 @@ AgentDNAI Authorization Check
   </div>
 </section>
 
+<!-- What's New in v0.2 -->
+<section class="whats-new" id="whats-new">
+  <div class="container">
+    <div class="section-label">🆕 What's New in v0.2</div>
+    <h2 class="section-title">Major new features and improvements</h2>
+    <p class="section-desc">The v0.2 release brings authentication, organizations, health checks, risk scoring, and much more.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3>User Authentication</h3>
+        <p>JWT + bcryptjs authentication with sessions, login, register, and logout.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Organization Management</h3>
+        <p>Multi-tenant orgs with roles: OWNER, ADMIN, SECURITY_MANAGER, DEVELOPER, VIEWER.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/></svg>
+        </div>
+        <h3>Ed25519 Cryptographic Identity</h3>
+        <p>Every agent gets an Ed25519 key pair for verifiable identity and challenge-response.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <h3>HMAC-SHA256 Token Hashing</h3>
+        <p>Tokens hashed with pepper. Raw tokens never stored. Timing-safe comparison.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <h3>Agent Health Checks</h3>
+        <p>Real-time health monitoring for every agent with status and uptime tracking.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>
+        </div>
+        <h3>Risk Scoring (7-Factor)</h3>
+        <p>Comprehensive 7-factor risk assessment on a 0–100 scale per agent.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3>Approval Workflow</h3>
+        <p>Request, approve, reject workflow for actions requiring human review.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        </div>
+        <h3>17+ Dashboard Views</h3>
+        <p>Comprehensive dashboard with agents, audit, policies, playground, compare, heatmap, and more.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <h3>Real-Time Event Streaming</h3>
+        <p>WebSocket + SSE live security event feed with pause/resume and live indicators.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Stats -->
 <section class="stats">
   <div class="container">
     <div class="stats-grid">
       <div><div class="stat-value">47</div><div class="stat-label">Permission Scopes</div></div>
       <div><div class="stat-value">9</div><div class="stat-label">Categories</div></div>
-      <div><div class="stat-value">5</div><div class="stat-label">Templates</div></div>
+      <div><div class="stat-value">10</div><div class="stat-label">Templates</div></div>
       <div><div class="stat-value">0</div><div class="stat-label">Implicit Grants</div></div>
     </div>
   </div>
@@ -404,7 +482,7 @@ AgentDNAI Authorization Check
 <section class="api" id="api">
   <div class="container">
     <div class="section-label">📡 API Reference</div>
-    <h2 class="section-title">26+ API Endpoints</h2>
+    <h2 class="section-title">37+ API Endpoints</h2>
     <p class="section-desc">Full REST API for agent management, authorization, and audit.</p>
     <table class="api-table">
       <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
@@ -421,6 +499,16 @@ AgentDNAI Authorization Check
         <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/audit/verify</code></td><td>Verify hash chain</td></tr>
         <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/export</code></td><td>Export all data as JSON</td></tr>
         <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/events/stream</code></td><td>Real-time SSE event feed</td></tr>
+        <tr><td><span class="api-method api-post">POST</span></td><td><code>/api/auth/register</code></td><td>Register new account</td></tr>
+        <tr><td><span class="api-method api-post">POST</span></td><td><code>/api/auth/login</code></td><td>Login with email/password</td></tr>
+        <tr><td><span class="api-method api-post">POST</span></td><td><code>/api/auth/logout</code></td><td>Invalidate session</td></tr>
+        <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/agents/{id}/risk</code></td><td>Agent risk score (7-factor)</td></tr>
+        <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/agents/{id}/health</code></td><td>Agent health check</td></tr>
+        <tr><td><span class="api-method api-post">POST</span></td><td><code>/api/agents/{id}/approve</code></td><td>Approve pending action</td></tr>
+        <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/stats</code></td><td>Platform statistics</td></tr>
+        <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/activity</code></td><td>Activity heatmap data</td></tr>
+        <tr><td><span class="api-method api-get">GET</span></td><td><code>/api/export</code></td><td>Export all data as JSON</td></tr>
+        <tr><td><span class="api-method api-post">POST</span></td><td><code>/api/import</code></td><td>Import data from JSON</td></tr>
       </tbody>
     </table>
     <p style="margin-top:20px;font-size:14px;color:var(--text-dim)">See <a href="https://github.com/smouj/agentdnai/blob/main/README.md" style="color:var(--crimson-light)">README.md</a> for the complete API reference.</p>
@@ -467,7 +555,7 @@ AgentDNAI Authorization Check
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 AgentDNAI · MIT License</span>
+      <span>© 2026 AgentDNAI · MIT License · Made with ❤️ for the AI agent community</span>
       <div class="footer-badges">
         <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> End-to-end encrypted</span>
         <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg> Zero trust</span>
