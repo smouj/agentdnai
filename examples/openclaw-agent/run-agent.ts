@@ -55,7 +55,7 @@ async function beforeAction(action: string, resource?: string) {
   });
 
   if (!decision.allowed) {
-    if (decision.decision === 'REQUIRES_APPROVAL') {
+    if (decision.decision === 'requires_approval') {
       console.warn(`⚠️  Action "${action}" requires human approval: ${decision.reason}`);
     } else {
       console.error(`❌ Action "${action}" is denied: ${decision.reason}`);
@@ -80,9 +80,9 @@ async function preflightCheck(actions: string[], resource?: string) {
     resource,
   });
 
-  const allowed = result.results.filter(r => r.decision === 'ALLOW');
-  const denied = result.results.filter(r => r.decision === 'DENY');
-  const needsApproval = result.results.filter(r => r.decision === 'REQUIRES_APPROVAL');
+  const allowed = result.results.filter(r => r.decision === 'allow');
+  const denied = result.results.filter(r => r.decision === 'deny');
+  const needsApproval = result.results.filter(r => r.decision === 'requires_approval');
 
   console.log(`  ✅ ${allowed.length} allowed, ❌ ${denied.length} denied, ⚠️  ${needsApproval.length} need approval`);
 

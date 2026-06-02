@@ -1,12 +1,15 @@
-import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
  * GET /api/activity - Activity heatmap data for past 30 days
  * Returns daily counts of audit events grouped by date
  */
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
+    await requireAuth(_request);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
@@ -76,6 +79,9 @@ export async function GET() {
       period: '30d',
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error getting activity data:', error);
     return NextResponse.json(
       { error: 'Failed to get activity data' },

@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateKeyPair, generateAgentUri, generateToken, hashToken } from '@/lib/crypto';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
@@ -6,8 +8,9 @@ import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 /**
  * POST /api/seed - Create demo data if none exists
  */
-export async function POST() {
+export async function POST(_request: NextRequest) {
   try {
+    await requireAuth(_request);
     // Check if agents already exist
     const existingAgents = await db.agentIdentity.count();
     if (existingAgents > 0) {
@@ -301,6 +304,9 @@ export async function POST() {
       decisions: decisionCount,
     }, { status: 200 });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error seeding demo data:', error);
     return NextResponse.json(
       { error: 'Failed to seed demo data' },

@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auditQuerySchema } from '@/lib/schemas';
@@ -7,6 +9,7 @@ import { auditQuerySchema } from '@/lib/schemas';
  */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth(request);
     const { searchParams } = request.nextUrl;
     const queryParams = Object.fromEntries(searchParams.entries());
     const parsed = auditQuerySchema.safeParse(queryParams);
@@ -51,6 +54,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(events);
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error getting audit events:', error);
     return NextResponse.json(
       { error: 'Failed to get audit events' },

@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
@@ -50,6 +52,7 @@ interface ImportData {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request);
     const body: ImportData = await request.json();
 
     // ── Validate structure ───────────────────────────────────────────────────
@@ -235,6 +238,9 @@ export async function POST(request: NextRequest) {
       errors,
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error importing data:', error);
 
     if (error instanceof SyntaxError) {

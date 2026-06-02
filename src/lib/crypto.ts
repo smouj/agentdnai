@@ -22,7 +22,13 @@ import {
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-const TOKEN_PEPPER = process.env.TOKEN_PEPPER || 'agentdnai-default-pepper-change-in-production';
+function getTokenPepper(): string {
+  const pepper = process.env.TOKEN_PEPPER || (process.env.NODE_ENV === 'production' ? '' : 'agentdnai-dev-pepper-not-for-production');
+  if (!pepper) {
+    throw new Error('TOKEN_PEPPER environment variable must be set in production');
+  }
+  return pepper;
+}
 
 // ─── Key Pair Generation ─────────────────────────────────────────────────────
 
@@ -100,7 +106,7 @@ export function verifySignature(publicKeyPem: string, challenge: string, signatu
  * Never store raw tokens - only their HMAC hashes
  */
 export function hashToken(token: string): string {
-  return createHmac('sha256', TOKEN_PEPPER).update(token).digest('hex');
+  return createHmac('sha256', getTokenPepper()).update(token).digest('hex');
 }
 
 /**

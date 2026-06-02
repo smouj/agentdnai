@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
@@ -10,6 +12,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(request);
     const { id } = await params;
 
     const agent = await db.agentIdentity.findUnique({
@@ -59,6 +62,9 @@ export async function POST(
       updatedAt: updated.updatedAt,
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error resuming agent:', error);
     return NextResponse.json(
       { error: 'Failed to resume agent' },

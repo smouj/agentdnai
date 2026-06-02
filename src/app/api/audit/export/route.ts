@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
  * GET /api/audit/export - Export all audit events as CSV
  */
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
+    await requireAuth(_request);
     const events = await db.auditEvent.findMany({
       orderBy: { createdAt: 'asc' },
     });
@@ -36,6 +39,9 @@ export async function GET() {
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error exporting audit events:', error);
     return NextResponse.json(
       { error: 'Failed to export audit events' },

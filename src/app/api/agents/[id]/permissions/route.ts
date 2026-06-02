@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
@@ -11,6 +13,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(request);
     const { id } = await params;
 
     const agent = await db.agentIdentity.findUnique({
@@ -63,6 +66,7 @@ export async function POST(
         data: {
           email: 'default@agentdnai.io',
           name: 'Default User',
+          passwordHash: 'system-no-login',
         },
       });
     }
@@ -92,6 +96,9 @@ export async function POST(
 
     return NextResponse.json({ permission }, { status: 201 });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error granting permission:', error);
     return NextResponse.json(
       { error: 'Failed to grant permission' },
@@ -108,6 +115,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(_request);
     const { id } = await params;
 
     const agent = await db.agentIdentity.findUnique({
@@ -124,6 +132,9 @@ export async function GET(
 
     return NextResponse.json({ permissions: agent.permissions });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error listing permissions:', error);
     return NextResponse.json(
       { error: 'Failed to list permissions' },
@@ -140,6 +151,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(request);
     const { id } = await params;
 
     const agent = await db.agentIdentity.findUnique({
@@ -206,6 +218,9 @@ export async function DELETE(
 
     return NextResponse.json({ deleted: true, permissionId });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error removing permission:', error);
     return NextResponse.json(
       { error: 'Failed to remove permission' },

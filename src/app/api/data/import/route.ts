@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateKeyPair } from '@/lib/crypto';
@@ -11,6 +13,7 @@ import { generateKeyPair } from '@/lib/crypto';
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request);
     const body = await request.json();
     const agents = body.agents;
 
@@ -104,6 +107,9 @@ export async function POST(request: NextRequest) {
       errors,
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error importing data:', error);
     return NextResponse.json(
       { error: 'Failed to import data' },

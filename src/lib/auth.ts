@@ -7,10 +7,18 @@
 
 import { db } from '@/lib/db';
 import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
+import { generateSessionToken } from '@/lib/crypto';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const SALT_LENGTH = 32;
-const PEPPER = process.env.AUTH_PEPPER || 'agentdnai-default-pepper-change-in-production';
+
+function getPepper(): string {
+  const pepper = process.env.AUTH_PEPPER || (process.env.NODE_ENV === 'production' ? '' : 'agentdnai-dev-pepper-not-for-production');
+  if (!pepper) {
+    throw new Error('AUTH_PEPPER environment variable must be set in production');
+  }
+  return pepper;
+}
 
 /**
  * Hash a password using HMAC-SHA256 with salt and pepper
@@ -18,7 +26,7 @@ const PEPPER = process.env.AUTH_PEPPER || 'agentdnai-default-pepper-change-in-pr
  */
 export function hashPassword(password: string): string {
   const salt = randomBytes(SALT_LENGTH);
-  const hash = createHmac('sha256', PEPPER)
+  const hash = createHmac('sha256', getPepper())
     .update(salt)
     .update(password)
     .digest();
@@ -35,7 +43,7 @@ export function verifyPassword(password: string, storedHash: string): boolean {
       if (parts.length !== 3) return false;
       const salt = Buffer.from(parts[1], 'hex');
       const hash = Buffer.from(parts[2], 'hex');
-      const derivedHash = createHmac('sha256', PEPPER)
+      const derivedHash = createHmac('sha256', getPepper())
         .update(salt)
         .update(password)
         .digest();
@@ -52,13 +60,6 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   } catch {
     return false;
   }
-}
-
-/**
- * Generate a cryptographically secure session token
- */
-export function generateSessionToken(): string {
-  return `sess_${randomBytes(32).toString('hex')}`;
 }
 
 /**

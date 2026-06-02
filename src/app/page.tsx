@@ -42,14 +42,14 @@ import { toast } from '@/hooks/use-toast';
 
 const pageTransition = {
   initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] as const } },
   exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
 };
 
 const stagger = {
   animate: (i: number) => ({
     opacity: 1, y: 0,
-    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' },
+    transition: { delay: i * 0.06, duration: 0.4, ease: 'easeOut' as const },
   }),
   initial: { opacity: 0, y: 16 },
 };

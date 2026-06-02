@@ -1,4 +1,6 @@
-import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -10,8 +12,9 @@ import { db } from '@/lib/db';
  *   - All authorization decisions
  *   - Stats summary
  */
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
+    await requireAuth(_request);
     // Fetch all agents with their permissions and tokens
     const agents = await db.agentIdentity.findMany({
       include: {
@@ -143,6 +146,9 @@ export async function GET() {
       },
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error exporting data:', error);
     return NextResponse.json(
       { error: 'Failed to export data' },

@@ -145,11 +145,11 @@ async function safeAction<T>(
 
     session.actionCount++;
 
-    if (decision.allowed && decision.decision === 'ALLOW') {
+    if (decision.allowed && decision.decision === 'allow') {
       console.log(`✅ Allowed: ${action} on ${resource}`);
       session.allowedActions.push(action);
       return executor();
-    } else if (decision.decision === 'REQUIRES_APPROVAL') {
+    } else if (decision.decision === 'requires_approval') {
       console.warn(`🔒 Blocked (needs approval): ${action} - ${decision.reason}`);
       session.approvalNeededActions.push(action);
       return null;

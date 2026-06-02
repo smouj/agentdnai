@@ -158,7 +158,7 @@ export async function POST(
       metadata: {
         approvalRequestId: id,
         temporaryPermissionId: temporaryPermission.id,
-        permissionExpiresAt: temporaryPermission.expiresAt.toISOString(),
+        permissionExpiresAt: temporaryPermission.expiresAt?.toISOString(),
         approvedBy: session.userId,
       },
     });

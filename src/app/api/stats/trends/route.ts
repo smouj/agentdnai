@@ -1,12 +1,15 @@
-import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
 /**
  * GET /api/stats/trends - Authorization trend data and permission distribution
  * Returns hourly decision counts for past 24h + permission category breakdown
  */
-export async function GET() {
+export async function GET(_request: NextRequest) {
   try {
+    await requireAuth(_request);
     // Hourly trend data for past 24 hours
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
@@ -77,6 +80,9 @@ export async function GET() {
       period: '24h',
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error getting trend data:', error);
     return NextResponse.json(
       { error: 'Failed to get trend data' },

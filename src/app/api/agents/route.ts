@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { generateKeyPair, generateAgentUri } from '@/lib/crypto';
@@ -9,6 +11,7 @@ import { createAgentSchema } from '@/lib/schemas';
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request);
     const body = await request.json();
     const parsed = createAgentSchema.safeParse(body);
 
@@ -83,6 +86,9 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error creating agent:', error);
     return NextResponse.json(
       { error: 'Failed to create agent' },
@@ -102,6 +108,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search')?.trim() || undefined;
     const status = searchParams.get('status')?.trim() || undefined;
@@ -154,6 +161,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error listing agents:', error);
     return NextResponse.json(
       { error: 'Failed to list agents' },

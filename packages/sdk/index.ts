@@ -81,12 +81,12 @@ export interface AuthorizationCheckParams {
 
 export interface AuthorizationDecision {
   allowed: boolean;
-  decision: 'ALLOW' | 'DENY' | 'REQUIRES_APPROVAL';
+  decision: 'allow' | 'deny' | 'requires_approval' | 'agent_inactive' | 'token_invalid' | 'token_expired' | 'insufficient_scope';
   reason: string;
-  agentId: string;
-  action: string;
-  resource?: string;
-  evaluatedAt: string;
+  requiresApproval: boolean;
+  expiresAt?: string | null;
+  matchedRule?: string;
+  decisionId?: string;
 }
 
 export interface BatchCheckParams {

@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { issueTokenSchema } from '@/lib/schemas';
 import { issueToken } from '@/lib/tokens';
@@ -7,6 +9,7 @@ import { issueToken } from '@/lib/tokens';
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request);
     const body = await request.json();
     const parsed = issueTokenSchema.safeParse(body);
 
@@ -26,6 +29,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error issuing token:', error);
     const message = error instanceof Error ? error.message : 'Failed to issue token';
     return NextResponse.json(

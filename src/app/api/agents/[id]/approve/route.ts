@@ -1,3 +1,5 @@
+import { requireAuth } from '@/lib/ownership';
+import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
@@ -15,6 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth(request);
     const { id } = await params;
 
     // Verify the agent exists
@@ -52,6 +55,7 @@ export async function POST(
           data: {
             email: 'default@agentdnai.io',
             name: 'Default User',
+            passwordHash: 'system-no-login',
           },
         });
         approverId = newUser.id;
@@ -112,6 +116,9 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error approving action:', error);
     return NextResponse.json(
       { error: 'Failed to approve action' },

@@ -117,7 +117,7 @@ export async function PATCH(
 
     // Audit event
     await createAuditEvent({
-      eventType: AUDIT_EVENTS.ORG_CREATED, // Using ORG_CREATED as a generic org event for updates
+      eventType: AUDIT_EVENTS.ORG_UPDATED,
       actorType: 'user',
       actorId: session.userId,
       organizationId: orgId,
@@ -178,7 +178,7 @@ export async function DELETE(
 
     // Audit event (organizationId is null since org is deleted)
     await createAuditEvent({
-      eventType: AUDIT_EVENTS.ORG_CREATED,
+      eventType: AUDIT_EVENTS.ORG_DELETED,
       actorType: 'user',
       actorId: session.userId,
       action: 'org.delete',
