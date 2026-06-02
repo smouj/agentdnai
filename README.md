@@ -11,7 +11,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-ORM-black?logo=prisma)](https://www.prisma.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-black?logo=docker)](https://www.docker.com/)
 
-[Installation](#-installation) · [Quick Start](#-quick-start) · [CLI](#-cli) · [SDK](#-sdk) · [API Reference](#-api-reference) · [Documentation](./docs)
+[Installation](#-installation) · [Quick Start](#-quick-start) · [Screenshots](#-screenshots) · [CLI](#-cli) · [SDK](#-sdk) · [API Reference](#-api-reference) · [Documentation](./docs)
 
 </div>
 
@@ -32,6 +32,84 @@ AI agents read repositories, modify files, create PRs, access secrets and automa
 | ❌ Production actions unguarded | ✅ Production always requires human approval |
 | ❌ No user accounts or teams | ✅ Users, organizations, roles, and ownership |
 | ❌ No way to integrate | ✅ TypeScript SDK + CLI + REST API |
+
+## 📸 Screenshots
+
+### Landing Page
+
+<table>
+  <tr>
+    <td align="center"><b>Hero Section</b></td>
+    <td align="center"><b>Features Overview</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/01-landing-hero.png" alt="AgentDNAI Landing Page Hero" width="600" /></td>
+    <td><img src="docs/screenshots/02-landing-features.png" alt="AgentDNAI Features Section" width="600" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>How It Works</b></td>
+    <td align="center"><b>Roadmap</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/03-landing-how-it-works.png" alt="How It Works" width="600" /></td>
+    <td><img src="docs/screenshots/04-landing-roadmap.png" alt="Roadmap" width="600" /></td>
+  </tr>
+</table>
+
+### Dashboard & Agent Management
+
+<table>
+  <tr>
+    <td align="center"><b>Dashboard Overview</b></td>
+    <td align="center"><b>Agent DNI Card</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/06-dashboard-overview.png" alt="Dashboard Overview" width="600" /></td>
+    <td><img src="docs/screenshots/07-agent-dni-card.png" alt="Agent DNI Card" width="400" /></td>
+  </tr>
+</table>
+
+### Security & Audit
+
+<table>
+  <tr>
+    <td align="center"><b>Hash-Chained Audit Trail</b></td>
+    <td align="center"><b>Authorization Checks</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/08-audit-trail.png" alt="Audit Trail" width="600" /></td>
+    <td><img src="docs/screenshots/09-authz-check.png" alt="Authorization Checks" width="400" /></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="2"><b>Approval Queue</b></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><img src="docs/screenshots/11-approval-queue.png" alt="Approval Queue" width="600" /></td>
+  </tr>
+</table>
+
+### CLI & SDK Integration
+
+<table>
+  <tr>
+    <td align="center"><b>CLI Usage</b></td>
+    <td align="center"><b>SDK Integration</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/10-cli-usage.png" alt="CLI Usage" width="400" /></td>
+    <td><img src="docs/screenshots/12-sdk-integration.png" alt="SDK Integration" width="600" /></td>
+  </tr>
+</table>
+
+### Real-World Use Cases
+
+| Use Case | How AgentDNAI Helps |
+|---|---|
+| 🔒 **Repository Access** | Grant agents `github.repo.read` but deny `production.deploy` — repo-auditor can read code but never touch production |
+| 🚀 **Production Deploys** | `production.deploy` requires human approval — deploy-bot must request permission before pushing to prod |
+| 🔑 **Secret Scanning** | Issue short-lived tokens (60s–24h) to secrets-scanner — no permanent API keys that can leak |
+| 📊 **Infrastructure Monitoring** | `infrastructure.read` allowed, `infrastructure.write` requires approval — infra-monitor can observe but not modify |
+| 🔍 **Code Review** | Wildcard permissions `github.repo.*` for read-heavy agents — fine-grained where it matters |
 
 ## ✨ Features
 
@@ -368,6 +446,7 @@ agentdnai/
 │   ├── codex-safe-runner/     # Codex integration example
 │   └── dev-agent-wrapper/     # Generic dev agent wrapper
 ├── docs/                      # Documentation
+│   └── screenshots/           # Application screenshots
 ├── mini-services/event-service/ # WebSocket service (port 3003)
 ├── Dockerfile                 # Multi-stage Docker build
 ├── docker-compose.yml         # Local deployment

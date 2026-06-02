@@ -73,3 +73,6 @@ prompt
 
 # development worklog
 /worklog.md
+.env
+prisma/db/
+dev.log
