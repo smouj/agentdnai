@@ -18,7 +18,10 @@ export type AppView =
   | 'audit'
   | 'policies'
   | 'settings'
-  | 'docs';
+  | 'docs'
+  | 'organizations'
+  | 'api-keys'
+  | 'tokens';
 
 interface UserInfo {
   id: string;
