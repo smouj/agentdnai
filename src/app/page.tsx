@@ -1001,27 +1001,39 @@ function DashboardView() {
   const [recentEvents, setRecentEvents] = useState<AuditEvent[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trends, setTrends] = useState<{ hourlyTrends: { hour: string; allow: number; deny: number; requiresApproval: number }[] } | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, events, a] = await Promise.all([api.getStats(), api.getAuditEvents({ limit: 10 }), api.listAgents()]);
+        const [s, events, a, t] = await Promise.all([api.getStats(), api.getAuditEvents({ limit: 10 }), api.listAgents(), api.getTrends().catch(() => null)]);
         setStats(s);
         setRecentEvents(Array.isArray(events) ? events : []);
         setAgents(Array.isArray(a) ? a : []);
+        setTrends(t);
       } catch { /* ignore */ }
       finally { setLoading(false); }
     };
     load();
   }, []);
 
-  // Mock trend data
-  const trendData: Record<string, { value: string; positive: boolean }> = {
-    Agents: { value: '+12%', positive: true },
-    'Active Tokens': { value: '+8%', positive: true },
-    Permissions: { value: '+24%', positive: true },
-    'Recent Events': { value: '-3%', positive: false },
-  };
+  const trendData: Record<string, { value: string; positive: boolean }> = useMemo(() => {
+    if (!trends?.hourlyTrends?.length) return {
+      Agents: { value: '+0%', positive: true },
+      'Active Tokens': { value: '+0%', positive: true },
+      Permissions: { value: '+0%', positive: true },
+      'Recent Events': { value: '+0%', positive: true },
+    };
+    const h = trends.hourlyTrends;
+    const totalDecisions = h.reduce((sum, d) => sum + d.allow + d.deny + d.requiresApproval, 0);
+    const allowPct = h.reduce((sum, d) => sum + d.allow, 0) / (totalDecisions || 1) * 100;
+    return {
+      Agents: { value: `${stats?.activeAgents ?? 0} active`, positive: true },
+      'Active Tokens': { value: `+${Math.round(allowPct)}% allow`, positive: true },
+      Permissions: { value: `${stats?.totalPermissions ?? 0} rules`, positive: true },
+      'Recent Events': { value: `${totalDecisions} total`, positive: totalDecisions > 0 },
+    };
+  }, [trends, stats]);
 
   const statCards = [
     { label: 'Agents', value: stats?.totalAgents ?? 0, icon: Bot, sub: `${stats?.activeAgents ?? 0} active` },
@@ -1046,6 +1058,25 @@ function DashboardView() {
     { label: 'Check Auth', icon: Shield, view: 'audit' as const, desc: 'Test authorization decisions' },
     { label: 'View Policies', icon: ScrollText, view: 'policies' as const, desc: 'Manage permission templates' },
   ];
+
+  // Quick auth check
+  const [quickAgentId, setQuickAgentId] = useState('');
+  const [quickAction, setQuickAction] = useState('');
+  const [quickResult, setQuickResult] = useState<AuthzResult | null>(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+
+  const quickAuthCheck = async () => {
+    if (!quickAgentId || !quickAction) return;
+    setQuickLoading(true);
+    try {
+      const result = await api.checkAuthz({ agentId: quickAgentId, action: quickAction });
+      setQuickResult(result);
+    } catch {
+      setQuickResult(null);
+    } finally {
+      setQuickLoading(false);
+    }
+  };
 
   // Authz decisions bar chart data
   const allowCount = stats?.recentAllowCount ?? 0;
@@ -1229,6 +1260,38 @@ function DashboardView() {
           </motion.button>
         ))}
       </div>
+
+      {/* Quick Auth Check */}
+      <Card className="bg-card border-border/60 mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2"><Shield className="w-4 h-4" /> Quick Auth Check</CardTitle>
+          <p className="text-[10px] text-muted-foreground">Test an authorization decision in real-time</p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <Select value={quickAgentId} onValueChange={setQuickAgentId}>
+              <SelectTrigger className="flex-1 h-8 text-xs bg-secondary/50 border-border/60">
+                <SelectValue placeholder="Select agent" />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Input value={quickAction} onChange={e => setQuickAction(e.target.value)} placeholder="action (e.g. github.repo.read)" className="flex-1 h-8 text-xs bg-secondary/50 border-border/60" />
+            <Button size="sm" className="h-8 bg-crimson text-crimson-foreground hover:brightness-110" onClick={quickAuthCheck} disabled={quickLoading || !quickAgentId || !quickAction}>
+              {quickLoading ? '...' : 'Check'}
+            </Button>
+          </div>
+          {quickResult && (
+            <div className={`mt-3 flex items-center gap-2 px-3 py-2 text-xs border ${quickResult.allowed ? 'border-foreground/20 bg-foreground/5' : 'border-crimson/30 bg-crimson/5'}`}>
+              {quickResult.allowed ? <CheckCircle2 className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+              <span className="font-mono">{quickResult.decision.toUpperCase()}</span>
+              <span className="text-muted-foreground">— {quickResult.reason}</span>
+              <button onClick={() => setQuickResult(null)} className="ml-auto text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Recent Activity Timeline */}
       <Card className="bg-card border-border/60">
@@ -2208,7 +2271,8 @@ function AuditView() {
   const [loading, setLoading] = useState(true);
   const [filterDecision, setFilterDecision] = useState('all');
   const [filterEventType, setFilterEventType] = useState('all');
-  const [verifyResult, setVerifyResult] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<{ valid: boolean; eventsChecked: number; message?: string } | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
   const loadEvents = useCallback(async () => {
     try {
@@ -2224,12 +2288,15 @@ function AuditView() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
-  const handleVerify = async () => {
+  const verifyChain = async () => {
+    setVerifying(true);
     try {
       const result = await api.verifyAuditChain();
-      setVerifyResult(result.valid ? `✓ Chain intact (${result.eventsChecked} events)` : `✗ Chain broken at event ${result.firstInvalidEvent}`);
+      setVerifyResult(result);
     } catch {
-      setVerifyResult('Verification failed');
+      setVerifyResult({ valid: false, eventsChecked: 0, message: 'Verification failed' });
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -2249,8 +2316,8 @@ function AuditView() {
     <div className="p-6 max-w-6xl mx-auto">
       <PageHeader title="Audit Log" subtitle="Tamper-evident record of all authorization decisions" action={
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="text-xs border-border/60" onClick={handleVerify}>
-            <Hash className="w-3 h-3 mr-1" /> Verify Chain
+          <Button variant="outline" size="sm" className="text-xs border-border/60" onClick={verifyChain} disabled={verifying}>
+            <ShieldCheck className="w-3 h-3 mr-1" /> {verifying ? 'Verifying...' : 'Verify Chain'}
           </Button>
           <Button variant="outline" size="sm" className="text-xs border-border/60" onClick={handleExport}>
             <Download className="w-3 h-3 mr-1" /> Export
@@ -2259,8 +2326,10 @@ function AuditView() {
       } />
 
       {verifyResult && (
-        <div className={`mb-4 text-sm px-3 py-2 rounded border ${verifyResult.startsWith('✓') ? 'border-foreground/20 bg-secondary/30' : 'border-crimson/30 bg-crimson/5'}`}>
-          {verifyResult}
+        <div className={`mb-4 flex items-center gap-2 px-3 py-2 text-xs border ${verifyResult.valid ? 'border-foreground/20 bg-foreground/5 text-foreground' : 'border-crimson/30 bg-crimson/5 text-crimson'}`}>
+          {verifyResult.valid ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+          <span>Chain {verifyResult.valid ? 'intact' : 'BROKEN'} — {verifyResult.eventsChecked} events verified</span>
+          <button onClick={() => setVerifyResult(null)} className="ml-auto text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
         </div>
       )}
 
@@ -2440,6 +2509,9 @@ function PoliciesView() {
 function SettingsView() {
   const { user } = useAppStore();
   const [isDark, setIsDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+  const [healthResult, setHealthResult] = useState<{ status: string; version: string; timestamp: string; services: Record<string, string> } | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   // Mock API keys data
   const mockApiKeys = [
@@ -2447,6 +2519,30 @@ function SettingsView() {
     { id: '2', name: 'Staging API Key', prefix: 'agk_stg_****2b1e', created: '2025-02-01', lastUsed: '5 days ago', status: 'active' },
     { id: '3', name: 'CI/CD Pipeline Key', prefix: 'agk_ci_****9c4d', created: '2025-02-20', lastUsed: 'Never', status: 'inactive' },
   ];
+
+  const checkHealth = async () => {
+    setHealthLoading(true);
+    try {
+      const result = await api.health();
+      setHealthResult(result);
+    } catch {
+      setHealthResult({ status: 'degraded', version: 'unknown', timestamp: new Date().toISOString(), services: {} });
+    } finally {
+      setHealthLoading(false);
+    }
+  };
+
+  const handleSeedDemo = async () => {
+    setSeeding(true);
+    try {
+      await api.seedDemo();
+      toast({ title: 'Demo data seeded', description: 'Sample agents and permissions have been created.' });
+    } catch (err: unknown) {
+      toast({ title: 'Seed failed', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
+    } finally {
+      setSeeding(false);
+    }
+  };
 
   const toggleTheme = () => {
     const next = !isDark;
@@ -2649,13 +2745,61 @@ function SettingsView() {
 
         {/* System Health */}
         <Card className="bg-card border-border/60">
-          <CardHeader className="pb-3"><CardTitle className="text-sm">System Health</CardTitle></CardHeader>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Server className="w-4 h-4" /> System Health
+              </CardTitle>
+              <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={checkHealth} disabled={healthLoading}>
+                <RefreshCw className={`w-3 h-3 mr-1 ${healthLoading ? 'animate-spin' : ''}`} /> {healthLoading ? 'Checking...' : 'Check Health'}
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> API Server</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Database</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Policy Engine</span>
-              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-foreground animate-pulse" /> Audit Chain</span>
+            {healthResult ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${healthResult.status === 'healthy' || healthResult.status === 'ok' ? 'bg-foreground animate-pulse' : 'bg-crimson'}`} />
+                  <span className="text-sm font-medium">Server: {healthResult.status}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">v{healthResult.version}</span>
+                </div>
+                {Object.entries(healthResult.services).length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {Object.entries(healthResult.services).map(([name, status]) => (
+                      <span key={name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className={`w-2 h-2 rounded-full ${status === 'healthy' || status === 'ok' || status === 'connected' ? 'bg-foreground animate-pulse' : 'bg-crimson'}`} />
+                        {name}: {status}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground">Last checked: {new Date(healthResult.timestamp).toLocaleString()}</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" /> API Server</span>
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" /> Database</span>
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" /> Policy Engine</span>
+                <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-muted-foreground/40" /> Audit Chain</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Demo Data */}
+        <Card className="bg-card border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Sparkles className="w-4 h-4" /> Demo Data
+            </CardTitle>
+            <p className="text-[10px] text-muted-foreground">Populate with sample agents, permissions, and audit events</p>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Seed the system with demo data for testing and exploration.</p>
+              <Button variant="outline" size="sm" className="text-xs border-border/60 hover:border-crimson/40 hover:text-crimson" onClick={handleSeedDemo} disabled={seeding}>
+                <Sparkles className="w-3 h-3 mr-1" /> {seeding ? 'Seeding...' : 'Seed Demo Data'}
+              </Button>
             </div>
           </CardContent>
         </Card>
