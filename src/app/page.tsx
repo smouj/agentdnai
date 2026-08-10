@@ -247,7 +247,7 @@ function LandingPage() {
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
                 AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions,
-                encrypted credentials, revocable access and a tamper-evident audit trail.
+                hashed credentials, revocable access and a tamper-evident audit trail.
                 No more anonymous agents. No more blanket access.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -258,7 +258,7 @@ function LandingPage() {
                   View Docs
                 </Button>
               </div>
-              <p className="mt-4 text-xs text-muted-foreground/60">No credit card · Set up in 2 minutes · Open source</p>
+              <p className="mt-4 text-xs text-muted-foreground/60">No credit card · Set up in 2 minutes · Source-available</p>
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.15 }} className="hidden lg:block">
               <div className="border border-border/60 bg-card p-5 shadow-elevated">
@@ -442,7 +442,7 @@ AgentDNAI Authorization Check
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-muted-foreground/60">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> No credit card</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> 2-minute setup</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> Open source</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-foreground/40" /> Source-available</span>
           </div>
         </div>
       </section>
@@ -482,7 +482,7 @@ AgentDNAI Authorization Check
               <h4 className="text-sm font-semibold mb-3">Company</h4>
               <ul className="space-y-2 text-xs text-muted-foreground">
                 <li><span className="hover:text-crimson transition-colors cursor-default">GitHub</span></li>
-                <li><span className="hover:text-crimson transition-colors cursor-default">MIT License</span></li>
+                <li><span className="hover:text-crimson transition-colors cursor-default">Source-available License</span></li>
                 <li><span className="hover:text-crimson transition-colors cursor-default">Contact</span></li>
               </ul>
             </div>
@@ -496,11 +496,11 @@ AgentDNAI Authorization Check
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-crimson/60" /> Zero trust</span>
               <span className="flex items-center gap-1"><Hash className="w-3 h-3 text-crimson/60" /> Hash-verified</span>
-              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-crimson/60" /> E2E encrypted</span>
+              <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3 text-crimson/60" /> Hashed credentials</span>
             </div>
           </div>
           <div className="text-center mt-4">
-            <span className="text-[10px] text-muted-foreground/50">© 2026 AgentDNAI · MIT License</span>
+            <span className="text-[10px] text-muted-foreground/50">© 2026 AgentDNAI · Source-available proprietary license</span>
           </div>
         </div>
       </footer>
@@ -3241,7 +3241,7 @@ function DocsView() {
 # Response:
 {
   "id": "agt_...",
-  "agentUri": "agentdnai://hermes-auditor@org",
+  "agentUri": "agent://org/hermes/hermes-auditor",
   "fingerprint": "SHA256:abc123...",
   "status": "ACTIVE"
 }`,
@@ -3265,7 +3265,7 @@ curl -X POST https://api.agentdnai.io/agents/{id}/permissions \\
 
 # Response:
 {
-  "token": "adk_live_abc123...",
+  "token": "adni_abc123...",
   "expiresAt": "2026-03-05T00:00:00Z"
 }`,
                         },
@@ -3597,8 +3597,8 @@ agentdnai export > backup.json`}</pre>
                           { label: 'Key Algorithm', value: 'RSA-PSS' },
                           { label: 'Token Hash', value: 'HMAC-SHA256' },
                           { label: 'Audit Chain', value: 'SHA-256 sequential hash' },
-                          { label: 'Key Size', value: '256-bit' },
-                          { label: 'Token Format', value: 'adk_live_ prefixed random' },
+                          { label: 'Key Size', value: 'RSA-PSS 2048-bit' },
+                          { label: 'Token Format', value: 'adni_ prefixed random' },
                           { label: 'Chain Verification', value: 'Full-chain integrity check' },
                         ].map(detail => (
                           <div key={detail.label} className="flex items-center justify-between p-2 bg-secondary/30 border border-border/30">

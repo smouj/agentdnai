@@ -1,6 +1,6 @@
 # Getting Started with AgentDNAI
 
-This guide will walk you through installing, configuring, and using AgentDNAI — the open-source platform for managing AI agent identities, permissions, and audit trails.
+This guide will walk you through installing, configuring, and using AgentDNAI — the source-available platform for managing AI agent identities, permissions, and audit trails.
 
 ## Prerequisites
 
@@ -38,8 +38,8 @@ Edit `.env` with your configuration. The defaults work for local development:
 
 ```env
 DATABASE_URL="file:./db/custom.db"
-TOKEN_PEPPER="change-this-to-a-different-random-secret-in-production"
-AUTH_PEPPER="change-this-to-a-random-secret-in-production"
+TOKEN_PEPPER="dev-token-pepper-replace-before-deploy"
+AUTH_PEPPER="dev-auth-pepper-replace-before-deploy"
 NODE_ENV=development
 ALLOW_DEMO_SEED=true
 ```

@@ -4,7 +4,9 @@
 
 **Digital Identity & Access Control for AI Agents**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-crimson.svg)](https://opensource.org/licenses/MIT)
+[English](./README.md) · [Español](./README.es.md)
+
+[![License: Source Available](https://img.shields.io/badge/License-Source_Available-crimson.svg)](./LICENSE)
 [![Version](https://img.shields.io/badge/v0.2.1-crimson)](https://github.com/smouj/agentdnai)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-black?logo=typescript)](https://www.typescriptlang.org/)
@@ -409,7 +411,7 @@ agentdnai/
 | **v0.4.0-beta** | 📋 Planned | Invitations, advanced audit, metrics, backups |
 | **v1.0.0** | 🎯 Goal | Production-ready, security audited, stable API, full docs |
 
-See [ROADMAP.md](./docs/ROADMAP.md) for details.
+See [ROADMAP.md](./docs/ROADMAP.md) for details. The visual direction for the product is documented in [INTERFACE_SYSTEM.md](./docs/INTERFACE_SYSTEM.md).
 
 ## 🤝 Contributing
 
@@ -417,7 +419,7 @@ Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for g
 
 ## 📄 License
 
-This project is licensed under the MIT License — see [LICENSE](./LICENSE) for details.
+This repository is source-available proprietary software. Review, local evaluation, and upstream contributions are allowed; redistribution, resale, hosted third-party use, relicensing, and brand/logo reuse require prior written permission. See [LICENSE](./LICENSE) for the full terms.
 
 ---
 

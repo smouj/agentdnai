@@ -15,9 +15,23 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
-  title: "AgentDNAI — Secure Identity for AI Agents",
-  description: "AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, revocable access and a clear audit trail.",
-  keywords: ["AgentDNAI", "AI agents", "identity", "permissions", "audit", "authorization", "security"],
+  title: "AgentDNAI — Identity Control Plane for AI Agents",
+  description: "Infrastructure-grade identity, authorization, temporary credentials and tamper-evident audit trails for autonomous AI agents.",
+  keywords: [
+    "AgentDNAI",
+    "AI agents",
+    "agent identity",
+    "agent security",
+    "AI governance",
+    "access control",
+    "authorization",
+    "permissions",
+    "audit trail",
+    "zero trust",
+    "RBAC",
+    "temporary credentials",
+    "security control plane",
+  ],
   authors: [{ name: "AgentDNAI" }],
   icons: {
     icon: [
@@ -27,15 +41,15 @@ export const metadata: Metadata = {
     apple: "/logo-symbol-dark.png",
   },
   openGraph: {
-    title: "AgentDNAI — Secure Identity for AI Agents",
-    description: "Verifiable digital identity, scoped permissions, and audit trails for AI agents.",
+    title: "AgentDNAI — Identity Control Plane for AI Agents",
+    description: "Infrastructure-grade identity, authorization, temporary credentials and audit trails for autonomous AI agents.",
     images: ["/hero-dna.png"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AgentDNAI — Secure Identity for AI Agents",
-    description: "Verifiable digital identity, scoped permissions, and audit trails for AI agents.",
+    title: "AgentDNAI — Identity Control Plane for AI Agents",
+    description: "Infrastructure-grade identity, authorization, temporary credentials and audit trails for autonomous AI agents.",
     images: ["/hero-dna.png"],
   },
 };

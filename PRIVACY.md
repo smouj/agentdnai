@@ -4,7 +4,7 @@
 
 ## Introduction
 
-AgentDNAI is an open-source platform for managing AI agent identities, permissions, and audit trails. This privacy policy describes what data AgentDNAI collects, how it is used, and how long it is retained.
+AgentDNAI is a source-available platform for managing AI agent identities, permissions, and audit trails. This privacy policy describes what data AgentDNAI collects, how it is used, and how long it is retained.
 
 ## Data We Collect
 

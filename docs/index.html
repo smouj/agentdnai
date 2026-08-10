@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AgentDNAI — Verifiable Digital Identity for AI Agents</title>
-  <meta name="description" content="AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, encrypted credentials, revocable access and a clear audit trail.">
+  <meta name="description" content="AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, hashed credentials, revocable access and a clear audit trail.">
   <meta name="keywords" content="AgentDNAI, AI agents, identity, permissions, audit, authorization, security">
   <meta property="og:title" content="AgentDNAI — Verifiable Digital Identity for AI Agents">
   <meta property="og:description" content="Scoped permissions, temporary tokens, hash-chained audit trails, and zero-trust authorization for AI agents.">
@@ -269,7 +269,7 @@
   <div class="container">
     <div class="hero-badge">🔐 Secure Identity Layer</div>
     <h1>Every AI agent<br>needs an <em>identity</em>.</h1>
-    <p class="hero-sub">AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, encrypted credentials, revocable access and a clear audit trail.</p>
+    <p class="hero-sub">AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, hashed credentials, revocable access and a clear audit trail.</p>
     <p class="hero-mono">&gt; Identity · Authorization · Audit — unified for AI agents <span class="cursor"></span></p>
     <div class="hero-buttons">
       <a href="#install" class="btn btn-primary">⚡ Quick Install</a>
@@ -353,7 +353,7 @@ AgentDNAI Authorization Check
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <h3>User Authentication</h3>
-        <p>JWT + bcryptjs authentication with sessions, login, register, and logout.</p>
+        <p>Database sessions with Argon2id password hashing, login, register, and logout.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
@@ -366,8 +366,8 @@ AgentDNAI Authorization Check
         <div class="feature-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/></svg>
         </div>
-        <h3>Ed25519 Cryptographic Identity</h3>
-        <p>Every agent gets an Ed25519 key pair for verifiable identity and challenge-response.</p>
+        <h3>RSA-PSS Cryptographic Identity</h3>
+        <p>Every agent gets an RSA-PSS key pair for verifiable identity and challenge-response.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">
@@ -555,9 +555,9 @@ AgentDNAI Authorization Check
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2026 AgentDNAI · MIT License · Made with ❤️ for the AI agent community</span>
+      <span>© 2026 AgentDNAI · Source-available proprietary license · Built for controlled AI agent operations</span>
       <div class="footer-badges">
-        <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> End-to-end encrypted</span>
+        <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Hashed credentials</span>
         <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg> Zero trust</span>
         <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg> Hash-verified</span>
       </div>

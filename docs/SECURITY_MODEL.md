@@ -174,7 +174,6 @@ AgentDNAI implements protection against Broken Object-Level Authorization (BOLA/
 
 - [ ] Set strong `TOKEN_PEPPER` (generate with `openssl rand -hex 32`)
 - [ ] Set strong `AUTH_PEPPER` (generate with `openssl rand -hex 32`)
-- [ ] Set strong `NEXTAUTH_SECRET` (generate with `openssl rand -base64 32`)
 - [ ] Use HTTPS (via Caddy, Nginx, or cloud load balancer)
 - [ ] Use PostgreSQL instead of SQLite
 - [ ] Restrict CORS to known origins

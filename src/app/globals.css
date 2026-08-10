@@ -40,15 +40,42 @@
   /* Crimson accent color for hover states */
   --color-crimson: var(--crimson);
   --color-crimson-foreground: var(--crimson-foreground);
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius-sm: var(--adnai-radius-sm);
+  --radius-md: var(--adnai-radius-md);
+  --radius-lg: var(--adnai-radius-lg);
+  --radius-xl: var(--adnai-radius-lg);
 }
 
 :root {
-  --radius: 0px;
-  /* Monochrome light theme with iridescent undertones */
+  /* AgentDNAI Interface System (AIS): infrastructure-grade control plane tokens */
+  --adnai-canvas: #f6f7f9;
+  --adnai-surface-1: #ffffff;
+  --adnai-surface-2: #eef1f5;
+  --adnai-surface-3: #e4e8ee;
+  --adnai-surface-hover: #dde3eb;
+  --adnai-border: #ccd3dd;
+  --adnai-border-strong: #aeb8c6;
+  --adnai-text: #15181e;
+  --adnai-text-secondary: #4c5563;
+  --adnai-text-tertiary: #737d8b;
+  --adnai-brand: #c62e55;
+  --adnai-brand-hover: #dc3a65;
+  --adnai-brand-soft: #c62e5518;
+  --adnai-brand-border: #c62e5555;
+  --adnai-success: #2f9f6b;
+  --adnai-info: #2f76d2;
+  --adnai-warning: #b87922;
+  --adnai-elevated: #ca6336;
+  --adnai-danger: #c9404d;
+  --adnai-critical: #e53042;
+  --adnai-disabled: #737a86;
+  --adnai-radius-xs: 3px;
+  --adnai-radius-sm: 4px;
+  --adnai-radius-md: 6px;
+  --adnai-radius-lg: 8px;
+  --radius: var(--adnai-radius-sm);
+
+  /* Monochrome light theme mapped to AIS tokens */
   --background: oklch(0.97 0.002 280);
   --foreground: oklch(0.13 0.005 280);
   --card: oklch(1 0.003 280);
@@ -80,47 +107,68 @@
   --sidebar-accent-foreground: oklch(0.13 0.005 280);
   --sidebar-border: oklch(0.82 0.005 280);
   --sidebar-ring: oklch(0.13 0.005 280);
-  /* Crimson accent - dark burgundy fuchsia for hover */
-  --crimson: oklch(0.35 0.15 15);
+  /* AgentDNAI Crimson is brand signal, not generic error state */
+  --crimson: var(--adnai-brand);
   --crimson-foreground: oklch(0.97 0.01 15);
 }
 
 .dark {
-  /* Monochrome dark theme with iridescent shimmer */
-  --background: oklch(0.1 0.003 280);
-  --foreground: oklch(0.92 0.005 280);
-  --card: oklch(0.14 0.004 280);
-  --card-foreground: oklch(0.92 0.005 280);
-  --popover: oklch(0.14 0.004 280);
-  --popover-foreground: oklch(0.92 0.005 280);
-  --primary: oklch(0.92 0.005 280);
-  --primary-foreground: oklch(0.1 0.003 280);
-  --secondary: oklch(0.2 0.005 280);
-  --secondary-foreground: oklch(0.92 0.005 280);
-  --muted: oklch(0.2 0.005 280);
-  --muted-foreground: oklch(0.55 0.006 280);
-  --accent: oklch(0.2 0.006 280);
-  --accent-foreground: oklch(0.92 0.005 280);
-  --destructive: oklch(0.5 0.005 280);
-  --border: oklch(0.25 0.006 280);
-  --input: oklch(0.22 0.006 280);
-  --ring: oklch(0.92 0.005 280);
+  --adnai-canvas: #090a0d;
+  --adnai-surface-1: #0f1115;
+  --adnai-surface-2: #15181e;
+  --adnai-surface-3: #1b1f27;
+  --adnai-surface-hover: #222730;
+  --adnai-border: #2a303a;
+  --adnai-border-strong: #3a414d;
+  --adnai-text: #f1f3f5;
+  --adnai-text-secondary: #a3a9b3;
+  --adnai-text-tertiary: #707782;
+  --adnai-brand: #c62e55;
+  --adnai-brand-hover: #dc3a65;
+  --adnai-brand-soft: #c62e5518;
+  --adnai-brand-border: #c62e5555;
+  --adnai-success: #3fbf7f;
+  --adnai-info: #5794f2;
+  --adnai-warning: #e4a853;
+  --adnai-elevated: #ef7d4d;
+  --adnai-danger: #e2525c;
+  --adnai-critical: #ff3e4d;
+  --adnai-disabled: #737a86;
+
+  /* Dark control-plane theme mapped to shadcn tokens */
+  --background: var(--adnai-canvas);
+  --foreground: var(--adnai-text);
+  --card: var(--adnai-surface-2);
+  --card-foreground: var(--adnai-text);
+  --popover: var(--adnai-surface-3);
+  --popover-foreground: var(--adnai-text);
+  --primary: var(--adnai-brand);
+  --primary-foreground: #ffffff;
+  --secondary: var(--adnai-surface-3);
+  --secondary-foreground: var(--adnai-text);
+  --muted: var(--adnai-surface-2);
+  --muted-foreground: var(--adnai-text-secondary);
+  --accent: var(--adnai-brand-soft);
+  --accent-foreground: var(--adnai-text);
+  --destructive: var(--adnai-danger);
+  --border: var(--adnai-border);
+  --input: var(--adnai-border);
+  --ring: var(--adnai-brand);
   --chart-1: oklch(0.85 0.005 280);
   --chart-2: oklch(0.65 0.005 280);
   --chart-3: oklch(0.45 0.005 280);
   --chart-4: oklch(0.3 0.004 280);
   --chart-5: oklch(0.15 0.003 280);
-  --sidebar: oklch(0.12 0.004 280);
-  --sidebar-foreground: oklch(0.92 0.005 280);
-  --sidebar-primary: oklch(0.92 0.005 280);
-  --sidebar-primary-foreground: oklch(0.1 0.003 280);
-  --sidebar-accent: oklch(0.2 0.006 280);
-  --sidebar-accent-foreground: oklch(0.92 0.005 280);
-  --sidebar-border: oklch(0.25 0.006 280);
-  --sidebar-ring: oklch(0.92 0.005 280);
-  /* Crimson accent - dark burgundy fuchsia for hover */
-  --crimson: oklch(0.38 0.17 12);
-  --crimson-foreground: oklch(0.95 0.01 15);
+  --sidebar: var(--adnai-surface-1);
+  --sidebar-foreground: var(--adnai-text);
+  --sidebar-primary: var(--adnai-brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--adnai-brand-soft);
+  --sidebar-accent-foreground: var(--adnai-text);
+  --sidebar-border: var(--adnai-border);
+  --sidebar-ring: var(--adnai-brand);
+  --crimson: var(--adnai-brand);
+  --crimson-foreground: #ffffff;
 }
 
 @layer base {

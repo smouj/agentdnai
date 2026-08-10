@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Landing Page Enhancements
 - Stats Counter section: animated count-up numbers (47 Permissions, 9 Categories, 10 Templates, 0 Implicit Grants)
-- Features Deep-Dive: 6 feature cards (Ed25519 Identity, Audit Trail, Policy Engine, Tokens, Risk Scoring, Wildcard Permissions)
+- Features Deep-Dive: 6 feature cards (RSA-PSS Identity, Audit Trail, Policy Engine, Tokens, Risk Scoring, Wildcard Permissions)
 - Roadmap timeline: v0.2 (current), v0.3, v0.4, v0.5 with staggered animation
 - Enhanced footer: 4-column grid (Product, Resources, Security, Company) with security badges
 
@@ -75,11 +75,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quick Start Guide: step-by-step numbered guide with curl code examples
 - Architecture section: text-based ASCII architecture diagram and component descriptions
 - CLI Reference: expanded from 9 to 22 commands with full flag documentation and examples
-- Security Model: cryptographic details card (Ed25519, HMAC-SHA256, SHA-256, token format, chain verification)
+- Security Model: cryptographic details card (RSA-PSS, HMAC-SHA256, SHA-256, token format, chain verification)
 - Permission Catalog: count badges per category with hover effects
 
 #### Security & Auth
-- User authentication implemented (custom JWT + bcryptjs — registration, login, logout, sessions)
+- User authentication implemented (database sessions with Argon2id password hashing — registration, login, logout)
 - BOLA (Broken Object Level Authorization) protection via ownership middleware
 - Basic rate limiting (in-memory, per-endpoint presets in lib/rate-limit.ts)
 
@@ -90,7 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard views now include Login, Register, Onboarding, Tokens, Orgs, API Keys
 
 ### Security
-- Ed25519 key pair generation for agent identity (replacing RSA-PSS references)
+- RSA-PSS key pair generation for agent identity
 - HMAC-SHA256 with pepper for token hashing
 - Token formats: `sess_<hex>` for sessions, `adni_<hex>` for agent tokens
 - BOLA protection enforced via ownership.ts middleware
@@ -102,7 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Platform
-- Agent identity management with Ed25519 key pairs
+- Agent identity management with RSA-PSS key pairs
 - Deny-by-default authorization engine with 8-step evaluation order
 - Fine-grained permission system with 47 permissions across 9 categories
 - 10 permission templates (read-only, audit, safe-builder, staging-operator, production-guarded, local-dev, deploy-agent, security-audit, documentation, full-dev-approval)
@@ -157,7 +157,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stat cards with trend indicators and gradient accents
 
 #### Security
-- Ed25519 key pair generation for agent identity
+- RSA-PSS key pair generation for agent identity
 - HMAC-SHA256 token hashing with configurable pepper
 - SHA-256 hash chain audit integrity verification
 - Timing-safe token comparison to prevent timing attacks

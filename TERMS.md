@@ -8,7 +8,7 @@ By using AgentDNAI ("the Software"), you agree to be bound by these Terms of Use
 
 ## 2. Description
 
-AgentDNAI is an open-source platform for managing verifiable digital identities, granular permissions, and audit trails for AI agents. It provides:
+AgentDNAI is a source-available platform for managing verifiable digital identities, granular permissions, and audit trails for AI agents. It provides:
 
 - **Agent Identity Management** — Create, monitor, and revoke AI agent identities
 - **Permission System** — Fine-grained authorization with deny-by-default policy
@@ -16,9 +16,9 @@ AgentDNAI is an open-source platform for managing verifiable digital identities,
 - **Audit Logging** — Tamper-evident hash-chained audit trail
 - **Authorization Engine** — Policy-based access control with human approval workflows
 
-## 3. Open Source License
+## 3. Source-Available License
 
-AgentDNAI is released under the **MIT License**. You are free to use, modify, and distribute the Software subject to the terms of the MIT License, which is included in the repository as `LICENSE`.
+AgentDNAI is proprietary source-available software. Review, local evaluation, and upstream contributions are allowed; redistribution, resale, hosted third-party use, relicensing, and brand/logo reuse require prior written permission. The full license is included in the repository as `LICENSE`.
 
 ## 4. Disclaimer of Warranties
 

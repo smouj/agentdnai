@@ -2,6 +2,7 @@
   "name": "@agentdnai/cli",
   "version": "0.2.0-alpha",
   "description": "AgentDNAI Command Line Interface",
+  "license": "UNLICENSED",
   "bin": {
     "agentdnai": "./index.ts"
   },

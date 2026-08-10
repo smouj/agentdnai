@@ -58,11 +58,9 @@ Edit `.env` with production values:
 
 ```env
 # ─── Database (PostgreSQL) ───────────────────────────
-DATABASE_URL=postgresql://agentdnai:STRONG_PASSWORD@postgres:5432/agentdnai
+DATABASE_URL=postgresql://agentdnai:<POSTGRES_PASSWORD>@postgres:5432/agentdnai
 
 # ─── Authentication ──────────────────────────────────
-NEXTAUTH_SECRET=$(openssl rand -base64 32)
-NEXTAUTH_URL=https://agentdnai.yourdomain.com
 AUTH_PEPPER=$(openssl rand -hex 32)
 
 # ─── Token Security ──────────────────────────────────
@@ -148,7 +146,7 @@ curl https://agentdnai.yourdomain.com/api/health
 ```bash
 curl -X POST https://agentdnai.yourdomain.com/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email": "admin@yourdomain.com", "password": "STRONG_PASSWORD", "name": "Admin"}'
+  -d '{"email": "admin@yourdomain.com", "password": "<strong-admin-password>", "name": "Admin"}'
 ```
 
 ## Service Configuration

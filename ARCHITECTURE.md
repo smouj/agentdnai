@@ -311,12 +311,10 @@ Browser ←── Socket.io → Event Service (port 3003) ←── Poll ──�
 For production deployment:
 
 1. Switch `DATABASE_URL` to PostgreSQL
-2. Set a strong `NEXTAUTH_SECRET`
-3. Set strong `TOKEN_PEPPER` and `AUTH_PEPPER` values
-4. Implement proper user authentication (already partially done)
-5. Enable HTTPS
-6. Restrict CORS origins
-7. Enforce rate limiting on all endpoints
-8. Encrypt private keys at rest with AES-256
+2. Set strong `TOKEN_PEPPER` and `AUTH_PEPPER` values
+3. Enable HTTPS
+4. Restrict CORS origins
+5. Enforce shared rate limiting on all endpoints
+6. Encrypt private keys at rest with AES-256
 9. Set up monitoring and alerting
 10. Configure proper backup strategy for the database

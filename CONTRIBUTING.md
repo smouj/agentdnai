@@ -60,7 +60,7 @@ Thank you for your interest in contributing to AgentDNAI! This document provides
 | `src/app/page.tsx` | Main SPA with 17+ views |
 | `src/app/api/` | 37+ API route handlers |
 | `src/lib/policy.ts` | Authorization engine (deny-by-default) |
-| `src/lib/crypto.ts` | Ed25519, HMAC-SHA256, SHA-256, key generation |
+| `src/lib/crypto.ts` | RSA-PSS, HMAC-SHA256, SHA-256, key generation |
 | `src/lib/audit.ts` | Hash-chained audit logger with 18 event types |
 | `src/lib/tokens.ts` | Token lifecycle service (issue, revoke, validate) |
 | `src/lib/permissions.ts` | 47 permissions across 9 categories, 10 templates |
@@ -171,4 +171,4 @@ Feature requests are welcome! Please:
 
 ## 📜 License
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+By contributing, you agree that your contributions may be used, modified, published, and distributed by AgentDNAI under the repository's source-available proprietary license or a future license chosen by the project maintainers.
