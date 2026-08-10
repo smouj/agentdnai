@@ -3,6 +3,7 @@ import { Server } from 'socket.io'
 
 const NEXT_API_BASE = 'http://localhost:3000'
 const PORT = 3003
+const AGENTDNAI_SESSION_TOKEN = process.env.AGENTDNAI_SESSION_TOKEN
 
 const httpServer = createServer()
 const io = new Server(httpServer, {
@@ -18,18 +19,30 @@ const io = new Server(httpServer, {
 // Track known event IDs to detect new ones
 let knownEventIds: Set<string> = new Set()
 
+interface AuditEvent {
+  id: string
+  eventType?: string
+  action?: string | null
+  decision?: string | null
+  createdAt?: string
+}
+
 /**
  * Fetch last N audit events from the Next.js API
  */
-async function fetchAuditEvents(limit = 20): Promise<any[]> {
+async function fetchAuditEvents(limit = 20): Promise<AuditEvent[]> {
   try {
-    const res = await fetch(`${NEXT_API_BASE}/api/audit?limit=${limit}`)
+    const res = await fetch(`${NEXT_API_BASE}/api/audit?limit=${limit}`, {
+      headers: AGENTDNAI_SESSION_TOKEN
+        ? { Authorization: `Bearer ${AGENTDNAI_SESSION_TOKEN}` }
+        : undefined,
+    })
     if (!res.ok) {
       console.error(`Failed to fetch audit events: ${res.status}`)
       return []
     }
     const data = await res.json()
-    return Array.isArray(data) ? data : []
+    return Array.isArray(data) ? data : data.events || []
   } catch (err) {
     console.error('Error fetching audit events:', err)
     return []
@@ -41,7 +54,11 @@ async function fetchAuditEvents(limit = 20): Promise<any[]> {
  */
 async function fetchStats(): Promise<Record<string, unknown> | null> {
   try {
-    const res = await fetch(`${NEXT_API_BASE}/api/stats`)
+    const res = await fetch(`${NEXT_API_BASE}/api/stats`, {
+      headers: AGENTDNAI_SESSION_TOKEN
+        ? { Authorization: `Bearer ${AGENTDNAI_SESSION_TOKEN}` }
+        : undefined,
+    })
     if (!res.ok) {
       console.error(`Failed to fetch stats: ${res.status}`)
       return null
@@ -56,7 +73,7 @@ async function fetchStats(): Promise<Record<string, unknown> | null> {
 // --- WebSocket connection handling ---
 
 io.on('connection', async (socket) => {
-  console.log(`Client connected: ${socket.id} (total: ${io.sockets.sockets.size})`)
+  console.warn(`Client connected: ${socket.id} (total: ${io.sockets.sockets.size})`)
 
   // Emit connection count to all clients
   io.emit('connection-count', io.sockets.sockets.size)
@@ -79,7 +96,7 @@ io.on('connection', async (socket) => {
   }
 
   socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id} (total: ${io.sockets.sockets.size})`)
+    console.warn(`Client disconnected: ${socket.id} (total: ${io.sockets.sockets.size})`)
     io.emit('connection-count', io.sockets.sockets.size)
   })
 
@@ -99,7 +116,7 @@ setInterval(async () => {
     const newEvents = events.filter((event) => event.id && !knownEventIds.has(event.id))
 
     if (newEvents.length > 0) {
-      console.log(`Detected ${newEvents.length} new security event(s)`)
+      console.warn(`Detected ${newEvents.length} new security event(s)`)
 
       // Emit each new event individually as a security-event
       for (const event of newEvents) {
@@ -146,25 +163,25 @@ setInterval(async () => {
 // --- Start server ---
 
 httpServer.listen(PORT, () => {
-  console.log(`Event WebSocket service running on port ${PORT}`)
-  console.log(`Polling audit events from ${NEXT_API_BASE}/api/audit every 3s`)
-  console.log(`Polling stats from ${NEXT_API_BASE}/api/stats every 5s`)
+  console.warn(`Event WebSocket service running on port ${PORT}`)
+  console.warn(`Polling audit events from ${NEXT_API_BASE}/api/audit every 3s`)
+  console.warn(`Polling stats from ${NEXT_API_BASE}/api/stats every 5s`)
 })
 
 // --- Graceful shutdown ---
 
 process.on('SIGTERM', () => {
-  console.log('Received SIGTERM signal, shutting down server...')
+  console.warn('Received SIGTERM signal, shutting down server...')
   httpServer.close(() => {
-    console.log('Event WebSocket server closed')
+    console.warn('Event WebSocket server closed')
     process.exit(0)
   })
 })
 
 process.on('SIGINT', () => {
-  console.log('Received SIGINT signal, shutting down server...')
+  console.warn('Received SIGINT signal, shutting down server...')
   httpServer.close(() => {
-    console.log('Event WebSocket server closed')
+    console.warn('Event WebSocket server closed')
     process.exit(0)
   })
 })

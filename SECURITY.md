@@ -40,10 +40,11 @@ AgentDNAI implements a zero-trust security model designed for AI agent authoriza
 
 | Operation | Algorithm | Key Size |
 |---|---|---|
-| **Key Pairs** | Ed25519 | Curve25519 |
+| **Agent Key Pairs** | RSA-PSS + SHA-256 | 2048-bit RSA |
+| **Password Hashing** | Argon2id + AUTH_PEPPER | Versioned hash format |
 | **Token Hashing** | HMAC-SHA256 with pepper | 256-bit pepper |
 | **Audit Chain** | SHA-256 | — |
-| **Signature** | Ed25519 + SHA-256 | Curve25519 |
+| **Signature** | RSA-PSS + SHA-256 | 2048-bit RSA |
 | **Token Generation** | CSPRNG (32 bytes) | 256-bit |
 | **Session Token** | CSPRNG (32 bytes) | Format: `sess_<hex>` |
 | **Agent Token** | CSPRNG (32 bytes) | Format: `adni_<hex>` |
@@ -85,8 +86,8 @@ The policy engine follows a strict evaluation order:
 | Limitation | Status | Planned Fix |
 |---|---|---|
 | Private keys not encrypted at rest | :warning: Open | AES-256 encryption planned |
-| No user authentication | :white_check_mark: Implemented | Custom JWT + bcryptjs authentication with database-backed sessions |
-| Rate limiting not enforced | :white_check_mark: Partial | Basic rate limiting implemented (lib/rate-limit.ts) |
+| User authentication | :white_check_mark: Implemented | Database-backed sessions and Argon2id password hashing |
+| Rate limiting not enforced everywhere | :white_check_mark: Partial | Basic in-memory rate limiting implemented; Redis/Valkey required for multi-replica production |
 | CORS open in development | :warning: Open | Configurable CORS planned |
 | SQLite only (dev) | :white_check_mark: By design | PostgreSQL supported via Docker |
 
@@ -99,13 +100,15 @@ AgentDNAI implements BOLA protection via `src/lib/ownership.ts`:
 3. **Role-based access control**: Five-tier role hierarchy (OWNER > ADMIN > SECURITY_MANAGER > DEVELOPER > VIEWER)
 4. **API-level enforcement**: `requireAuth()`, `requireAgentAccess()`, `requireOrgAccess()`, `canManageAgent()` middleware functions
 5. **Minimum role requirements**: Organization endpoints enforce minimum role levels for non-read operations
+6. **Client ownership fields ignored**: Owners, token issuers, import owners, and approvers are derived from the authenticated session
+7. **AuthZ token boundary**: `/api/authz/check` and `/api/authz/batch-check` derive `agentId` and scopes from the presented agent token, not from request body scopes
 
 ## Security Best Practices for Deployment
 
 1. **Use HTTPS** in production — never expose the application over plain HTTP
 2. **Set strong TOKEN_PEPPER and AUTH_PEPPER** — generate with `openssl rand -hex 32`
-3. **Set a strong NEXTAUTH_SECRET** — generate with `openssl rand -base64 32`
-4. **Use PostgreSQL** instead of SQLite for production workloads
+3. **Use PostgreSQL** instead of SQLite for production workloads
+4. **Use shared rate limiting** (Redis/Valkey or gateway-level) when running more than one instance
 5. **Restrict CORS** to known origins only
 6. **Enable rate limiting** when available
 7. **Monitor the audit log** for suspicious activity

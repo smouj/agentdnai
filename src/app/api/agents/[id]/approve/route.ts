@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -17,23 +17,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const { id } = await params;
-
-    // Verify the agent exists
-    const agent = await db.agentIdentity.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
+    const agent = await requireAgentManagement(session, id);
 
     const body = await request.json();
-    const { action, resource, approvedByUserId } = body;
+    const { action, resource } = body;
 
     if (!action || typeof action !== 'string') {
       return NextResponse.json(
@@ -42,34 +31,7 @@ export async function POST(
       );
     }
 
-    // Resolve the approving user - use provided ID or find/create a default user
-    let approverId = approvedByUserId;
-    if (!approverId) {
-      const defaultUser = await db.user.findUnique({
-        where: { email: 'default@agentdnai.io' },
-      });
-      if (defaultUser) {
-        approverId = defaultUser.id;
-      } else {
-        const newUser = await db.user.create({
-          data: {
-            email: 'default@agentdnai.io',
-            name: 'Default User',
-            passwordHash: 'system-no-login',
-          },
-        });
-        approverId = newUser.id;
-      }
-    } else {
-      // Verify the user exists
-      const user = await db.user.findUnique({ where: { id: approverId } });
-      if (!user) {
-        return NextResponse.json(
-          { error: 'Approved by user not found' },
-          { status: 404 }
-        );
-      }
-    }
+    const approverId = session.userId;
 
     // Create temporary permission that expires in 1 hour
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
@@ -91,6 +53,7 @@ export async function POST(
       actorType: 'user',
       actorId: approverId,
       agentId: agent.id,
+      organizationId: agent.organizationId || undefined,
       resource: resource || undefined,
       action,
       decision: 'allow',

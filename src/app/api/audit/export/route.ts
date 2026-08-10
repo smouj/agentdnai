@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAuth, visibleAuditWhere } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -8,8 +8,10 @@ import { db } from '@/lib/db';
  */
 export async function GET(_request: NextRequest) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
+    const where = await visibleAuditWhere(session.userId);
     const events = await db.auditEvent.findMany({
+      where,
       orderBy: { createdAt: 'asc' },
     });
 

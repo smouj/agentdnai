@@ -12,7 +12,7 @@ export const createAgentSchema = z.object({
   name: z.string().min(1).max(100),
   runtime: z.string().min(1).max(50),
   description: z.string().max(500).optional(),
-  ownerEmail: z.string().email().optional(),
+  organizationId: z.string().min(1).optional(),
 });
 
 export const agentActionSchema = z.object({
@@ -38,7 +38,6 @@ export const issueTokenSchema = z.object({
   agentId: z.string().min(1),
   scopes: z.array(z.string()).min(1).max(50),
   ttlSeconds: z.number().int().min(60).max(86400).default(3600),
-  createdBy: z.string().optional(), // userId of the issuer
 });
 
 export const revokeTokenSchema = z.object({
@@ -48,10 +47,9 @@ export const revokeTokenSchema = z.object({
 // ─── Authorization Schemas ────────────────────────────────────────────────────
 
 export const checkAuthzSchema = z.object({
-  agentId: z.string().min(1),
+  agentId: z.string().min(1).optional(),
   action: z.string().min(1).max(200),
   resource: z.string().max(500).optional(),
-  tokenScopes: z.array(z.string()).max(50).optional(),
 });
 
 // ─── Audit Schemas ────────────────────────────────────────────────────────────

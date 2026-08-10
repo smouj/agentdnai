@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { getAccessibleAgentIds, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -9,13 +9,15 @@ import { db } from '@/lib/db';
  */
 export async function GET(_request: NextRequest) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
+    const agentIds = await getAccessibleAgentIds(session.userId);
     // Hourly trend data for past 24 hours
     const twentyFourHoursAgo = new Date();
     twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
 
     const recentDecisions = await db.authorizationDecision.findMany({
       where: {
+        agentId: { in: agentIds },
         createdAt: { gte: twentyFourHoursAgo },
       },
       select: {
@@ -47,6 +49,7 @@ export async function GET(_request: NextRequest) {
 
     // Permission distribution by scope category
     const permissions = await db.agentPermission.findMany({
+      where: { agentId: { in: agentIds } },
       select: { scope: true, effect: true },
     });
 

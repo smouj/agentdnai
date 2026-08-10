@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { ApiError } from '@/lib/api-error';
+import { requireAgentAccess, requireAuth } from '@/lib/ownership';
 
 /**
  * GET /api/agents/[id]/health - Get agent health status
@@ -9,7 +11,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth(_request);
     const { id } = await params;
+    await requireAgentAccess(session, id);
 
     const agent = await db.agentIdentity.findUnique({
       where: { id },
@@ -108,6 +112,9 @@ export async function GET(
       uptime,
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error checking agent health:', error);
     return NextResponse.json(
       { error: 'Failed to check agent health' },

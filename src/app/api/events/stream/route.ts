@@ -1,10 +1,24 @@
 import { db } from '@/lib/db'
+import { ApiError } from '@/lib/api-error'
+import { requireAuth, visibleAuditWhere } from '@/lib/ownership'
 
 /**
  * GET /api/events/stream - SSE endpoint for real-time security event notifications
  * Falls back to polling audit events every 5 seconds for clients not using WebSocket
  */
-export async function GET() {
+export async function GET(request: Request) {
+  let auditWhere: Awaited<ReturnType<typeof visibleAuditWhere>>
+
+  try {
+    const session = await requireAuth(request)
+    auditWhere = await visibleAuditWhere(session.userId)
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse()
+    }
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   let knownEventIds: Set<string> = new Set()
   let intervalId: ReturnType<typeof setInterval> | null = null
 
@@ -36,6 +50,7 @@ export async function GET() {
       // Send initial audit events
       try {
         const initialEvents = await db.auditEvent.findMany({
+          where: auditWhere,
           orderBy: { createdAt: 'desc' },
           take: 20,
         })
@@ -56,6 +71,7 @@ export async function GET() {
       intervalId = setInterval(async () => {
         try {
           const events = await db.auditEvent.findMany({
+            where: auditWhere,
             orderBy: { createdAt: 'desc' },
             take: 20,
           })

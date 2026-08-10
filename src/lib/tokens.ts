@@ -128,8 +128,10 @@ export async function revokeToken(tokenId: string, revokedBy?: string): Promise<
 export async function validateToken(token: string): Promise<{
   valid: boolean;
   agentId?: string;
+  tokenId?: string;
   scopes?: string[];
   reason?: string;
+  status?: 'invalid' | 'expired' | 'revoked';
 }> {
   const tokenHash = hashToken(token);
 
@@ -149,15 +151,27 @@ export async function validateToken(token: string): Promise<{
   }
 
   if (!tokenRecord) {
-    return { valid: false, reason: 'Token not found' };
+    return { valid: false, reason: 'Token not found', status: 'invalid' };
   }
 
   if (tokenRecord.revokedAt) {
-    return { valid: false, reason: 'Token has been revoked' };
+    return {
+      valid: false,
+      agentId: tokenRecord.agentId,
+      tokenId: tokenRecord.id,
+      reason: 'Token has been revoked',
+      status: 'revoked',
+    };
   }
 
   if (new Date() > tokenRecord.expiresAt) {
-    return { valid: false, reason: 'Token has expired' };
+    return {
+      valid: false,
+      agentId: tokenRecord.agentId,
+      tokenId: tokenRecord.id,
+      reason: 'Token has expired',
+      status: 'expired',
+    };
   }
 
   // Update last used timestamp
@@ -169,6 +183,7 @@ export async function validateToken(token: string): Promise<{
   return {
     valid: true,
     agentId: tokenRecord.agentId,
+    tokenId: tokenRecord.id,
     scopes: JSON.parse(tokenRecord.scopes),
   };
 }

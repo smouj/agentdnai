@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { ApiError } from '@/lib/api-error';
+import { requireAgentAccess, requireAuth } from '@/lib/ownership';
 
 /**
  * GET /api/agents/[id]/risk - Compute risk score for an agent
@@ -20,7 +22,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await requireAuth(_request);
     const { id } = await params;
+    await requireAgentAccess(session, id);
 
     const agent = await db.agentIdentity.findUnique({
       where: { id },
@@ -220,6 +224,9 @@ export async function GET(
       factors,
     });
   } catch (error) {
+    if (error instanceof ApiError) {
+      return error.toResponse();
+    }
     console.error('Error computing risk score:', error);
     return NextResponse.json(
       { error: 'Failed to compute risk score' },

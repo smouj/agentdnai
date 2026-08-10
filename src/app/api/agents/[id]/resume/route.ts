@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -12,19 +12,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const { id } = await params;
-
-    const agent = await db.agentIdentity.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
+    const agent = await requireAgentManagement(session, id);
 
     if (agent.status !== 'PAUSED') {
       return NextResponse.json(
@@ -51,7 +41,9 @@ export async function POST(
     await createAuditEvent({
       eventType: AUDIT_EVENTS.AGENT_RESUMED,
       actorType: 'user',
+      actorId: session.userId,
       agentId: id,
+      organizationId: agent.organizationId || undefined,
       action: 'agent.resume',
       metadata: { reason },
     });

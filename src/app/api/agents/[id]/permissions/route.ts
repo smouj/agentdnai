@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentAccess, requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -13,19 +13,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const { id } = await params;
-
-    const agent = await db.agentIdentity.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
+    await requireAgentManagement(session, id);
 
     const body = await request.json();
     const parsed = grantPermissionSchema.safeParse(body);
@@ -56,21 +46,6 @@ export async function POST(
       );
     }
 
-    // Get or create default user for createdByUserId
-    let user = await db.user.findUnique({
-      where: { email: 'default@agentdnai.io' },
-    });
-
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          email: 'default@agentdnai.io',
-          name: 'Default User',
-          passwordHash: 'system-no-login',
-        },
-      });
-    }
-
     // Create permission
     const permission = await db.agentPermission.create({
       data: {
@@ -79,7 +54,7 @@ export async function POST(
         resource: resource || null,
         effect,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        createdByUserId: user.id,
+        createdByUserId: session.userId,
       },
     });
 
@@ -87,7 +62,7 @@ export async function POST(
     await createAuditEvent({
       eventType: AUDIT_EVENTS.PERMISSION_GRANTED,
       actorType: 'user',
-      actorId: user.id,
+      actorId: session.userId,
       agentId: id,
       action: 'permission.grant',
       resource: scope,
@@ -115,8 +90,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
     const { id } = await params;
+    await requireAgentAccess(session, id);
 
     const agent = await db.agentIdentity.findUnique({
       where: { id },
@@ -151,19 +127,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const { id } = await params;
-
-    const agent = await db.agentIdentity.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
+    await requireAgentManagement(session, id);
 
     const body = await request.json();
     const parsed = deletePermissionSchema.safeParse(body);
@@ -205,6 +171,7 @@ export async function DELETE(
     await createAuditEvent({
       eventType: AUDIT_EVENTS.PERMISSION_REVOKED,
       actorType: 'user',
+      actorId: session.userId,
       agentId: id,
       action: 'permission.revoke',
       resource: permission.scope,

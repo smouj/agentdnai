@@ -2,12 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthzSchema } from '@/lib/schemas';
 import { checkAuthorization, recordDecision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
+import { validateToken } from '@/lib/tokens';
 
 /**
  * POST /api/authz/check - Check authorization
  */
 export async function POST(request: NextRequest) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
+    if (!bearerToken) {
+      return NextResponse.json(
+        { error: 'Authorization bearer agent token is required' },
+        { status: 401 }
+      );
+    }
+
+    const token = await validateToken(bearerToken);
+    if (!token.valid || !token.agentId || !token.scopes) {
+      const decision = token.status === 'expired' ? 'token_expired' : 'token_invalid';
+      return NextResponse.json(
+        {
+          allowed: false,
+          decision,
+          reason: token.reason || 'Invalid token',
+          requiresApproval: false,
+        },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const parsed = checkAuthzSchema.safeParse(body);
 
@@ -18,11 +43,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (parsed.data.agentId && parsed.data.agentId !== token.agentId) {
+      return NextResponse.json(
+        { error: 'Token is not valid for the requested agent' },
+        { status: 403 }
+      );
+    }
+
     const input = {
-      agentId: parsed.data.agentId,
+      agentId: token.agentId,
       action: parsed.data.action,
       resource: parsed.data.resource,
-      tokenScopes: parsed.data.tokenScopes,
+      tokenScopes: token.scopes,
     };
 
     // Check authorization

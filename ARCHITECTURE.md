@@ -10,12 +10,12 @@ AgentDNAI is a full-stack web application built with Next.js 16 that provides ve
 
 Every agent receives:
 - **Unique URI**: `agent://owner/runtime/name` format
-- **Ed25519 Key Pair**: Curve25519 for signing and verification
+- **RSA-PSS Key Pair**: 2048-bit RSA-PSS for signing and verification
 - **Lifecycle Status**: ACTIVE → PAUSED → REVOKED → BLOCKED → EXPIRED
 
 ```
 Agent Identity Creation Flow:
-1. Generate Ed25519 key pair (Curve25519)
+1. Generate RSA-PSS key pair
 2. Compute agent URI from owner + runtime + name
 3. Store public key + hashed URI in database
 4. Return agent identity with key pair
@@ -88,11 +88,12 @@ Verification: For each event, recompute eventHash and verify previousHash linkag
 
 ### 6. Authentication (`src/lib/auth.ts`)
 
-- **Custom JWT + bcryptjs**: Email/password registration and login (not NextAuth.js)
-- **Database-backed sessions**: Sessions stored in Session table with hashed tokens
+- **Custom database sessions**: Email/password registration and login (not NextAuth.js/JWT)
+- **Database-backed sessions**: Sessions stored in Session table
 - **Session tokens**: Format `sess_<64 hex chars>`, validated via Authorization header or cookie
-- **Password hashing**: HMAC-SHA256 with AUTH_PEPPER
-- **Token extraction**: From `Authorization: Bearer <token>` header or `session_token` cookie
+- **Password hashing**: Argon2id with versioned hash format and AUTH_PEPPER
+- **Legacy migration**: Old `hmacsha256:` password hashes verify only for migration and are rehashed after successful login
+- **Token extraction**: From `Authorization: Bearer <token>` header or `session` cookie
 
 ### 7. Ownership & BOLA Protection (`src/lib/ownership.ts`)
 
@@ -100,6 +101,8 @@ Verification: For each event, recompute eventHash and verify previousHash linkag
 - **Organization membership**: Users can access agents in their organizations
 - **Role hierarchy**: OWNER > ADMIN > SECURITY_MANAGER > DEVELOPER > VIEWER
 - **Middleware functions**: `requireAuth()`, `requireAgentAccess()`, `requireOrgAccess()`, `canManageAgent()`
+- **Session-derived ownership**: API routes do not trust client-supplied `ownerId`, `ownerEmail`, `createdBy`, or approver fields
+- **Agent token AuthZ**: Public authorization checks validate the bearer agent token, load token scopes from the database, and reject expired/revoked tokens
 
 ### 8. Rate Limiting (`src/lib/rate-limit.ts`)
 
@@ -169,7 +172,7 @@ AgentIdentity
 ├── name: String
 ├── runtime: String (hermes|codex|openclaw|cli|automation|custom)
 ├── status: AgentStatus (ACTIVE|PAUSED|REVOKED|BLOCKED|EXPIRED)
-├── publicKey: String (Ed25519 PEM)
+├── publicKey: String (RSA-PSS PEM)
 ├── description: String?
 ├── ownerUserId: String → User
 ├── organizationId: String? → Organization

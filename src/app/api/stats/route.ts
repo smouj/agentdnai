@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { accessibleAgentWhere, getAccessibleAgentIds, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -8,7 +8,9 @@ import { db } from '@/lib/db';
  */
 export async function GET(_request: NextRequest) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
+    const agentWhere = accessibleAgentWhere(session.userId);
+    const agentIds = await getAccessibleAgentIds(session.userId);
     const [
       totalAgents,
       activeAgents,
@@ -20,20 +22,21 @@ export async function GET(_request: NextRequest) {
       recentDeny,
       recentRequiresApproval,
     ] = await Promise.all([
-      db.agentIdentity.count(),
-      db.agentIdentity.count({ where: { status: 'ACTIVE' } }),
-      db.agentIdentity.count({ where: { status: 'PAUSED' } }),
-      db.agentIdentity.count({ where: { status: 'REVOKED' } }),
-      db.agentPermission.count(),
+      db.agentIdentity.count({ where: agentWhere }),
+      db.agentIdentity.count({ where: { AND: [agentWhere, { status: 'ACTIVE' }] } }),
+      db.agentIdentity.count({ where: { AND: [agentWhere, { status: 'PAUSED' }] } }),
+      db.agentIdentity.count({ where: { AND: [agentWhere, { status: 'REVOKED' }] } }),
+      db.agentPermission.count({ where: { agentId: { in: agentIds } } }),
       db.agentToken.count({
         where: {
+          agentId: { in: agentIds },
           revokedAt: null,
           expiresAt: { gt: new Date() },
         },
       }),
-      db.authorizationDecision.count({ where: { decision: 'allow' } }),
-      db.authorizationDecision.count({ where: { decision: 'deny' } }),
-      db.authorizationDecision.count({ where: { decision: 'requires_approval' } }),
+      db.authorizationDecision.count({ where: { agentId: { in: agentIds }, decision: 'allow' } }),
+      db.authorizationDecision.count({ where: { agentId: { in: agentIds }, decision: 'deny' } }),
+      db.authorizationDecision.count({ where: { agentId: { in: agentIds }, decision: 'requires_approval' } }),
     ]);
 
     return NextResponse.json({

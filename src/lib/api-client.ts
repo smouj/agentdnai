@@ -213,7 +213,7 @@ export const api = {
     apiFetch<Permission>(`/agents/${agentId}/permissions`, { method: 'POST', body: JSON.stringify(data) }),
 
   listPermissions: (agentId: string) =>
-    apiFetch<Permission[]>(`/agents/${agentId}/permissions`),
+    apiFetch<{ permissions: Permission[] }>(`/agents/${agentId}/permissions`).then((data) => data.permissions),
 
   deletePermission: (agentId: string, permissionId: string) =>
     apiFetch<void>(`/agents/${agentId}/permissions`, { method: 'DELETE', body: JSON.stringify({ permissionId }) }),
@@ -226,11 +226,19 @@ export const api = {
     apiFetch<void>(`/tokens/${tokenId}/revoke`, { method: 'POST' }),
 
   // ─── Authorization ────────────────────────────────────────────────────
-  checkAuthz: (data: { agentId: string; action: string; resource?: string }) =>
-    apiFetch<AuthzResult>('/authz/check', { method: 'POST', body: JSON.stringify(data) }),
+  checkAuthz: (data: { agentToken: string; action: string; resource?: string }) =>
+    apiFetch<AuthzResult>('/authz/check', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${data.agentToken}` },
+      body: JSON.stringify({ action: data.action, resource: data.resource }),
+    }),
 
-  batchCheckAuthz: (data: { agentId: string; actions: string[]; resource?: string }) =>
-    apiFetch<{ results: AuthzResult[] }>('/authz/batch-check', { method: 'POST', body: JSON.stringify(data) }),
+  batchCheckAuthz: (data: { agentToken: string; actions: string[]; resource?: string }) =>
+    apiFetch<{ results: AuthzResult[] }>('/authz/batch-check', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${data.agentToken}` },
+      body: JSON.stringify({ actions: data.actions, resource: data.resource }),
+    }),
 
   approveAction: (agentId: string, data: { action: string; resource?: string }) =>
     apiFetch<Permission>(`/agents/${agentId}/approve`, { method: 'POST', body: JSON.stringify(data) }),
@@ -241,7 +249,7 @@ export const api = {
     if (params?.status) sp.set('status', params.status);
     if (params?.agentId) sp.set('agentId', params.agentId);
     const qs = sp.toString();
-    return apiFetch<ApprovalRequest[]>(`/approvals${qs ? `?${qs}` : ''}`);
+    return apiFetch<{ approvals: ApprovalRequest[] }>(`/approvals${qs ? `?${qs}` : ''}`).then((data) => data.approvals);
   },
 
   createApproval: (data: { agentId: string; action: string; resource?: string }) =>
@@ -262,7 +270,7 @@ export const api = {
     if (params?.limit) sp.set('limit', String(params.limit));
     if (params?.offset) sp.set('offset', String(params.offset));
     const qs = sp.toString();
-    return apiFetch<AuditEvent[]>(`/audit${qs ? `?${qs}` : ''}`);
+    return apiFetch<{ events: AuditEvent[] }>(`/audit${qs ? `?${qs}` : ''}`).then((data) => data.events);
   },
 
   verifyAuditChain: () =>

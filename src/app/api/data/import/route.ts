@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAuth, resolveActiveOrgId } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -13,7 +13,8 @@ import { generateKeyPair } from '@/lib/crypto';
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
+    const activeOrgId = await resolveActiveOrgId(request, session, 'DEVELOPER');
     const body = await request.json();
     const agents = body.agents;
 
@@ -28,17 +29,7 @@ export async function POST(request: NextRequest) {
     let agentsSkipped = 0;
     const errors: string[] = [];
 
-    // Find or create a default user for imports
-    let userId: string;
-    const existingUser = await db.user.findFirst();
-    if (existingUser) {
-      userId = existingUser.id;
-    } else {
-      const newUser = await db.user.create({
-        data: { email: 'import@agentdnai.local', name: 'Import User', passwordHash: 'import-no-login' },
-      });
-      userId = newUser.id;
-    }
+    const userId = session.userId;
 
     for (const agentData of agents) {
       try {
@@ -72,6 +63,7 @@ export async function POST(request: NextRequest) {
             fingerprint: keyPair.fingerprint,
             status: agentData.status || 'ACTIVE',
             ownerUserId: userId,
+            organizationId: activeOrgId,
           },
         });
 

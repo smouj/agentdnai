@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentAccess, requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -12,8 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
     const { id } = await params;
+    await requireAgentAccess(session, id);
 
     const agent = await db.agentIdentity.findUnique({
       where: { id },
@@ -60,19 +61,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
     const { id } = await params;
-
-    const agent = await db.agentIdentity.findUnique({
-      where: { id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
+    const agent = await requireAgentManagement(session, id);
 
     // Delete all related records first
     await db.agentPermission.deleteMany({ where: { agentId: id } });
@@ -87,7 +78,9 @@ export async function DELETE(
     await createAuditEvent({
       eventType: 'AGENT_DELETED',
       actorType: 'user',
+      actorId: session.userId,
       agentId: undefined,
+      organizationId: agent.organizationId || undefined,
       action: 'agent.delete',
       metadata: { deletedAgentId: id, deletedAgentName: agent.name, deletedAgentUri: agent.agentUri },
     });

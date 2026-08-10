@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const passwordHash = hashPassword(password);
+    const passwordHash = await hashPassword(password);
 
     // Generate slug from name/email for personal organization
     const slugBase = name.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');

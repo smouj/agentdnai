@@ -10,22 +10,17 @@ import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
  */
 export async function POST(_request: NextRequest) {
   try {
-    await requireAuth(_request);
-    // Check if agents already exist
-    const existingAgents = await db.agentIdentity.count();
+    const session = await requireAuth(_request);
+    // Check if this user already has demo agents
+    const existingAgents = await db.agentIdentity.count({
+      where: { ownerUserId: session.userId },
+    });
     if (existingAgents > 0) {
       return NextResponse.json({ message: 'Demo data already exists', agents: existingAgents }, { status: 200 });
     }
 
-    // Get or create default user
-    let user = await db.user.findUnique({ where: { email: 'default@agentdnai.io' } });
-    if (!user) {
-      user = await db.user.create({
-        data: { email: 'default@agentdnai.io', name: 'Default User', passwordHash: 'seed-only-no-login' },
-      });
-    }
-
-    const owner = 'user';
+    const user = session.user;
+    const owner = user.email.split('@')[0] || 'user';
     let agentCount = 0;
     let tokenCount = 0;
     let decisionCount = 0;

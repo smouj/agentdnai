@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { getAccessibleAgentIds, requireAuth, visibleAuditWhere } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -9,7 +9,11 @@ import { db } from '@/lib/db';
  */
 export async function GET(_request: NextRequest) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
+    const [agentIds, auditWhere] = await Promise.all([
+      getAccessibleAgentIds(session.userId),
+      visibleAuditWhere(session.userId),
+    ]);
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
@@ -17,7 +21,7 @@ export async function GET(_request: NextRequest) {
     // Get all audit events from the past 30 days
     const events = await db.auditEvent.findMany({
       where: {
-        createdAt: { gte: thirtyDaysAgo },
+        AND: [auditWhere, { createdAt: { gte: thirtyDaysAgo } }],
       },
       select: {
         createdAt: true,
@@ -54,7 +58,7 @@ export async function GET(_request: NextRequest) {
     const agentEvents = await db.auditEvent.findMany({
       where: {
         createdAt: { gte: thirtyDaysAgo },
-        agentId: { not: null },
+        agentId: { in: agentIds },
       },
       select: {
         agentId: true,

@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "AgentDNAI — Secure Identity for AI Agents",
-  description: "AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, encrypted credentials, revocable access and a clear audit trail.",
+  description: "AgentDNAI gives every AI agent a verifiable digital identity, scoped permissions, revocable access and a clear audit trail.",
   keywords: ["AgentDNAI", "AI agents", "identity", "permissions", "audit", "authorization", "security"],
   authors: [{ name: "AgentDNAI" }],
   icons: {

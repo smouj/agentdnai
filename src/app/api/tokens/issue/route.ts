@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { issueTokenSchema } from '@/lib/schemas';
@@ -9,7 +9,7 @@ import { issueToken } from '@/lib/tokens';
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const body = await request.json();
     const parsed = issueTokenSchema.safeParse(body);
 
@@ -20,11 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await requireAgentManagement(session, parsed.data.agentId);
+
     const result = await issueToken({
       agentId: parsed.data.agentId,
       scopes: parsed.data.scopes,
       ttlSeconds: parsed.data.ttlSeconds,
-      createdBy: parsed.data.createdBy,
+      createdBy: session.userId,
     });
 
     return NextResponse.json(result, { status: 201 });

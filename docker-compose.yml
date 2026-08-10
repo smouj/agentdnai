@@ -7,14 +7,14 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=file:./db/custom.db
-      - TOKEN_PEPPER=change-this-in-production
-      - AUTH_PEPPER=change-this-in-production
+      - TOKEN_PEPPER=${TOKEN_PEPPER:?Set TOKEN_PEPPER to a strong random secret}
+      - AUTH_PEPPER=${AUTH_PEPPER:?Set AUTH_PEPPER to a different strong random secret}
       - NODE_ENV=production
       - ALLOW_DEMO_SEED=false
     volumes:
       - agentdnai-data:/app/db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      test: ["CMD", "bun", "-e", "const r=await fetch('http://127.0.0.1:3000/api/health').catch(()=>null); process.exit(r?.ok ? 0 : 1)"]
       interval: 30s
       timeout: 10s
       retries: 3

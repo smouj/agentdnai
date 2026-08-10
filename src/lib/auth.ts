@@ -2,15 +2,17 @@
  * AgentDNAI Core Authentication Library
  *
  * Handles password hashing, session management, and token generation.
- * Uses HMAC-SHA256 for password hashing (production should use bcrypt/scrypt/argon2).
+ * Uses Argon2id for password hashing. Legacy HMAC-SHA256 hashes are accepted
+ * only for progressive migration after a successful login.
  */
 
 import { db } from '@/lib/db';
-import { randomBytes, createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { generateSessionToken } from '@/lib/crypto';
+import argon2 from 'argon2';
 
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const SALT_LENGTH = 32;
+const ARGON2ID_PREFIX = 'argon2id:v1:';
 
 function getPepper(): string {
   const pepper = process.env.AUTH_PEPPER || (process.env.NODE_ENV === 'production' ? '' : 'agentdnai-dev-pepper-not-for-production');
@@ -21,23 +23,30 @@ function getPepper(): string {
 }
 
 /**
- * Hash a password using HMAC-SHA256 with salt and pepper
- * Format: hmacsha256:salt:hash (all hex encoded)
+ * Hash a password using Argon2id.
+ * Format: argon2id:v1:<bun argon2id hash>
  */
-export function hashPassword(password: string): string {
-  const salt = randomBytes(SALT_LENGTH);
-  const hash = createHmac('sha256', getPepper())
-    .update(salt)
-    .update(password)
-    .digest();
-  return `hmacsha256:${salt.toString('hex')}:${hash.toString('hex')}`;
+export async function hashPassword(password: string): Promise<string> {
+  const pepperedPassword = `${password}${getPepper()}`;
+  const hash = await argon2.hash(pepperedPassword, {
+    type: argon2.argon2id,
+    memoryCost: 65536,
+    timeCost: 3,
+    parallelism: 1,
+  });
+  return `${ARGON2ID_PREFIX}${hash}`;
 }
 
 /**
  * Verify a password against its hash using timing-safe comparison
  */
-export function verifyPassword(password: string, storedHash: string): boolean {
+export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
   try {
+    if (storedHash.startsWith(ARGON2ID_PREFIX)) {
+      const hash = storedHash.slice(ARGON2ID_PREFIX.length);
+      return argon2.verify(hash, `${password}${getPepper()}`);
+    }
+
     if (storedHash.startsWith('hmacsha256:')) {
       const parts = storedHash.split(':');
       if (parts.length !== 3) return false;
@@ -60,6 +69,10 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   } catch {
     return false;
   }
+}
+
+export function passwordNeedsRehash(storedHash: string): boolean {
+  return storedHash.startsWith('hmacsha256:');
 }
 
 /**

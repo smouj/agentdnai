@@ -89,7 +89,6 @@ function AgentDNAILogoInner({
  */
 export function AgentDNAILogoMark({ className = '', size = 28 }: { className?: string; size?: number }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img 
       src="/logo.svg" 
       alt="AgentDNAI" 

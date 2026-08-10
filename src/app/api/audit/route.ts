@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentAccess, requireAuth, visibleAuditWhere } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -9,7 +9,7 @@ import { auditQuerySchema } from '@/lib/schemas';
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const { searchParams } = request.nextUrl;
     const queryParams = Object.fromEntries(searchParams.entries());
     const parsed = auditQuerySchema.safeParse(queryParams);
@@ -24,22 +24,24 @@ export async function GET(request: NextRequest) {
     const { agentId, decision, eventType, resource, limit, offset } = parsed.data;
 
     // Build where clause
-    const where: Record<string, unknown> = {};
+    const visibilityWhere = await visibleAuditWhere(session.userId);
+    const where: Record<string, unknown> = { AND: [visibilityWhere] };
 
     if (agentId) {
-      where.agentId = agentId;
+      await requireAgentAccess(session, agentId);
+      (where.AND as Record<string, unknown>[]).push({ agentId });
     }
 
     if (eventType) {
-      where.eventType = eventType;
+      (where.AND as Record<string, unknown>[]).push({ eventType });
     }
 
     if (resource) {
-      where.resource = resource;
+      (where.AND as Record<string, unknown>[]).push({ resource });
     }
 
     if (decision) {
-      where.decision = decision;
+      (where.AND as Record<string, unknown>[]).push({ decision });
     }
 
     const [events, total] = await Promise.all([

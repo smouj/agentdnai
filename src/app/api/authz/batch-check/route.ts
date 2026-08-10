@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkAuthorization, recordDecision } from '@/lib/policy';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
+import { validateToken } from '@/lib/tokens';
 
 /**
  * POST /api/authz/batch-check - Check multiple actions at once
@@ -12,13 +13,44 @@ import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { agentId, actions, resource, tokenScopes } = body;
+    const authHeader = request.headers.get('authorization');
+    const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
 
-    if (!agentId || typeof agentId !== 'string') {
+    if (!bearerToken) {
       return NextResponse.json(
-        { error: 'Validation failed', details: { agentId: 'agentId is required and must be a string' } },
+        { error: 'Authorization bearer agent token is required' },
+        { status: 401 }
+      );
+    }
+
+    const token = await validateToken(bearerToken);
+    if (!token.valid || !token.agentId || !token.scopes) {
+      const decision = token.status === 'expired' ? 'token_expired' : 'token_invalid';
+      return NextResponse.json(
+        {
+          allowed: false,
+          decision,
+          reason: token.reason || 'Invalid token',
+          requiresApproval: false,
+        },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { agentId, actions, resource } = body;
+
+    if (agentId !== undefined && typeof agentId !== 'string') {
+      return NextResponse.json(
+        { error: 'Validation failed', details: { agentId: 'agentId must be a string when provided' } },
         { status: 400 }
+      );
+    }
+
+    if (agentId && agentId !== token.agentId) {
+      return NextResponse.json(
+        { error: 'Token is not valid for the requested agent' },
+        { status: 403 }
       );
     }
 
@@ -49,7 +81,7 @@ export async function POST(request: NextRequest) {
     const results = [];
 
     for (const action of actions) {
-      const input = { agentId, action, resource, tokenScopes };
+      const input = { agentId: token.agentId, action, resource, tokenScopes: token.scopes };
 
       // Check authorization
       const authzResult = await checkAuthorization(input);
@@ -83,7 +115,7 @@ export async function POST(request: NextRequest) {
       await createAuditEvent({
         eventType: auditEventType,
         actorType: 'agent',
-        agentId,
+        agentId: token.agentId,
         resource,
         action,
         decision: authzResult.decision,

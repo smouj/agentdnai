@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAuth, resolveActiveOrgId } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -52,7 +52,8 @@ interface ImportData {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
+    const activeOrgId = await resolveActiveOrgId(request, session, 'DEVELOPER');
     const body: ImportData = await request.json();
 
     // ── Validate structure ───────────────────────────────────────────────────
@@ -104,51 +105,7 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Resolve or create owner user
-      let ownerUserId = agentData.ownerUserId;
-      if (!ownerUserId && agentData.owner?.email) {
-        const existingUser = await db.user.findUnique({
-          where: { email: agentData.owner.email },
-        });
-        if (existingUser) {
-          ownerUserId = existingUser.id;
-        } else {
-          const newUser = await db.user.create({
-            data: {
-              email: agentData.owner.email,
-              name: agentData.owner.name || agentData.owner.email.split('@')[0],
-              passwordHash: 'import-no-login',
-            },
-          });
-          ownerUserId = newUser.id;
-        }
-      }
-
-      if (!ownerUserId) {
-        // Use default user
-        const defaultUser = await db.user.findUnique({
-          where: { email: 'default@agentdnai.io' },
-        });
-        if (defaultUser) {
-          ownerUserId = defaultUser.id;
-        } else {
-          const newUser = await db.user.create({
-            data: {
-              email: 'default@agentdnai.io',
-              name: 'Default User',
-              passwordHash: 'import-no-login',
-            },
-          });
-          ownerUserId = newUser.id;
-        }
-      }
-
-      // Verify owner exists
-      const ownerExists = await db.user.findUnique({ where: { id: ownerUserId } });
-      if (!ownerExists) {
-        errors.push(`Agent "${agentData.agentUri}": owner user "${ownerUserId}" not found, skipping`);
-        continue;
-      }
+      const ownerUserId = session.userId;
 
       try {
         // Create the agent
@@ -161,6 +118,7 @@ export async function POST(request: NextRequest) {
             publicKey: agentData.publicKey,
             status: agentData.status || 'ACTIVE',
             ownerUserId,
+            organizationId: activeOrgId,
           },
         });
 

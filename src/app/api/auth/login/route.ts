@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { verifyPassword, createSession, getClientIp, getClientUserAgent } from '@/lib/auth';
+import { createSession, getClientIp, getClientUserAgent, hashPassword, passwordNeedsRehash, verifyPassword } from '@/lib/auth';
 import { rateLimit, RATE_LIMITS } from '@/lib/rate-limit';
 import { createAuditEvent, AUDIT_EVENTS } from '@/lib/audit';
 import { loginSchema } from '@/lib/schemas';
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const isValid = verifyPassword(password, user.passwordHash);
+    const isValid = await verifyPassword(password, user.passwordHash);
     if (!isValid) {
       // Audit failed login attempt
       await createAuditEvent({
@@ -74,7 +74,12 @@ export async function POST(request: NextRequest) {
     // Update lastLoginAt
     await db.user.update({
       where: { id: user.id },
-      data: { lastLoginAt: new Date() },
+      data: {
+        lastLoginAt: new Date(),
+        ...(passwordNeedsRehash(user.passwordHash)
+          ? { passwordHash: await hashPassword(password) }
+          : {}),
+      },
     });
 
     // Audit successful login

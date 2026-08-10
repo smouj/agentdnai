@@ -33,73 +33,17 @@ AI agents read repositories, modify files, create PRs, access secrets and automa
 | ❌ No user accounts or teams | ✅ Users, organizations, roles, and ownership |
 | ❌ No way to integrate | ✅ TypeScript SDK + CLI + REST API |
 
-## 📸 Screenshots
+## Screenshots
 
-### Landing Page
+Real screenshots captured from the running app with seeded demo data.
 
-<table>
-  <tr>
-    <td align="center"><b>Hero Section</b></td>
-    <td align="center"><b>Features Overview</b></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/01-landing-hero.png" alt="AgentDNAI Landing Page Hero" width="600" /></td>
-    <td><img src="docs/screenshots/02-landing-features.png" alt="AgentDNAI Features Section" width="600" /></td>
-  </tr>
-  <tr>
-    <td align="center"><b>How It Works</b></td>
-    <td align="center"><b>Roadmap</b></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/03-landing-how-it-works.png" alt="How It Works" width="600" /></td>
-    <td><img src="docs/screenshots/04-landing-roadmap.png" alt="Roadmap" width="600" /></td>
-  </tr>
-</table>
+| Dashboard | Agents |
+|---|---|
+| <img src="docs/screenshots/dashboard-overview.png" alt="AgentDNAI dashboard overview" width="600" /> | <img src="docs/screenshots/agents-list.png" alt="AgentDNAI agents list" width="600" /> |
 
-### Dashboard & Agent Management
-
-<table>
-  <tr>
-    <td align="center"><b>Dashboard Overview</b></td>
-    <td align="center"><b>Agent DNI Card</b></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/06-dashboard-overview.png" alt="Dashboard Overview" width="600" /></td>
-    <td><img src="docs/screenshots/07-agent-dni-card.png" alt="Agent DNI Card" width="400" /></td>
-  </tr>
-</table>
-
-### Security & Audit
-
-<table>
-  <tr>
-    <td align="center"><b>Hash-Chained Audit Trail</b></td>
-    <td align="center"><b>Authorization Checks</b></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/08-audit-trail.png" alt="Audit Trail" width="600" /></td>
-    <td><img src="docs/screenshots/09-authz-check.png" alt="Authorization Checks" width="400" /></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="2"><b>Approval Queue</b></td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center"><img src="docs/screenshots/11-approval-queue.png" alt="Approval Queue" width="600" /></td>
-  </tr>
-</table>
-
-### CLI & SDK Integration
-
-<table>
-  <tr>
-    <td align="center"><b>CLI Usage</b></td>
-    <td align="center"><b>SDK Integration</b></td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/10-cli-usage.png" alt="CLI Usage" width="400" /></td>
-    <td><img src="docs/screenshots/12-sdk-integration.png" alt="SDK Integration" width="600" /></td>
-  </tr>
-</table>
+| Audit Log |
+|---|
+| <img src="docs/screenshots/audit-log.png" alt="AgentDNAI audit log" width="900" /> |
 
 ### Real-World Use Cases
 
@@ -114,7 +58,7 @@ AI agents read repositories, modify files, create PRs, access secrets and automa
 ## ✨ Features
 
 - **🔐 Agent Identity (DNI)** — Unique URI (`agent://org/runtime/name`), RSA-PSS key pair, fingerprint, environment, and lifecycle status
-- **👤 User Authentication** — Register, login, sessions with HMAC-SHA256 password hashing
+- **👤 User Authentication** — Register, login, database sessions with Argon2id password hashing
 - **🏢 Organizations** — Teams with roles: OWNER, ADMIN, SECURITY_MANAGER, DEVELOPER, VIEWER
 - **🛡️ Scoped Permissions** — 47 granular permissions across 9 categories, with ALLOW / DENY / REQUIRES_APPROVAL effects and wildcard support
 - **🔑 Secure Tokens** — HMAC-SHA256 with pepper, timing-safe comparison, TTL (60s–24h), raw tokens never stored
@@ -205,12 +149,14 @@ curl -X POST http://localhost:3000/api/tokens/issue \
 ```bash
 curl -X POST http://localhost:3000/api/authz/check \
   -H "Content-Type: application/json" \
-  -d '{"agentId":"{agentId}","action":"github.repo.read"}'
+  -H "Authorization: Bearer <agent-token>" \
+  -d '{"action":"github.repo.read"}'
 # → {"allowed":true,"decision":"allow","reason":"Explicit permission found for this action."}
 
 curl -X POST http://localhost:3000/api/authz/check \
   -H "Content-Type: application/json" \
-  -d '{"agentId":"{agentId}","action":"production.deploy"}'
+  -H "Authorization: Bearer <agent-token>" \
+  -d '{"action":"production.deploy"}'
 # → {"allowed":false,"decision":"requires_approval","reason":"Production actions require human approval."}
 ```
 
@@ -390,7 +336,7 @@ See [API Reference](./docs/API_REFERENCE.md) for complete documentation.
 | **Language** | TypeScript 5 |
 | **Styling** | Tailwind CSS 4 + shadcn/ui |
 | **Database** | Prisma ORM (SQLite dev / PostgreSQL prod) |
-| **Auth** | Custom sessions with HMAC-SHA256 password hashing |
+| **Auth** | Custom database sessions with Argon2id password hashing |
 | **Cryptography** | RSA-PSS key pairs, HMAC-SHA256 tokens with pepper |
 | **Animations** | Framer Motion |
 | **Charts** | Recharts |
@@ -458,7 +404,7 @@ agentdnai/
 
 | Version | Status | Focus |
 |---|---|---|
-| **v0.2.1** | ✅ Current | Security hardening, auth, orgs, real crypto, CLI, SDK, Docker |
+| **v0.2.1** | ✅ Current | Production hardening: multitenant boundaries, real token AuthZ, Argon2id, Docker fixes, security tests |
 | **v0.3.0-alpha** | 🔜 Next | Onboarding UX, agent DNI card, integrations, tests |
 | **v0.4.0-beta** | 📋 Planned | Invitations, advanced audit, metrics, backups |
 | **v1.0.0** | 🎯 Goal | Production-ready, security audited, stable API, full docs |

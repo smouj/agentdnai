@@ -1,7 +1,8 @@
-import { requireAuth } from '@/lib/ownership';
+import { requireAgentManagement, requireAuth } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { revokeToken } from '@/lib/tokens';
+import { db } from '@/lib/db';
 
 /**
  * POST /api/tokens/[id]/revoke - Revoke a token
@@ -11,10 +12,20 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
     const { id } = await params;
+    const token = await db.agentToken.findUnique({
+      where: { id },
+      select: { agentId: true },
+    });
 
-    await revokeToken(id);
+    if (!token) {
+      return NextResponse.json({ error: 'Token not found' }, { status: 404 });
+    }
+
+    await requireAgentManagement(session, token.agentId);
+
+    await revokeToken(id, session.userId);
 
     return NextResponse.json({ revoked: true, tokenId: id });
   } catch (error) {

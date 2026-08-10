@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { accessibleAgentWhere, getAccessibleAgentIds, requireAuth, visibleAuditWhere } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -14,9 +14,14 @@ import { db } from '@/lib/db';
  */
 export async function GET(_request: NextRequest) {
   try {
-    await requireAuth(_request);
+    const session = await requireAuth(_request);
+    const [agentIds, auditWhere] = await Promise.all([
+      getAccessibleAgentIds(session.userId),
+      visibleAuditWhere(session.userId),
+    ]);
     // Fetch all agents with their permissions and tokens
     const agents = await db.agentIdentity.findMany({
+      where: accessibleAgentWhere(session.userId),
       include: {
         permissions: {
           orderBy: { createdAt: 'asc' },
@@ -33,11 +38,13 @@ export async function GET(_request: NextRequest) {
 
     // Fetch all audit events
     const auditEvents = await db.auditEvent.findMany({
+      where: auditWhere,
       orderBy: { createdAt: 'asc' },
     });
 
     // Fetch all authorization decisions
     const authorizationDecisions = await db.authorizationDecision.findMany({
+      where: { agentId: { in: agentIds } },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -101,7 +108,6 @@ export async function GET(_request: NextRequest) {
         tokens: agent.tokens.map((t) => ({
           id: t.id,
           agentId: t.agentId,
-          tokenHash: t.tokenHash,
           scopes: t.scopes,
           expiresAt: t.expiresAt,
           revokedAt: t.revokedAt,

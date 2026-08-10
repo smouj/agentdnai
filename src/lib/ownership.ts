@@ -113,6 +113,36 @@ export async function requireAgentAccess(
 }
 
 /**
+ * Prisma where clause for all agents visible to a user.
+ */
+export function accessibleAgentWhere(userId: string) {
+  return {
+    OR: [
+      { ownerUserId: userId },
+      {
+        organization: {
+          members: {
+            some: { userId },
+          },
+        },
+      },
+    ],
+  };
+}
+
+/**
+ * Return IDs for all agents visible to a user. Useful for models that only
+ * store agentId and do not have a Prisma relation to AgentIdentity.
+ */
+export async function getAccessibleAgentIds(userId: string): Promise<string[]> {
+  const agents = await db.agentIdentity.findMany({
+    where: accessibleAgentWhere(userId),
+    select: { id: true },
+  });
+  return agents.map((agent) => agent.id);
+}
+
+/**
  * Require that the current user is a member of the specified organization
  * with at least the minimum role.
  * Throws ApiError if access is denied.
@@ -169,6 +199,27 @@ export async function getUserOrgIds(userId: string): Promise<string[]> {
 }
 
 /**
+ * Resolve an optional active organization from request context.
+ * The client may select an org by query param or header, but membership is
+ * always checked before it is trusted.
+ */
+export async function resolveActiveOrgId(
+  request: Request,
+  session: { userId: string },
+  minRole: string = 'VIEWER'
+): Promise<string | null> {
+  const url = new URL(request.url);
+  const orgId = url.searchParams.get('orgId') || request.headers.get('x-agentdnai-org-id');
+
+  if (!orgId) {
+    return null;
+  }
+
+  await requireOrgAccess(session, orgId, minRole);
+  return orgId;
+}
+
+/**
  * Check if a user can manage a specific agent (non-read operations).
  * Requires OWNER, ADMIN, or DEVELOPER role in the organization, or direct ownership.
  */
@@ -206,4 +257,47 @@ export async function canManageAgent(
   } catch {
     return false;
   }
+}
+
+/**
+ * Require manager-level access to an agent for mutating operations.
+ */
+export async function requireAgentManagement(
+  session: { userId: string },
+  agentId: string
+) {
+  const allowed = await canManageAgent(session, agentId);
+
+  if (!allowed) {
+    const exists = await db.agentIdentity.findUnique({
+      where: { id: agentId },
+      select: { id: true },
+    });
+
+    if (!exists) {
+      throw notFound('Agent not found');
+    }
+
+    throw forbidden('You do not have permission to manage this agent');
+  }
+
+  return requireAgentAccess(session, agentId);
+}
+
+/**
+ * Scope audit events to the actor, visible organizations, and visible agents.
+ */
+export async function visibleAuditWhere(userId: string) {
+  const [organizationIds, agentIds] = await Promise.all([
+    getUserOrgIds(userId),
+    getAccessibleAgentIds(userId),
+  ]);
+
+  return {
+    OR: [
+      { actorId: userId },
+      ...(organizationIds.length ? [{ organizationId: { in: organizationIds } }] : []),
+      ...(agentIds.length ? [{ agentId: { in: agentIds } }] : []),
+    ],
+  };
 }

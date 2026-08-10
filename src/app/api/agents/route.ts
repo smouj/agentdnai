@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/ownership';
+import { accessibleAgentWhere, requireAuth, requireOrgAccess, resolveActiveOrgId } from '@/lib/ownership';
 import { ApiError } from '@/lib/api-error';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
@@ -11,7 +11,7 @@ import { createAgentSchema } from '@/lib/schemas';
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const body = await request.json();
     const parsed = createAgentSchema.safeParse(body);
 
@@ -22,27 +22,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, runtime, description, ownerEmail } = parsed.data;
-
-    // Get or create user
-    const email = ownerEmail || 'default@agentdnai.io';
-    let user = await db.user.findUnique({ where: { email } });
-
-    if (!user) {
-      user = await db.user.create({
-        data: {
-          email,
-          name: email === 'default@agentdnai.io' ? 'Default User' : email.split('@')[0],
-          passwordHash: 'agent-created-no-login',
-        },
-      });
+    const { name, runtime, description, organizationId } = parsed.data;
+    if (organizationId) {
+      await requireOrgAccess(session, organizationId, 'DEVELOPER');
     }
+    const activeOrgId = organizationId || await resolveActiveOrgId(request, session, 'DEVELOPER');
+    const owner = session.user.email.split('@')[0] || 'user';
 
     // Generate RSA-PSS key pair
     const keyPair = generateKeyPair();
 
     // Generate agent URI
-    const owner = email === 'default@agentdnai.io' ? 'user' : email.split('@')[0];
     const agentUri = generateAgentUri(owner, runtime, name);
 
     // Create agent identity with fingerprint
@@ -55,7 +45,8 @@ export async function POST(request: NextRequest) {
         publicKey: keyPair.publicKey,
         fingerprint: keyPair.fingerprint,
         status: 'ACTIVE',
-        ownerUserId: user.id,
+        ownerUserId: session.userId,
+        organizationId: activeOrgId,
       },
     });
 
@@ -63,8 +54,9 @@ export async function POST(request: NextRequest) {
     await createAuditEvent({
       eventType: AUDIT_EVENTS.AGENT_CREATED,
       actorType: 'user',
-      actorId: user.id,
+      actorId: session.userId,
       agentId: agent.id,
+      organizationId: agent.organizationId || undefined,
       action: 'agent.create',
       metadata: { name, runtime, agentUri },
     });
@@ -80,6 +72,7 @@ export async function POST(request: NextRequest) {
         publicKey: agent.publicKey,
         status: agent.status,
         ownerUserId: agent.ownerUserId,
+        organizationId: agent.organizationId,
         createdAt: agent.createdAt,
         updatedAt: agent.updatedAt,
       },
@@ -108,14 +101,17 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth(request);
+    const session = await requireAuth(request);
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search')?.trim() || undefined;
     const status = searchParams.get('status')?.trim() || undefined;
     const runtime = searchParams.get('runtime')?.trim() || undefined;
 
     // Build the where clause
-    const where: Record<string, unknown> = {};
+    const activeOrgId = await resolveActiveOrgId(request, session);
+    const where: Record<string, unknown> = activeOrgId
+      ? { organizationId: activeOrgId }
+      : accessibleAgentWhere(session.userId);
 
     if (status) {
       where.status = status.toUpperCase();
@@ -152,6 +148,7 @@ export async function GET(request: NextRequest) {
       publicKey: agent.publicKey,
       status: agent.status,
       ownerUserId: agent.ownerUserId,
+      organizationId: agent.organizationId,
       createdAt: agent.createdAt,
       updatedAt: agent.updatedAt,
       lastSeenAt: agent.lastSeenAt,

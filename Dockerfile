@@ -1,40 +1,41 @@
-FROM oven/bun:1 AS base
+FROM oven/bun:1 AS deps
 WORKDIR /app
 
-# Install dependencies
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --backend=copyfile --network-concurrency=8 --cache-dir=/tmp/bun-cache --no-progress
 
-# Copy source
-COPY . .
+FROM oven/bun:1 AS builder
+WORKDIR /app
 
-# Generate Prisma client
-RUN bunx prisma generate
-
-# Build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN bunx prisma generate
 RUN bun run build
 
-# Production image
 FROM oven/bun:1 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs \
+  && mkdir -p /app/db \
+  && chown -R nextjs:nodejs /app
 
-COPY --from=base /app/public ./public
-COPY --from=base /app/.next/standalone ./
-COPY --from=base /app/.next/static ./.next/static
-COPY --from=base /app/prisma ./prisma
-COPY --from=base /app/db ./db
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD bun -e "const r=await fetch('http://127.0.0.1:3000/api/health').catch(()=>null); process.exit(r?.ok ? 0 : 1)"
 
 CMD ["bun", "server.js"]

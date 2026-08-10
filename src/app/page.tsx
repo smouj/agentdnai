@@ -3,21 +3,20 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
 import { api, type Agent, type Permission, type Token, type AuditEvent, type AuthzResult, type DashboardStats, type IssuedToken, type ApprovalRequest } from '@/lib/api-client';
-import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES, type PermissionCategory } from '@/lib/permissions';
+import { PERMISSIONS, PERMISSION_TEMPLATES, PERMISSION_CATEGORIES } from '@/lib/permissions';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shield, Key, Activity, Eye, Ban, Play, Pause, RotateCw, Plus,
-  ChevronRight, Terminal, Lock, Fingerprint, Database, FileText,
-  AlertTriangle, CheckCircle2, XCircle, Clock, Search, Filter,
-  Copy, ExternalLink, Server, Globe, Mail, CreditCard,
-  HardDrive, Trash2, Zap, ArrowRight, ArrowLeft, Home, LayoutDashboard,
-  Users, ScrollText, Settings, BookOpen, ShieldCheck, ShieldAlert,
+  ChevronRight, Terminal, Lock, Fingerprint, Database,
+  AlertTriangle, CheckCircle2, XCircle, Clock, Search,
+  Copy, Server,
+  Trash2, Zap, ArrowRight, ArrowLeft, LayoutDashboard,
+  ScrollText, Settings, BookOpen, ShieldCheck,
   ShieldX, RefreshCw, Download, Hash, Cpu,
-  Layers, Bot, Sparkles, Command, Menu, X, Code2,
+  Bot, Sparkles, Command, Menu, X, Code2,
   Wrench, Package, Workflow, Bell,
-  Sun, Moon, Upload, FileDown, LogOut, Building2, User,
-  RotateCcw
+  Sun, Moon, Upload, LogOut, Building2, User
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -31,7 +30,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
@@ -1060,16 +1058,16 @@ function DashboardView() {
   ];
 
   // Quick auth check
-  const [quickAgentId, setQuickAgentId] = useState('');
+  const [quickAgentToken, setQuickAgentToken] = useState('');
   const [quickAction, setQuickAction] = useState('');
   const [quickResult, setQuickResult] = useState<AuthzResult | null>(null);
   const [quickLoading, setQuickLoading] = useState(false);
 
   const quickAuthCheck = async () => {
-    if (!quickAgentId || !quickAction) return;
+    if (!quickAgentToken || !quickAction) return;
     setQuickLoading(true);
     try {
-      const result = await api.checkAuthz({ agentId: quickAgentId, action: quickAction });
+      const result = await api.checkAuthz({ agentToken: quickAgentToken, action: quickAction });
       setQuickResult(result);
     } catch {
       setQuickResult(null);
@@ -1269,16 +1267,9 @@ function DashboardView() {
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Select value={quickAgentId} onValueChange={setQuickAgentId}>
-              <SelectTrigger className="flex-1 h-8 text-xs bg-secondary/50 border-border/60">
-                <SelectValue placeholder="Select agent" />
-              </SelectTrigger>
-              <SelectContent>
-                {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Input value={quickAgentToken} onChange={e => setQuickAgentToken(e.target.value)} placeholder="agent token" className="flex-1 h-8 text-xs bg-secondary/50 border-border/60 font-mono" />
             <Input value={quickAction} onChange={e => setQuickAction(e.target.value)} placeholder="action (e.g. github.repo.read)" className="flex-1 h-8 text-xs bg-secondary/50 border-border/60" />
-            <Button size="sm" className="h-8 bg-crimson text-crimson-foreground hover:brightness-110" onClick={quickAuthCheck} disabled={quickLoading || !quickAgentId || !quickAction}>
+            <Button size="sm" className="h-8 bg-crimson text-crimson-foreground hover:brightness-110" onClick={quickAuthCheck} disabled={quickLoading || !quickAgentToken || !quickAction}>
               {quickLoading ? '...' : 'Check'}
             </Button>
           </div>
@@ -1524,6 +1515,7 @@ function AgentDetailView() {
   const [newResource, setNewResource] = useState('');
   const [tokenScopes, setTokenScopes] = useState('');
   const [tokenTTL, setTokenTTL] = useState('3600');
+  const [authzToken, setAuthzToken] = useState('');
   const [authzAction, setAuthzAction] = useState('');
   const [authzResult, setAuthzResult] = useState<AuthzResult | null>(null);
   const [issuedToken, setIssuedToken] = useState<IssuedToken | null>(null);
@@ -1603,10 +1595,10 @@ function AgentDetailView() {
   };
 
   const handleCheckAuthz = async () => {
-    if (!authzAction.trim()) return;
+    if (!authzAction.trim() || !authzToken.trim()) return;
     setActionLoading(true);
     try {
-      const result = await api.checkAuthz({ agentId: agent.id, action: authzAction });
+      const result = await api.checkAuthz({ agentToken: authzToken, action: authzAction });
       setAuthzResult(result);
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed', variant: 'destructive' });
@@ -1615,10 +1607,10 @@ function AgentDetailView() {
 
   const handlePlaygroundCheck = async () => {
     const actions = playgroundActions.split('\n').map(a => a.trim()).filter(Boolean);
-    if (actions.length === 0) return;
+    if (actions.length === 0 || !authzToken.trim()) return;
     setPlaygroundLoading(true);
     try {
-      const result = await api.batchCheckAuthz({ agentId: agent.id, actions });
+      const result = await api.batchCheckAuthz({ agentToken: authzToken, actions });
       setPlaygroundResults(result.results || []);
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Batch check failed', variant: 'destructive' });
@@ -2120,6 +2112,10 @@ function AgentDetailView() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
+              <Label className="text-sm">Agent Token</Label>
+              <Input value={authzToken} onChange={e => setAuthzToken(e.target.value)} placeholder="adni_..." className="bg-secondary/50 border-border/60 font-mono text-sm" />
+            </div>
+            <div className="space-y-2">
               <Label className="text-sm">Action</Label>
               <Input value={authzAction} onChange={e => setAuthzAction(e.target.value)} placeholder="e.g. github.repo.read" className="bg-secondary/50 border-border/60 font-mono text-sm" />
             </div>
@@ -2143,7 +2139,7 @@ function AgentDetailView() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setAuthzOpen(false); setAuthzResult(null); }}>Cancel</Button>
-            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleCheckAuthz} disabled={actionLoading || !authzAction.trim()}>
+            <Button className="bg-crimson text-crimson-foreground hover:brightness-110" onClick={handleCheckAuthz} disabled={actionLoading || !authzAction.trim() || !authzToken.trim()}>
               Check
             </Button>
           </DialogFooter>
@@ -2399,7 +2395,6 @@ function AuditView() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function PoliciesView() {
-  const { navigateToAgent } = useAppStore();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [applyOpen, setApplyOpen] = useState<string | null>(null);
   const [selectedAgent, setSelectedAgent] = useState('');
@@ -3629,7 +3624,7 @@ agentdnai export > backup.json`}</pre>
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function AgentDNAIApp() {
-  const { currentView, sessionToken, setSession, setView, user } = useAppStore();
+  const { currentView, sessionToken, setSession, setView } = useAppStore();
   const [authLoading, setAuthLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -3650,7 +3645,7 @@ function AgentDNAIApp() {
       setAuthLoading(false);
     };
     validateSession();
-  }, []);
+  }, [currentView, sessionToken, setSession, setView]);
 
   // Mobile detection
   useEffect(() => {
